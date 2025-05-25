@@ -9,7 +9,7 @@ import {
   faMapMarkerAlt, faChartLine, faUserCircle, 
   faWallet, faBars, faCheckCircle, faTimes, 
   faInfoCircle, faExclamationTriangle, faCubes, 
-  faLeaf, faArrowRight
+  faLeaf, faArrowRight, faSpinner
 } from '@fortawesome/free-solid-svg-icons';
 
 library.add(
@@ -17,7 +17,7 @@ library.add(
   faMapMarkerAlt, faChartLine, faUserCircle, 
   faWallet, faBars, faCheckCircle, faTimes, 
   faInfoCircle, faExclamationTriangle, faCubes, 
-  faLeaf, faArrowRight
+  faLeaf, faArrowRight, faSpinner
 );
 
 createRoot(document.getElementById("root")!).render(<App />);

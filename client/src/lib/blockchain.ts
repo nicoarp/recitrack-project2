@@ -1,6 +1,12 @@
 import { ethers } from "ethers";
 import { BottleEvent, Contract } from "@/types/blockchain";
 
+// Definimos el tipo para las transacciones
+type TransactionResponse = {
+  hash: string;
+  wait: () => Promise<any>;
+};
+
 // Contract configuration
 const contractAddress = "0xd9145CCE52D386f254917e481eB44e9943F39138";
 const contractABI = [
@@ -115,8 +121,9 @@ export const getContract = async (): Promise<Contract> => {
     throw new Error("MetaMask is not installed");
   }
   
-  const provider = new ethers.providers.Web3Provider(window.ethereum);
-  const signer = provider.getSigner();
+  // Usar la nueva API de ethers v6
+  const provider = new ethers.BrowserProvider(window.ethereum);
+  const signer = await provider.getSigner();
   return new ethers.Contract(contractAddress, contractABI, signer) as Contract;
 };
 
@@ -126,11 +133,28 @@ export const registerDeposit = async (
   bottleCount: number, 
   location: string
 ): Promise<ethers.providers.TransactionResponse> => {
-  const contract = await getContract();
-  const eventType = "DepositoLote";
-  const description = `${bottleCount} botellas depositadas`;
-  
-  return await contract.registerEvent(batchId, eventType, description, location);
+  try {
+    const contract = await getContract();
+    const eventType = "DepositoLote";
+    const description = `${bottleCount} botellas depositadas`;
+    
+    // En un entorno de desarrollo, podemos simular una transacción exitosa
+    // Esto es útil para probar la interfaz sin una conexión real a blockchain
+    if (process.env.NODE_ENV === 'development' && !window.ethereum) {
+      console.log('Modo desarrollo: Simulando transacción blockchain', { batchId, bottleCount, location });
+      // Devolver un objeto que simula una transacción
+      return {
+        hash: '0x' + Math.random().toString(16).substring(2, 42),
+        wait: async () => Promise.resolve({})
+      } as unknown as ethers.providers.TransactionResponse;
+    }
+    
+    // Llamada real al contrato blockchain
+    return await contract.registerEvent(batchId, eventType, description, location);
+  } catch (error) {
+    console.error('Error en registerDeposit:', error);
+    throw error;
+  }
 };
 
 // Get bottle history

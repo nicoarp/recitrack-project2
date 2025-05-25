@@ -9,6 +9,8 @@ import { ThemeProvider } from "./components/ui/theme-provider";
 import { BlockchainProvider } from "./hooks/use-blockchain";
 // Import the TransactionModalProvider for blockchain transactions
 import { TransactionModalProvider } from "./components/ui/transaction-modal";
+// Import FontAwesome components
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Dashboard from "@/pages/dashboard";
 import Deposits from "@/pages/deposits";
 import History from "@/pages/history";
@@ -43,8 +45,8 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <BlockchainProvider>
-        <ThemeProvider defaultTheme="light">
+      <ThemeProvider defaultTheme="light">
+        <BlockchainProvider>
           <TooltipProvider>
             <TransactionModalProvider>
               <div className="min-h-screen flex flex-col md:flex-row">
@@ -61,7 +63,7 @@ function App() {
                   <header className="bg-white shadow-md md:hidden p-4 flex items-center justify-between">
                     <div className="flex items-center">
                       <div className="h-8 w-8 flex items-center justify-center rounded-lg bg-primary-500 text-white">
-                        <i className="fas fa-recycle text-sm"></i>
+                        <FontAwesomeIcon icon="recycle" className="text-sm" />
                       </div>
                       <h1 className="ml-2 text-lg font-bold text-gray-800">EcoTraza</h1>
                     </div>
@@ -69,7 +71,7 @@ function App() {
                       onClick={toggleMobileMenu} 
                       className="text-gray-600"
                     >
-                      <i className="fas fa-bars text-xl"></i>
+                      <FontAwesomeIcon icon="bars" className="text-xl" />
                     </button>
                   </header>
                   <main className="flex-1 overflow-auto">
@@ -81,8 +83,8 @@ function App() {
               <Toaster />
             </TransactionModalProvider>
           </TooltipProvider>
-        </ThemeProvider>
-      </BlockchainProvider>
+        </BlockchainProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }
