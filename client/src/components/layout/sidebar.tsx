@@ -43,18 +43,17 @@ export default function Sidebar({ isMobile = false, closeMobileMenu }: SidebarPr
         <ul className="space-y-1">
           {navItems.map((item) => (
             <li key={item.path}>
-              <Link href={item.path}>
-                <a 
-                  onClick={handleClick}
-                  className={`flex items-center px-4 py-3 ${
-                    location === item.path 
-                      ? "text-gray-800 bg-gray-100 border-l-4 border-primary-500" 
-                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-800"
-                  }`}
-                >
-                  <FontAwesomeIcon icon={item.icon as any} className="w-6" />
-                  <span>{item.label}</span>
-                </a>
+              <Link 
+                href={item.path}
+                onClick={handleClick}
+                className={`flex items-center px-4 py-3 ${
+                  location === item.path 
+                    ? "text-gray-800 bg-gray-100 border-l-4 border-primary-500" 
+                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-800"
+                }`}
+              >
+                <FontAwesomeIcon icon={item.icon as any} className="w-6" />
+                <span className="ml-2">{item.label}</span>
               </Link>
             </li>
           ))}
