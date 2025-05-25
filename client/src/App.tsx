@@ -18,7 +18,6 @@ import Profile from "@/pages/profile";
 import NotFound from "@/pages/not-found";
 import Sidebar from "@/components/layout/sidebar";
 import MobileNav from "@/components/layout/mobile-nav";
-import TransactionModal from "@/components/ui/transaction-modal";
 import { useState } from "react";
 
 function Router() {
