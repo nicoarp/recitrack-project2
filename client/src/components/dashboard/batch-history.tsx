@@ -7,140 +7,195 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useBlockchain } from "@/hooks/use-blockchain";
-import { EmptyState } from "@/components/ui/empty-state";
 import { useToast } from "@/hooks/use-toast";
-import { getBottleHistory, formatAddress } from "@/lib/blockchain";
-import { BottleEvent } from "@/types/blockchain";
+import { EmptyState } from "@/components/ui/empty-state";
 
+// Simulación del historial de lotes
+const MOCK_HISTORY = [
+  {
+    eventType: "DepositoLote",
+    description: "10 botellas depositadas",
+    location: "Punto Limpio Central",
+    timestamp: Date.now() - 86400000 * 2, // 2 días atrás
+    actor: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e"
+  },
+  {
+    eventType: "Procesamiento",
+    description: "Botellas clasificadas por color",
+    location: "Centro de Reciclaje Municipal",
+    timestamp: Date.now() - 86400000, // 1 día atrás
+    actor: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e"
+  },
+  {
+    eventType: "Reciclado",
+    description: "Material transformado en materia prima",
+    location: "Planta de Reciclaje Industrial",
+    timestamp: Date.now() - 43200000, // 12 horas atrás
+    actor: "0x8912dF56C43C43A3d44c34Bd414A1324456D554e"
+  }
+];
+
+// Esquema de validación
 const formSchema = z.object({
-  batchId: z.string().min(1, "El ID del lote es requerido").transform(val => parseInt(val, 10))
+  batchId: z.string().min(1, "El ID del lote es requerido")
 });
 
 export function BatchHistory() {
-  const { isConnected } = useBlockchain();
   const { toast } = useToast();
-  const [events, setEvents] = useState<BottleEvent[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [history, setHistory] = useState([]);
   const [hasSearched, setHasSearched] = useState(false);
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       batchId: "1"
     }
   });
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    if (!isConnected) {
-      toast({
-        title: "Error",
-        description: "Conecta tu wallet para consultar el historial",
-        variant: "destructive"
-      });
-      return;
-    }
-
+  const onSubmit = async (values) => {
     try {
-      setLoading(true);
-      const history = await getBottleHistory(values.batchId);
-      setEvents(history);
+      setIsLoading(true);
       setHasSearched(true);
+      
+      // Simulamos la búsqueda del historial
+      console.log('Buscando historial para el lote:', values.batchId);
+      
+      // Simulamos un retardo para representar el tiempo de procesamiento
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Usamos datos de simulación
+      setHistory(MOCK_HISTORY);
+      
     } catch (error) {
       console.error('Error fetching history:', error);
       toast({
         title: "Error",
-        description: "Error al consultar el historial",
+        description: "Error al obtener el historial del lote",
         variant: "destructive"
       });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
+  };
+
+  // Función para formatear la fecha
+  const formatDate = (timestamp) => {
+    const date = new Date(timestamp);
+    return date.toLocaleString('es-ES', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  // Función para formatear la dirección de blockchain
+  const formatAddress = (address) => {
+    return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
   };
 
   return (
     <Card className="overflow-hidden">
       <CardHeader className="bg-secondary-500 py-4 px-6">
-        <CardTitle className="text-lg font-semibold text-white">Historial del Lote</CardTitle>
+        <CardTitle className="text-lg font-semibold text-white">Historial de Lote</CardTitle>
       </CardHeader>
       <CardContent className="p-6">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="mb-4">
-            <FormField
-              control={form.control}
-              name="batchId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm font-medium text-gray-700 mb-1">ID de Lote a consultar:</FormLabel>
-                  <div className="flex">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mb-6">
+            <div className="flex space-x-4">
+              <FormField
+                control={form.control}
+                name="batchId"
+                render={({ field }) => (
+                  <FormItem className="flex-1">
+                    <FormLabel className="text-sm font-medium text-gray-700">ID de Lote:</FormLabel>
                     <FormControl>
                       <Input 
                         type="number" 
                         min="1" 
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-l-md shadow-sm focus:outline-none focus:ring-2 focus:ring-secondary-500 focus:border-secondary-500" 
+                        className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-secondary-500 focus:border-secondary-500" 
                         {...field} 
                       />
                     </FormControl>
-                    <Button 
-                      type="submit"
-                      disabled={loading}
-                      className="bg-secondary-500 text-white px-4 py-2 rounded-r-md hover:bg-secondary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary-500 transition duration-150 ease-in-out"
-                    >
-                      {loading ? (
-                        <FontAwesomeIcon icon="spinner" spin />
-                      ) : "Consultar"}
-                    </Button>
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button 
+                type="submit" 
+                disabled={isLoading}
+                className="self-end bg-secondary-500 text-white py-2 px-4 rounded-md hover:bg-secondary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary-500 transition duration-150 ease-in-out"
+              >
+                {isLoading ? (
+                  <>
+                    <FontAwesomeIcon icon="spinner" spin className="mr-2" />
+                    Buscando...
+                  </>
+                ) : "Buscar"}
+              </Button>
+            </div>
           </form>
-        </Form>
-        
-        <div className="mt-6">
-          <div className="border-t border-gray-200 mt-4 pt-4">
-            <h3 className="text-md font-medium text-gray-700 mb-3">Eventos registrados:</h3>
-            <div className="max-h-80 overflow-y-auto">
-              {loading ? (
-                <div className="flex justify-center items-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-secondary-500"></div>
+          
+          {hasSearched && (
+            <div className="mt-6">
+              {history.length > 0 ? (
+                <div className="border rounded-lg overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Evento
+                          </th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Descripción
+                          </th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Ubicación
+                          </th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Fecha
+                          </th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Actor
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {history.map((event, index) => (
+                          <tr key={index}>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                              {event.eventType}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {event.description}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {event.location}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {formatDate(event.timestamp)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {formatAddress(event.actor)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-              ) : !hasSearched ? (
+              ) : (
                 <EmptyState 
                   icon="history" 
-                  message="Consulta el historial de un lote para ver los eventos registrados en la blockchain" 
+                  message="No se encontró historial para este lote"
                 />
-              ) : events.length === 0 ? (
-                <EmptyState 
-                  icon="info-circle" 
-                  message={`No se encontraron eventos para el lote #${form.getValues().batchId}`} 
-                />
-              ) : (
-                <ul className="space-y-4">
-                  {events.map((event, index) => {
-                    const date = new Date(event.timestamp * 1000).toLocaleString();
-                    const shortAddress = formatAddress(event.actor);
-                    
-                    return (
-                      <li key={index} className="border-l-4 border-secondary-500 pl-4 py-2">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <span className="font-medium text-gray-800">{event.eventType}</span>
-                            <p className="text-gray-600 mt-1">{event.description}</p>
-                            <p className="text-gray-500 text-sm mt-1">Ubicación: {event.location}</p>
-                          </div>
-                          <span className="text-xs text-gray-400">{date}</span>
-                        </div>
-                        <p className="text-xs text-gray-400 mt-2">Registrado por: {shortAddress}</p>
-                      </li>
-                    );
-                  })}
-                </ul>
               )}
             </div>
-          </div>
-        </div>
+          )}
+        </Form>
       </CardContent>
     </Card>
   );
