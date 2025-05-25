@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { LocalStorage } from "@/lib/storage";
 
 // Definimos el esquema de validación
 const formSchema = z.object({
@@ -30,27 +31,44 @@ export function DepositForm() {
     }
   });
 
-  const onSubmit = async (values) => {
+  const onSubmit = async (values: any) => {
     try {
       setIsSubmitting(true);
       
-      // Simulamos el registro de depósito
+      // Registramos el depósito en nuestro almacenamiento local
       console.log('Registrando depósito:', values);
       
-      // Simulamos un retardo para representar el tiempo de procesamiento
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Simulamos un pequeño retardo para representar el tiempo de procesamiento
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Guardamos el evento en el almacenamiento local
+      LocalStorage.saveEvent({
+        eventType: "DepositoLote",
+        description: `${values.bottleCount} botellas depositadas`,
+        location: values.location,
+        timestamp: Date.now(),
+        actor: "0x" + Math.random().toString(16).substring(2, 42), // Simula una dirección de wallet
+        batchId: values.batchId
+      });
       
       // Notificamos el éxito
       toast({
         title: "¡Éxito!",
-        description: "Depósito registrado correctamente en la blockchain"
+        description: "Depósito registrado correctamente y almacenado para trazabilidad"
+      });
+      
+      // Opcional: resetear el formulario para un nuevo depósito
+      form.reset({
+        batchId: values.batchId,
+        bottleCount: "",
+        location: values.location
       });
       
     } catch (error) {
       console.error('Error registering deposit:', error);
       toast({
         title: "Error",
-        description: "Error al registrar el depósito en la blockchain",
+        description: "Error al registrar el depósito",
         variant: "destructive"
       });
     } finally {

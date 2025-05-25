@@ -9,31 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { EmptyState } from "@/components/ui/empty-state";
-
-// Simulación del historial de lotes
-const MOCK_HISTORY = [
-  {
-    eventType: "DepositoLote",
-    description: "10 botellas depositadas",
-    location: "Punto Limpio Central",
-    timestamp: Date.now() - 86400000 * 2, // 2 días atrás
-    actor: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e"
-  },
-  {
-    eventType: "Procesamiento",
-    description: "Botellas clasificadas por color",
-    location: "Centro de Reciclaje Municipal",
-    timestamp: Date.now() - 86400000, // 1 día atrás
-    actor: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e"
-  },
-  {
-    eventType: "Reciclado",
-    description: "Material transformado en materia prima",
-    location: "Planta de Reciclaje Industrial",
-    timestamp: Date.now() - 43200000, // 12 horas atrás
-    actor: "0x8912dF56C43C43A3d44c34Bd414A1324456D554e"
-  }
-];
+import { LocalStorage } from "@/lib/storage";
 
 // Esquema de validación
 const formSchema = z.object({
@@ -43,7 +19,7 @@ const formSchema = z.object({
 export function BatchHistory() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [history, setHistory] = useState([]);
+  const [history, setHistory] = useState<any[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
 
   const form = useForm({
@@ -53,19 +29,38 @@ export function BatchHistory() {
     }
   });
 
-  const onSubmit = async (values) => {
+  const onSubmit = async (values: any) => {
     try {
       setIsLoading(true);
       setHasSearched(true);
       
-      // Simulamos la búsqueda del historial
+      // Buscamos el historial real del lote en el almacenamiento local
       console.log('Buscando historial para el lote:', values.batchId);
       
-      // Simulamos un retardo para representar el tiempo de procesamiento
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Simulamos un pequeño retardo para representar el tiempo de procesamiento
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Usamos datos de simulación
-      setHistory(MOCK_HISTORY);
+      // Obtenemos los datos reales del almacenamiento local
+      const realHistory = LocalStorage.getEventsByBatchId(values.batchId);
+      
+      // Si no hay registros, podemos agregar algunos eventos de sistema automáticamente
+      if (realHistory.length === 0) {
+        toast({
+          title: "Sin historial",
+          description: "No se encontraron registros para este lote",
+          variant: "destructive"
+        });
+        setHistory([]);
+      } else {
+        // Ordenamos por fecha, del más reciente al más antiguo
+        const sortedHistory = [...realHistory].sort((a, b) => b.timestamp - a.timestamp);
+        setHistory(sortedHistory);
+        
+        toast({
+          title: "Historial cargado",
+          description: `Se encontraron ${sortedHistory.length} registros para el lote ${values.batchId}`
+        });
+      }
       
     } catch (error) {
       console.error('Error fetching history:', error);
@@ -80,7 +75,7 @@ export function BatchHistory() {
   };
 
   // Función para formatear la fecha
-  const formatDate = (timestamp) => {
+  const formatDate = (timestamp: number) => {
     const date = new Date(timestamp);
     return date.toLocaleString('es-ES', {
       day: '2-digit',
@@ -92,7 +87,7 @@ export function BatchHistory() {
   };
 
   // Función para formatear la dirección de blockchain
-  const formatAddress = (address) => {
+  const formatAddress = (address: string) => {
     return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
   };
 
