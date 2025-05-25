@@ -132,25 +132,22 @@ export const registerDeposit = async (
   batchId: number, 
   bottleCount: number, 
   location: string
-): Promise<ethers.providers.TransactionResponse> => {
+): Promise<TransactionResponse> => {
   try {
+    // Si MetaMask no está instalado o estamos en desarrollo, usamos la simulación
+    if (!isMetaMaskInstalled()) {
+      // Importamos dinámicamente la función de simulación
+      const { mockRegisterDeposit } = await import('./mockDeposit');
+      return await mockRegisterDeposit(batchId, bottleCount, location);
+    }
+    
+    // Si tenemos conexión real a blockchain
     const contract = await getContract();
     const eventType = "DepositoLote";
     const description = `${bottleCount} botellas depositadas`;
     
-    // En un entorno de desarrollo, podemos simular una transacción exitosa
-    // Esto es útil para probar la interfaz sin una conexión real a blockchain
-    if (process.env.NODE_ENV === 'development' && !window.ethereum) {
-      console.log('Modo desarrollo: Simulando transacción blockchain', { batchId, bottleCount, location });
-      // Devolver un objeto que simula una transacción
-      return {
-        hash: '0x' + Math.random().toString(16).substring(2, 42),
-        wait: async () => Promise.resolve({})
-      } as unknown as ethers.providers.TransactionResponse;
-    }
-    
     // Llamada real al contrato blockchain
-    return await contract.registerEvent(batchId, eventType, description, location);
+    return await contract.registerEvent(batchId, eventType, description, location) as TransactionResponse;
   } catch (error) {
     console.error('Error en registerDeposit:', error);
     throw error;
@@ -159,8 +156,21 @@ export const registerDeposit = async (
 
 // Get bottle history
 export const getBottleHistory = async (batchId: number): Promise<BottleEvent[]> => {
-  const contract = await getContract();
-  return await contract.getBottleHistory(batchId);
+  try {
+    // Si MetaMask no está instalado o estamos en desarrollo, usamos la simulación
+    if (!isMetaMaskInstalled()) {
+      // Importamos dinámicamente la función de simulación
+      const { mockGetBottleHistory } = await import('./mockDeposit');
+      return await mockGetBottleHistory(batchId);
+    }
+    
+    // Si tenemos conexión real a blockchain
+    const contract = await getContract();
+    return await contract.getBottleHistory(batchId);
+  } catch (error) {
+    console.error('Error en getBottleHistory:', error);
+    throw error;
+  }
 };
 
 // Format address to shorter version

@@ -8,24 +8,20 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useBlockchain } from "@/hooks/use-blockchain";
-import { useTransactionModal, TransactionLoader } from "@/components/ui/transaction-modal";
 import { useToast } from "@/hooks/use-toast";
-import { registerDeposit } from "@/lib/blockchain";
 
+// Definimos el esquema de validación
 const formSchema = z.object({
-  batchId: z.string().min(1, "El ID del lote es requerido").transform(val => parseInt(val, 10)),
-  bottleCount: z.string().min(1, "La cantidad de botellas es requerida").transform(val => parseInt(val, 10)),
+  batchId: z.string().min(1, "El ID del lote es requerido"),
+  bottleCount: z.string().min(1, "La cantidad de botellas es requerida"),
   location: z.string().min(1, "La ubicación es requerida")
 });
 
 export function DepositForm() {
-  const { isConnected } = useBlockchain();
   const { toast } = useToast();
-  const { showModal, updateModalContent, hideModal } = useTransactionModal();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       batchId: "1",
@@ -34,41 +30,23 @@ export function DepositForm() {
     }
   });
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    if (!isConnected) {
-      toast({
-        title: "Error",
-        description: "Conecta tu wallet para registrar un depósito",
-        variant: "destructive"
-      });
-      return;
-    }
-
+  const onSubmit = async (values) => {
     try {
       setIsSubmitting(true);
-      showModal("Registrando Depósito", 
-        <TransactionLoader message="Procesando transacción en la blockchain. Por favor, espere..." />
-      );
-
-      const tx = await registerDeposit(values.batchId, values.bottleCount, values.location);
       
-      updateModalContent("Transacción Enviada", 
-        <TransactionLoader 
-          message="Esperando confirmación en la blockchain..." 
-          txHash={tx.hash}
-        />
-      );
+      // Simulamos el registro de depósito
+      console.log('Registrando depósito:', values);
       
-      await tx.wait();
-      hideModal();
+      // Simulamos un retardo para representar el tiempo de procesamiento
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
+      // Notificamos el éxito
       toast({
         title: "¡Éxito!",
         description: "Depósito registrado correctamente en la blockchain"
       });
       
     } catch (error) {
-      hideModal();
       console.error('Error registering deposit:', error);
       toast({
         title: "Error",

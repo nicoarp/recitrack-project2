@@ -3,13 +3,9 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-// Using our custom ThemeProvider
 import { ThemeProvider } from "./components/ui/theme-provider";
-// Ensure blockchain functionality works with MetaMask
 import { BlockchainProvider } from "./hooks/use-blockchain";
-// Import the TransactionModalProvider for blockchain transactions
 import { TransactionModalProvider } from "./components/ui/transaction-modal";
-// Import FontAwesome components
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Dashboard from "@/pages/dashboard";
 import Deposits from "@/pages/deposits";
@@ -45,10 +41,10 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="light">
-        <BlockchainProvider>
-          <TooltipProvider>
-            <TransactionModalProvider>
+      <BlockchainProvider>
+        <ThemeProvider defaultTheme="light">
+          <TransactionModalProvider>
+            <TooltipProvider>
               <div className="min-h-screen flex flex-col md:flex-row">
                 <Sidebar />
                 <div className="fixed inset-0 bg-gray-900 bg-opacity-50 z-50 md:hidden" 
@@ -81,10 +77,10 @@ function App() {
                 </div>
               </div>
               <Toaster />
-            </TransactionModalProvider>
-          </TooltipProvider>
-        </BlockchainProvider>
-      </ThemeProvider>
+            </TooltipProvider>
+          </TransactionModalProvider>
+        </ThemeProvider>
+      </BlockchainProvider>
     </QueryClientProvider>
   );
 }
