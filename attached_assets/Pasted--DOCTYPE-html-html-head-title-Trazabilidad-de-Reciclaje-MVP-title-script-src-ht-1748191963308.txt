@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Trazabilidad de Reciclaje - MVP</title>
+  <script src="https://cdn.jsdelivr.net/npm/ethers/dist/ethers.min.js"></script>
+</head>
+<body>
+  <h2>Registro de depósito</h2>
+  <label>ID de Lote/Punto Limpio:</label>
+  <input id="bottleId" type="number" value="1"/><br><br>
+
+  <label>Cantidad de botellas:</label>
+  <input id="cantidad" type="number" value="5"/><br><br>
+
+  <button onclick="registrarDeposito()">Registrar evento</button>
+  <br><br>
+
+  <h2>Historial del lote</h2>
+  <button onclick="consultarHistorial()">Ver historial</button>
+  <div id="historial"></div>
+
+<script>
+  // Dirección y ABI del contrato (ajusta con los tuyos)
+  const contractAddress = "0xd9145CCE52D386f254917e481eB44e9943F39138";
+  const contractABI = [[
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "bottleId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "string",
+				"name": "eventType",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "description",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "location",
+				"type": "string"
+			}
+		],
+		"name": "registerEvent",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "bottleHistory",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "eventType",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "description",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "location",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "timestamp",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "actor",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "bottleId",
+				"type": "uint256"
+			}
+		],
+		"name": "getBottleHistory",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "string",
+						"name": "eventType",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "description",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "location",
+						"type": "string"
+					},
+					{
+						"internalType": "uint256",
+						"name": "timestamp",
+						"type": "uint256"
+					},
+					{
+						"internalType": "address",
+						"name": "actor",
+						"type": "address"
+					}
+				],
+				"internalType": "struct RecyclingMVP.BottleEvent[]",
+				"name": "",
+				"type": "tuple[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	}
+]];
+
+  async function registrarDeposito() {
+    if(typeof window.ethereum === 'undefined') {
+      alert('Instala MetaMask para probar!');
+      return;
+    }
+    await ethereum.request({ method: 'eth_requestAccounts' });
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const signer = provider.getSigner();
+    const contract = new ethers.Contract(contractAddress, contractABI, signer);
+
+    const bottleId = document.getElementById("bottleId").value;
+    const cantidad = document.getElementById("cantidad").value;
+    const eventType = "DepositoLote";
+    const description = cantidad + " botellas depositadas";
+    const location = "Punto Limpio Central"; // O puedes pedirlo como input
+
+    try {
+      const tx = await contract.registerEvent(bottleId, eventType, description, location);
+      await tx.wait();
+      alert("¡Evento registrado en blockchain!");
+    } catch (e) {
+      alert("Error al registrar: " + e.message);
+    }
+  }
+
+  async function consultarHistorial() {
+    if(typeof window.ethereum === 'undefined') {
+      alert('Instala MetaMask para probar!');
+      return;
+    }
+    await ethereum.request({ method: 'eth_requestAccounts' });
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const contract = new ethers.Contract(contractAddress, contractABI, provider);
+
+    const bottleId = document.getElementById("bottleId").value;
+    const history = await contract.getBottleHistory(bottleId);
+    let html = "<ul>";
+    for(let i=0; i<history.length; i++) {
+      const ev = history[i];
+      html += `<li>${ev.eventType} | ${ev.description} | ${ev.location} | ${new Date(ev.timestamp*1000).toLocaleString()} | actor: ${ev.actor}</li>`;
+    }
+    html += "</ul>";
+    document.getElementById("historial").innerHTML = html;
+  }
+</script>
+</body>
+</html>
