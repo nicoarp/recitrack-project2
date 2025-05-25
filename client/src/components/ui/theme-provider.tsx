@@ -1,4 +1,4 @@
-"use client"
+"// Theme provider component"
 
 import * as React from "react"
 import { createContext, useContext, useEffect, useState } from "react"
