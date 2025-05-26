@@ -228,96 +228,31 @@ export class BlockchainService {
       try {
         const events = await this.contract.getBottleHistory(bottleIdNumber);
         
-        console.log(`📥 RESPUESTA COMPLETA:`, events);
-        console.log(`📊 Tipo:`, typeof events);
-        console.log(`📏 Longitud:`, events?.length);
-        console.log(`🔍 Es array:`, Array.isArray(events));
-        console.log(`🔄 Valores raw:`, JSON.stringify(events, null, 2));
+        console.log(`✅ DATOS ENCONTRADOS - ${events.length} eventos`);
         
-        // Verificar si tiene datos
-        if (events && events.length > 0) {
-          console.log(`✅ DATOS ENCONTRADOS - ${events.length} eventos:`);
-          events.forEach((event, i) => {
-            console.log(`   Evento ${i}:`, event);
-          });
-        } else {
-          console.log(`❌ NO HAY DATOS en backend - pero Remix SÍ devuelve para ID ${bottleIdNumber}`);
-          console.log(`🚨 INCONSISTENCIA: Remix funciona, backend no`);
-          
-          // Retornar inmediatamente para debug
-          return {
-            success: false,
-            error: 'Backend no encuentra datos que existen en Remix',
-            debugInfo: {
-              bottleId: bottleIdNumber,
-              contractAddress: this.contract.target,
-              eventsResponse: events,
-              eventsType: typeof events,
-              eventsLength: events?.length
-            }
-          };
+        // Verificar si hay eventos
+        if (!events || events.length === 0) {
+          console.log(`📭 No hay eventos registrados para botella ${bottleId}`);
+          return [];
         }
         
-        return events;
+        // Convertir eventos a formato JSON-safe
+        const formattedEvents = events.map(event => ({
+          eventType: event.eventType,
+          description: event.description,
+          location: event.location,
+          timestamp: Number(event.timestamp) * 1000, // Convertir BigInt a Number en milliseconds
+          actor: event.actor
+        }));
+
+        console.log(`📊 ${formattedEvents.length} eventos encontrados para botella ${bottleId}`);
+        
+        return formattedEvents;
+        
       } catch (contractError) {
         console.log(`🚨 ERROR en llamada al contrato:`, contractError);
         throw contractError;
       }
-      
-      // Intentar ver si la respuesta tiene propiedades ocultas o formato especial de ethers
-      if (events) {
-        console.log(`🔍 Propiedades disponibles:`, Object.getOwnPropertyNames(events));
-        console.log(`🔍 Es array?:`, Array.isArray(events));
-        if (events.length !== undefined) {
-          console.log(`🔍 Intentando iterar por índices:`);
-          for (let i = 0; i < Math.min(events.length, 3); i++) {
-            console.log(`   - events[${i}]:`, events[i]);
-          }
-        }
-        
-        // Intentar convertir a array si es un objeto de ethers
-        try {
-          const eventsArray = [...events];
-          console.log(`🔄 Convertido a array:`, eventsArray);
-        } catch (e) {
-          console.log(`❌ No se pudo convertir a array:`, e.message);
-        }
-      }
-      
-      // Verificar si es un array válido
-      if (Array.isArray(events)) {
-        console.log(`✅ Es un array válido con ${events.length} elementos`);
-        events.forEach((event, index) => {
-          console.log(`📋 Evento ${index}:`, event);
-          console.log(`📋 Evento ${index} serializado:`, JSON.stringify(event, null, 2));
-        });
-      } else {
-        console.log(`❌ La respuesta no es un array:`, events);
-        // Intentar acceder como objeto
-        if (events && typeof events === 'object') {
-          console.log(`🔍 Propiedades del objeto:`, Object.keys(events));
-          console.log(`🔍 Valores del objeto:`, Object.values(events));
-        }
-      }
-      
-      // Verificar si hay eventos
-      if (!events || events.length === 0) {
-        console.log(`📭 No hay eventos registrados para botella ${bottleId}`);
-        return [];
-      }
-      
-      // Convertir formato blockchain a formato frontend
-      const formattedEvents = events.map(event => ({
-        eventType: event.eventType,
-        description: event.description,
-        location: event.location,
-        timestamp: Number(event.timestamp) * 1000, // Convertir a milliseconds
-        actor: event.actor
-      }));
-
-      console.log(`📊 ${formattedEvents.length} eventos encontrados para botella ${bottleId}`);
-      
-      return formattedEvents;
     } catch (error) {
       if (error.code === 'BAD_DATA' && error.value === '0x') {
         console.log(`📭 No hay datos para botella ${bottleId} - esto es normal si no se han registrado eventos`);

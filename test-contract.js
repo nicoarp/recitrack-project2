@@ -13,7 +13,7 @@ async function testContractQuery() {
     
     // Configuración exacta
     const RPC_URL = 'https://sepolia.infura.io/v3/e3756259fcf148d5b141d7bb610f314d';
-    const CONTRACT_ADDRESS = '0xd1ca86232E3c54725c4cD05c653c78922061180f';
+    const CONTRACT_ADDRESS = '0xc09aaABE6f3231F306e09156DcCf51103Ba147F0';
     const PRIVATE_KEY = '0x55c405215bc7bff4a1a1534b88580a27f983640a3b6da67f9e457d30cb4b72a6';
     
     console.log('📡 Conectando al proveedor...');
