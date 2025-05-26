@@ -65,7 +65,12 @@ export class BlockchainService {
       const contractAddress = process.env.CONTRACT_ADDRESS || '0x0000000000000000000000000000000000000000';
       const operatorPrivateKey = process.env.OPERATOR_PRIVATE_KEY;
 
-      if (!operatorPrivateKey) {
+      console.log('🔍 Verificando configuración blockchain...');
+      console.log('RPC URL:', rpcUrl ? 'Configurado' : 'No configurado');
+      console.log('Contract Address:', contractAddress);
+      console.log('Private Key:', operatorPrivateKey ? 'Configurado' : 'No configurado');
+
+      if (!operatorPrivateKey || operatorPrivateKey === '0x0000000000000000000000000000000000000000000000000000000000000000') {
         console.warn('⚠️  OPERATOR_PRIVATE_KEY no configurado. Modo offline activado.');
         return false;
       }

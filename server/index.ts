@@ -1,7 +1,11 @@
 import express, { type Request, Response, NextFunction } from "express";
+import { config } from "dotenv";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { blockchainService } from "./blockchain.js";
+
+// Cargar variables de entorno
+config();
 
 const app = express();
 app.use(express.json());
