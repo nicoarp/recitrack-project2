@@ -216,21 +216,34 @@ export class BlockchainService {
       
       // Verificar que el contrato está inicializado correctamente
       console.log(`🔗 Dirección del contrato: ${this.contract.target}`);
-      console.log(`🌐 Red conectada: ${await this.provider.getNetwork()}`);
+      const network = await this.provider.getNetwork();
+      console.log(`🌐 Red conectada:`, {
+        name: network.name,
+        chainId: network.chainId,
+        ensAddress: network.ensAddress
+      });
       
       const events = await this.contract.getBottleHistory(bottleIdNumber);
-      console.log(`📥 Respuesta raw del contrato:`, JSON.stringify(events, null, 2));
+      console.log(`📥 Respuesta raw del contrato:`, events);
+      console.log(`📥 Respuesta serializada:`, JSON.stringify(events, null, 2));
       console.log(`📊 Tipo de respuesta:`, typeof events);
       console.log(`📏 Longitud de eventos:`, events ? events.length : 'undefined');
+      console.log(`🔍 Constructor de la respuesta:`, events?.constructor?.name);
       
       // Verificar si es un array válido
       if (Array.isArray(events)) {
         console.log(`✅ Es un array válido con ${events.length} elementos`);
         events.forEach((event, index) => {
-          console.log(`📋 Evento ${index}:`, JSON.stringify(event, null, 2));
+          console.log(`📋 Evento ${index}:`, event);
+          console.log(`📋 Evento ${index} serializado:`, JSON.stringify(event, null, 2));
         });
       } else {
         console.log(`❌ La respuesta no es un array:`, events);
+        // Intentar acceder como objeto
+        if (events && typeof events === 'object') {
+          console.log(`🔍 Propiedades del objeto:`, Object.keys(events));
+          console.log(`🔍 Valores del objeto:`, Object.values(events));
+        }
       }
       
       // Verificar si hay eventos
