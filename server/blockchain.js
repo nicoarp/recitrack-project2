@@ -226,11 +226,21 @@ export class BlockchainService {
       console.log(`🔍 Llamando a contract.getBottleHistory(${bottleIdNumber})...`);
       const events = await this.contract.getBottleHistory(bottleIdNumber);
       
-      console.log(`📥 Respuesta raw del contrato:`, events);
-      console.log(`📥 Respuesta serializada:`, JSON.stringify(events, null, 2));
-      console.log(`📊 Tipo de respuesta:`, typeof events);
-      console.log(`📏 Longitud de eventos:`, events ? events.length : 'undefined');
-      console.log(`🔍 Constructor de la respuesta:`, events?.constructor?.name);
+      console.log(`📥 RESPUESTA COMPLETA:`, events);
+      console.log(`📊 Tipo:`, typeof events);
+      console.log(`📏 Longitud:`, events?.length);
+      console.log(`🔍 Es array:`, Array.isArray(events));
+      
+      // Verificar si tiene datos
+      if (events && events.length > 0) {
+        console.log(`✅ DATOS ENCONTRADOS - ${events.length} eventos:`);
+        events.forEach((event, i) => {
+          console.log(`   Evento ${i}:`, event);
+        });
+      } else {
+        console.log(`❌ NO HAY DATOS - pero Remix sí devuelve datos para ID ${bottleIdNumber}`);
+        console.log(`🚨 PROBLEMA: Hay inconsistencia entre Remix y nuestro código`);
+      }
       
       // Intentar ver si la respuesta tiene propiedades ocultas o formato especial de ethers
       if (events) {
