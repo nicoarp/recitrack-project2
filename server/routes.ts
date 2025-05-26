@@ -137,11 +137,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const history = await blockchainService.getBottleHistory(batchId);
+      
+      // Si no hay eventos, devolver éxito con array vacío
       res.json({
         success: true,
         batchId,
         events: history,
-        mode: "blockchain"
+        mode: "blockchain",
+        message: history.length === 0 ? "No hay eventos registrados para este ID" : `${history.length} eventos encontrados`
       });
     } catch (error) {
       console.error("Error consultando historial blockchain:", error);

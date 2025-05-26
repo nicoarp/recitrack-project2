@@ -212,8 +212,16 @@ export class BlockchainService {
       
       // Convertir bottleId a número para el contrato
       const bottleIdNumber = parseInt(bottleId);
+      console.log(`🔢 Usando bottleId como número: ${bottleIdNumber}`);
       
       const events = await this.contract.getBottleHistory(bottleIdNumber);
+      console.log(`📥 Respuesta raw del contrato:`, events);
+      
+      // Verificar si hay eventos
+      if (!events || events.length === 0) {
+        console.log(`📭 No hay eventos registrados para botella ${bottleId}`);
+        return [];
+      }
       
       // Convertir formato blockchain a formato frontend
       const formattedEvents = events.map(event => ({
@@ -228,6 +236,10 @@ export class BlockchainService {
       
       return formattedEvents;
     } catch (error) {
+      if (error.code === 'BAD_DATA' && error.value === '0x') {
+        console.log(`📭 No hay datos para botella ${bottleId} - esto es normal si no se han registrado eventos`);
+        return [];
+      }
       console.error('❌ Error consultando historial:', error.message);
       throw error;
     }
