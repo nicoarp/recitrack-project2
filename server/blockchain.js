@@ -223,12 +223,26 @@ export class BlockchainService {
         ensAddress: network.ensAddress
       });
       
+      console.log(`🔍 Llamando a contract.getBottleHistory(${bottleIdNumber})...`);
       const events = await this.contract.getBottleHistory(bottleIdNumber);
+      
       console.log(`📥 Respuesta raw del contrato:`, events);
       console.log(`📥 Respuesta serializada:`, JSON.stringify(events, null, 2));
       console.log(`📊 Tipo de respuesta:`, typeof events);
       console.log(`📏 Longitud de eventos:`, events ? events.length : 'undefined');
       console.log(`🔍 Constructor de la respuesta:`, events?.constructor?.name);
+      
+      // Intentar ver si la respuesta tiene propiedades ocultas o formato especial de ethers
+      if (events) {
+        console.log(`🔍 Propiedades disponibles:`, Object.getOwnPropertyNames(events));
+        console.log(`🔍 Es array?:`, Array.isArray(events));
+        if (events.length !== undefined) {
+          console.log(`🔍 Intentando iterar por índices:`);
+          for (let i = 0; i < Math.min(events.length, 3); i++) {
+            console.log(`   - events[${i}]:`, events[i]);
+          }
+        }
+      }
       
       // Verificar si es un array válido
       if (Array.isArray(events)) {
