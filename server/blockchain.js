@@ -1,0 +1,177 @@
+import { ethers } from 'ethers';
+
+// ABI simplificado para el contrato de trazabilidad EcoTraza
+const CONTRACT_ABI = [
+  {
+    "inputs": [
+      { "internalType": "string", "name": "batchId", "type": "string" },
+      { "internalType": "string", "name": "eventType", "type": "string" },
+      { "internalType": "string", "name": "description", "type": "string" },
+      { "internalType": "string", "name": "location", "type": "string" }
+    ],
+    "name": "registerEvent",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "string", "name": "batchId", "type": "string" }
+    ],
+    "name": "getBatchHistory",
+    "outputs": [
+      {
+        "components": [
+          { "internalType": "string", "name": "eventType", "type": "string" },
+          { "internalType": "string", "name": "description", "type": "string" },
+          { "internalType": "string", "name": "location", "type": "string" },
+          { "internalType": "uint256", "name": "timestamp", "type": "uint256" },
+          { "internalType": "address", "name": "actor", "type": "address" }
+        ],
+        "internalType": "struct EcoTraza.Event[]",
+        "name": "",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "string", "name": "batchId", "type": "string" },
+      { "indexed": false, "internalType": "string", "name": "eventType", "type": "string" },
+      { "indexed": false, "internalType": "string", "name": "description", "type": "string" },
+      { "indexed": false, "internalType": "string", "name": "location", "type": "string" },
+      { "indexed": false, "internalType": "address", "name": "actor", "type": "address" }
+    ],
+    "name": "EventRegistered",
+    "type": "event"
+  }
+];
+
+export class BlockchainService {
+  constructor() {
+    this.provider = null;
+    this.operatorWallet = null;
+    this.contract = null;
+    this.isInitialized = false;
+  }
+
+  async initialize() {
+    try {
+      // Configuración para Sepolia testnet
+      const rpcUrl = process.env.SEPOLIA_RPC_URL || 'https://sepolia.infura.io/v3/YOUR_INFURA_KEY';
+      const contractAddress = process.env.CONTRACT_ADDRESS || '0x0000000000000000000000000000000000000000';
+      const operatorPrivateKey = process.env.OPERATOR_PRIVATE_KEY;
+
+      if (!operatorPrivateKey) {
+        console.warn('⚠️  OPERATOR_PRIVATE_KEY no configurado. Modo offline activado.');
+        return false;
+      }
+
+      this.provider = new ethers.JsonRpcProvider(rpcUrl);
+      this.operatorWallet = new ethers.Wallet(operatorPrivateKey, this.provider);
+      this.contract = new ethers.Contract(contractAddress, CONTRACT_ABI, this.operatorWallet);
+
+      // Verificar conexión
+      await this.provider.getNetwork();
+      console.log('✅ Conexión blockchain establecida');
+      console.log('📍 Operador:', this.operatorWallet.address);
+      console.log('🔗 Contrato:', contractAddress);
+      
+      this.isInitialized = true;
+      return true;
+    } catch (error) {
+      console.error('❌ Error inicializando blockchain:', error.message);
+      return false;
+    }
+  }
+
+  async registerEvent(batchId, eventType, description, location) {
+    if (!this.isInitialized) {
+      throw new Error('Servicio blockchain no inicializado');
+    }
+
+    try {
+      console.log(`📝 Registrando evento: ${eventType} para lote ${batchId}`);
+      
+      const tx = await this.contract.registerEvent(
+        batchId,
+        eventType,
+        description,
+        location
+      );
+
+      console.log(`⏳ Transacción enviada: ${tx.hash}`);
+      
+      // Esperar confirmación
+      const receipt = await tx.wait();
+      
+      console.log(`✅ Evento registrado en bloque: ${receipt.blockNumber}`);
+      
+      return {
+        success: true,
+        txHash: tx.hash,
+        blockNumber: receipt.blockNumber,
+        gasUsed: receipt.gasUsed.toString()
+      };
+    } catch (error) {
+      console.error('❌ Error registrando evento:', error.message);
+      throw error;
+    }
+  }
+
+  async getBatchHistory(batchId) {
+    if (!this.isInitialized) {
+      throw new Error('Servicio blockchain no inicializado');
+    }
+
+    try {
+      console.log(`🔍 Consultando historial del lote: ${batchId}`);
+      
+      const events = await this.contract.getBatchHistory(batchId);
+      
+      // Convertir formato blockchain a formato frontend
+      const formattedEvents = events.map(event => ({
+        eventType: event.eventType,
+        description: event.description,
+        location: event.location,
+        timestamp: Number(event.timestamp) * 1000, // Convertir a milliseconds
+        actor: event.actor
+      }));
+
+      console.log(`📊 ${formattedEvents.length} eventos encontrados para lote ${batchId}`);
+      
+      return formattedEvents;
+    } catch (error) {
+      console.error('❌ Error consultando historial:', error.message);
+      throw error;
+    }
+  }
+
+  async getOperatorBalance() {
+    if (!this.isInitialized) {
+      return '0';
+    }
+
+    try {
+      const balance = await this.provider.getBalance(this.operatorWallet.address);
+      return ethers.formatEther(balance);
+    } catch (error) {
+      console.error('❌ Error obteniendo balance:', error.message);
+      return '0';
+    }
+  }
+
+  getOperatorAddress() {
+    return this.operatorWallet?.address || 'No configurado';
+  }
+
+  isReady() {
+    return this.isInitialized;
+  }
+}
+
+// Instancia singleton
+export const blockchainService = new BlockchainService();

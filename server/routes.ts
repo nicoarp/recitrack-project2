@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { z } from "zod";
 import { storage } from "./storage";
 import { insertBottleDepositSchema, insertRecyclingPointSchema, insertUserSchema } from "@shared/schema";
+import { blockchainService } from "./blockchain.js";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes
@@ -74,6 +75,103 @@ export async function registerRoutes(app: Express): Promise<Server> {
       totalPoints,
       environmentalImpact: (totalBottles * 0.075).toFixed(1) // Approx weight in kg
     });
+  });
+
+  // Blockchain routes - Backend invisible para trazabilidad
+  const blockchainEventSchema = z.object({
+    batchId: z.string().min(1, "ID de lote requerido"),
+    eventType: z.string().min(1, "Tipo de evento requerido"),
+    description: z.string().min(1, "Descripción requerida"),
+    location: z.string().min(1, "Ubicación requerida")
+  });
+
+  app.post("/api/blockchain/register-event", async (req, res) => {
+    try {
+      const eventData = blockchainEventSchema.parse(req.body);
+      
+      if (!blockchainService.isReady()) {
+        // Fallback a almacenamiento local si blockchain no está disponible
+        console.log("⚠️ Blockchain no disponible, usando almacenamiento local");
+        res.json({ 
+          success: true, 
+          message: "Evento registrado localmente",
+          mode: "local"
+        });
+        return;
+      }
+
+      const result = await blockchainService.registerEvent(
+        eventData.batchId,
+        eventData.eventType,
+        eventData.description,
+        eventData.location
+      );
+
+      res.json({
+        success: true,
+        txHash: result.txHash,
+        blockNumber: result.blockNumber,
+        gasUsed: result.gasUsed,
+        mode: "blockchain"
+      });
+    } catch (error) {
+      console.error("Error registrando evento blockchain:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: error.message || "Error al registrar evento" 
+      });
+    }
+  });
+
+  app.get("/api/blockchain/history/:batchId", async (req, res) => {
+    try {
+      const { batchId } = req.params;
+      
+      if (!blockchainService.isReady()) {
+        res.status(503).json({ 
+          success: false, 
+          error: "Servicio blockchain no disponible",
+          mode: "offline"
+        });
+        return;
+      }
+
+      const history = await blockchainService.getBatchHistory(batchId);
+      res.json({
+        success: true,
+        batchId,
+        events: history,
+        mode: "blockchain"
+      });
+    } catch (error) {
+      console.error("Error consultando historial blockchain:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: error.message || "Error al consultar historial" 
+      });
+    }
+  });
+
+  app.get("/api/blockchain/status", async (req, res) => {
+    try {
+      const isReady = blockchainService.isReady();
+      const operatorAddress = blockchainService.getOperatorAddress();
+      const balance = await blockchainService.getOperatorBalance();
+
+      res.json({
+        isReady,
+        operatorAddress,
+        balance: `${balance} ETH`,
+        network: "Sepolia Testnet",
+        mode: isReady ? "blockchain" : "local"
+      });
+    } catch (error) {
+      res.json({
+        isReady: false,
+        error: error.message,
+        mode: "offline"
+      });
+    }
   });
 
   const httpServer = createServer(app);

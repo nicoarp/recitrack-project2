@@ -1,0 +1,91 @@
+Necesito que me ayudes a implementar un backend tipo "blockchain invisible" para mi proyecto EcoTraza. El objetivo es que el usuario final pueda registrar eventos de reciclaje (depósitos, lotes, etc.) sin tener que interactuar con MetaMask ni ninguna wallet, es decir, todo el proceso blockchain debe ocurrir "por detrás", desde el backend.
+
+Requerimientos principales:
+
+Stack recomendado:
+
+Node.js con Express.
+
+ethers.js para interactuar con la blockchain.
+
+CORS habilitado para que mi frontend React (hecho en Replit) pueda comunicarse con el backend.
+
+Flujo que necesito:
+
+El usuario en el frontend llena un formulario (ID de lote, cantidad, ubicación, etc.).
+
+El frontend envía estos datos al backend mediante una solicitud HTTP POST.
+
+El backend recibe estos datos y, usando una wallet de operador (clave privada segura en variables de entorno), llama a mi contrato inteligente en la blockchain usando ethers.js (función registerEvent).
+
+El usuario recibe confirmación de que su depósito fue registrado.
+
+(Opcional pero ideal) Un endpoint para consultar el historial de un lote usando el método getBottleHistory del contrato.
+
+Archivos que debe contener el backend:
+
+.env con la clave privada del operador, la dirección del contrato, y la URL de la red (testnet).
+
+index.js con la lógica principal del servidor.
+
+contract-abi.json con el ABI de mi contrato.
+
+Ejemplo de endpoints requeridos:
+
+POST /api/register-event
+Recibe: { bottleId, eventType, description, location }
+Acción: Llama a registerEvent del contrato.
+Responde: { success: true, txHash } o { success: false, error }
+
+(Opcional) GET /api/history/:bottleId
+Devuelve historial usando getBottleHistory.
+
+Ejemplo de código base para el backend:
+
+javascript
+Copiar
+Editar
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const { ethers } = require('ethers');
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+const contractABI = require('./contract-abi.json');
+const contractAddress = process.env.CONTRACT_ADDRESS;
+const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
+const operatorWallet = new ethers.Wallet(process.env.OPERATOR_PRIVATE_KEY, provider);
+const contract = new ethers.Contract(contractAddress, contractABI, operatorWallet);
+
+app.post('/api/register-event', async (req, res) => {
+  const { bottleId, eventType, description, location } = req.body;
+  try {
+    const tx = await contract.registerEvent(bottleId, eventType, description, location);
+    await tx.wait();
+    res.json({ success: true, txHash: tx.hash });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.listen(3001, () => {
+  console.log('Backend de blockchain invisible corriendo en http://localhost:3001');
+});
+Variables en .env:
+
+ini
+Copiar
+Editar
+CONTRACT_ADDRESS=0xTuDireccionContrato
+RPC_URL=https://rpc-testnet-url
+OPERATOR_PRIVATE_KEY=0xTuClavePrivadaOperador
+¿Cómo debe integrarse con el frontend?
+
+El frontend React ya desarrollado debe enviar los datos del formulario a este backend usando fetch o axios (POST).
+
+El frontend muestra el mensaje de éxito o error según la respuesta del backend.
+
+El usuario nunca debe ver ni firmar con MetaMask ni otras wallets.
