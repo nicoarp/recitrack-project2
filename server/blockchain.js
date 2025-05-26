@@ -223,36 +223,26 @@ export class BlockchainService {
         ensAddress: network.ensAddress
       });
       
-      console.log(`🔍 Llamando a contract.getBottleHistory(${bottleIdNumber})...`);
+      const events = await this.contract.getBottleHistory(bottleIdNumber);
       
-      try {
-        const events = await this.contract.getBottleHistory(bottleIdNumber);
-        
-        console.log(`✅ DATOS ENCONTRADOS - ${events.length} eventos`);
-        
-        // Verificar si hay eventos
-        if (!events || events.length === 0) {
-          console.log(`📭 No hay eventos registrados para botella ${bottleId}`);
-          return [];
-        }
-        
-        // Convertir eventos a formato JSON-safe
-        const formattedEvents = events.map(event => ({
+      if (!events || events.length === 0) {
+        return [];
+      }
+      
+      // Convertir eventos a formato seguro
+      const formattedEvents = [];
+      for (const event of events) {
+        formattedEvents.push({
           eventType: event.eventType,
           description: event.description,
           location: event.location,
-          timestamp: Number(event.timestamp) * 1000, // Convertir BigInt a Number en milliseconds
+          timestamp: parseInt(event.timestamp.toString()) * 1000,
           actor: event.actor
-        }));
-
-        console.log(`📊 ${formattedEvents.length} eventos encontrados para botella ${bottleId}`);
-        
-        return formattedEvents;
-        
-      } catch (contractError) {
-        console.log(`🚨 ERROR en llamada al contrato:`, contractError);
-        throw contractError;
+        });
       }
+      
+      console.log(`✅ ${formattedEvents.length} eventos encontrados para botella ${bottleId}`);
+      return formattedEvents;
     } catch (error) {
       if (error.code === 'BAD_DATA' && error.value === '0x') {
         console.log(`📭 No hay datos para botella ${bottleId} - esto es normal si no se han registrado eventos`);
