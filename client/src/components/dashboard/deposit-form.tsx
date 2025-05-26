@@ -54,18 +54,36 @@ export function DepositForm() {
       const result = await response.json();
       
       if (result.success) {
-        let description = "Depósito registrado correctamente";
-        
-        if (result.mode === "blockchain") {
-          description += ` en blockchain (Tx: ${result.txHash?.substring(0, 10)}...)`;
+        if (result.mode === "blockchain" && result.txHash) {
+          // Mostrar hash completo con enlace a Etherscan
+          const etherscanUrl = `https://sepolia.etherscan.io/tx/${result.txHash}`;
+          
+          toast({
+            title: "¡Éxito!",
+            description: (
+              <div className="space-y-2">
+                <p>Depósito registrado correctamente en blockchain</p>
+                <div className="text-xs">
+                  <p className="font-medium">Hash de transacción:</p>
+                  <a 
+                    href={etherscanUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-800 underline break-all"
+                  >
+                    {result.txHash}
+                  </a>
+                </div>
+                <p className="text-xs text-gray-500">Haz clic en el hash para ver en Etherscan</p>
+              </div>
+            )
+          });
         } else {
-          description += " localmente";
+          toast({
+            title: "¡Éxito!",
+            description: "Depósito registrado correctamente localmente"
+          });
         }
-        
-        toast({
-          title: "¡Éxito!",
-          description
-        });
         
         // Resetear formulario para nuevo depósito
         form.reset({
