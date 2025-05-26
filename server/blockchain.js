@@ -242,6 +242,14 @@ export class BlockchainService {
             console.log(`   - events[${i}]:`, events[i]);
           }
         }
+        
+        // Intentar convertir a array si es un objeto de ethers
+        try {
+          const eventsArray = [...events];
+          console.log(`🔄 Convertido a array:`, eventsArray);
+        } catch (e) {
+          console.log(`❌ No se pudo convertir a array:`, e.message);
+        }
       }
       
       // Verificar si es un array válido
