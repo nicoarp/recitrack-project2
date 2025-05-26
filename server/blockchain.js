@@ -1,13 +1,29 @@
 import { ethers } from 'ethers';
 
-// ABI simplificado para el contrato de trazabilidad EcoTraza
+// ABI real del contrato EcoTraza
 const CONTRACT_ABI = [
   {
     "inputs": [
-      { "internalType": "string", "name": "batchId", "type": "string" },
-      { "internalType": "string", "name": "eventType", "type": "string" },
-      { "internalType": "string", "name": "description", "type": "string" },
-      { "internalType": "string", "name": "location", "type": "string" }
+      {
+        "internalType": "uint256",
+        "name": "bottleId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "string",
+        "name": "eventType",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "description",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "location",
+        "type": "string"
+      }
     ],
     "name": "registerEvent",
     "outputs": [],
@@ -16,37 +32,93 @@ const CONTRACT_ABI = [
   },
   {
     "inputs": [
-      { "internalType": "string", "name": "batchId", "type": "string" }
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
     ],
-    "name": "getBatchHistory",
+    "name": "bottleHistory",
     "outputs": [
       {
-        "components": [
-          { "internalType": "string", "name": "eventType", "type": "string" },
-          { "internalType": "string", "name": "description", "type": "string" },
-          { "internalType": "string", "name": "location", "type": "string" },
-          { "internalType": "uint256", "name": "timestamp", "type": "uint256" },
-          { "internalType": "address", "name": "actor", "type": "address" }
-        ],
-        "internalType": "struct EcoTraza.Event[]",
-        "name": "",
-        "type": "tuple[]"
+        "internalType": "string",
+        "name": "eventType",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "description",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "location",
+        "type": "string"
+      },
+      {
+        "internalType": "uint256",
+        "name": "timestamp",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "actor",
+        "type": "address"
       }
     ],
     "stateMutability": "view",
     "type": "function"
   },
   {
-    "anonymous": false,
     "inputs": [
-      { "indexed": true, "internalType": "string", "name": "batchId", "type": "string" },
-      { "indexed": false, "internalType": "string", "name": "eventType", "type": "string" },
-      { "indexed": false, "internalType": "string", "name": "description", "type": "string" },
-      { "indexed": false, "internalType": "string", "name": "location", "type": "string" },
-      { "indexed": false, "internalType": "address", "name": "actor", "type": "address" }
+      {
+        "internalType": "uint256",
+        "name": "bottleId",
+        "type": "uint256"
+      }
     ],
-    "name": "EventRegistered",
-    "type": "event"
+    "name": "getBottleHistory",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "string",
+            "name": "eventType",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "description",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "location",
+            "type": "string"
+          },
+          {
+            "internalType": "uint256",
+            "name": "timestamp",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "actor",
+            "type": "address"
+          }
+        ],
+        "internalType": "struct RecyclingMVP.BottleEvent[]",
+        "name": "",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
   }
 ];
 
@@ -93,16 +165,19 @@ export class BlockchainService {
     }
   }
 
-  async registerEvent(batchId, eventType, description, location) {
+  async registerEvent(bottleId, eventType, description, location) {
     if (!this.isInitialized) {
       throw new Error('Servicio blockchain no inicializado');
     }
 
     try {
-      console.log(`📝 Registrando evento: ${eventType} para lote ${batchId}`);
+      console.log(`📝 Registrando evento: ${eventType} para botella ${bottleId}`);
+      
+      // Convertir bottleId a número para el contrato
+      const bottleIdNumber = parseInt(bottleId);
       
       const tx = await this.contract.registerEvent(
-        batchId,
+        bottleIdNumber,
         eventType,
         description,
         location
@@ -127,15 +202,18 @@ export class BlockchainService {
     }
   }
 
-  async getBatchHistory(batchId) {
+  async getBottleHistory(bottleId) {
     if (!this.isInitialized) {
       throw new Error('Servicio blockchain no inicializado');
     }
 
     try {
-      console.log(`🔍 Consultando historial del lote: ${batchId}`);
+      console.log(`🔍 Consultando historial de la botella: ${bottleId}`);
       
-      const events = await this.contract.getBatchHistory(batchId);
+      // Convertir bottleId a número para el contrato
+      const bottleIdNumber = parseInt(bottleId);
+      
+      const events = await this.contract.getBottleHistory(bottleIdNumber);
       
       // Convertir formato blockchain a formato frontend
       const formattedEvents = events.map(event => ({
@@ -146,7 +224,7 @@ export class BlockchainService {
         actor: event.actor
       }));
 
-      console.log(`📊 ${formattedEvents.length} eventos encontrados para lote ${batchId}`);
+      console.log(`📊 ${formattedEvents.length} eventos encontrados para botella ${bottleId}`);
       
       return formattedEvents;
     } catch (error) {

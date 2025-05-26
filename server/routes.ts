@@ -101,7 +101,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const result = await blockchainService.registerEvent(
-        eventData.batchId,
+        eventData.batchId, // Se usa como bottleId en el contrato
         eventData.eventType,
         eventData.description,
         eventData.location
@@ -136,7 +136,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return;
       }
 
-      const history = await blockchainService.getBatchHistory(batchId);
+      const history = await blockchainService.getBottleHistory(batchId);
       res.json({
         success: true,
         batchId,
