@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { EmptyState } from "@/components/ui/empty-state";
-import { LocalStorage } from "@/lib/storage";
+import { apiRequest } from "@/lib/queryClient";
 
 // Esquema de validación
 const formSchema = z.object({
@@ -34,41 +34,45 @@ export function BatchHistory() {
       setIsLoading(true);
       setHasSearched(true);
       
-      // Buscamos el historial real del lote en el almacenamiento local
-      console.log('Buscando historial para el lote:', values.batchId);
+      console.log('Consultando historial blockchain para el lote:', values.batchId);
       
-      // Simulamos un pequeño retardo para representar el tiempo de procesamiento
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Consultar historial desde el backend blockchain
+      const response = await fetch(`/api/blockchain/history/${values.batchId}`);
+      const result = await response.json();
       
-      // Obtenemos los datos reales del almacenamiento local
-      const realHistory = LocalStorage.getEventsByBatchId(values.batchId);
-      
-      // Si no hay registros, podemos agregar algunos eventos de sistema automáticamente
-      if (realHistory.length === 0) {
+      if (result.success && result.events) {
+        // Ordenar por fecha, del más reciente al más antiguo
+        const sortedHistory = [...result.events].sort((a, b) => b.timestamp - a.timestamp);
+        setHistory(sortedHistory);
+        
+        toast({
+          title: "Historial cargado",
+          description: `Se encontraron ${sortedHistory.length} registros blockchain para el lote ${values.batchId}`
+        });
+      } else if (result.mode === "offline") {
+        toast({
+          title: "Servicio blockchain offline",
+          description: "No se puede consultar el historial en este momento",
+          variant: "destructive"
+        });
+        setHistory([]);
+      } else {
         toast({
           title: "Sin historial",
           description: "No se encontraron registros para este lote",
           variant: "destructive"
         });
         setHistory([]);
-      } else {
-        // Ordenamos por fecha, del más reciente al más antiguo
-        const sortedHistory = [...realHistory].sort((a, b) => b.timestamp - a.timestamp);
-        setHistory(sortedHistory);
-        
-        toast({
-          title: "Historial cargado",
-          description: `Se encontraron ${sortedHistory.length} registros para el lote ${values.batchId}`
-        });
       }
       
     } catch (error) {
-      console.error('Error fetching history:', error);
+      console.error('Error fetching blockchain history:', error);
       toast({
         title: "Error",
-        description: "Error al obtener el historial del lote",
+        description: "Error al consultar el historial blockchain",
         variant: "destructive"
       });
+      setHistory([]);
     } finally {
       setIsLoading(false);
     }

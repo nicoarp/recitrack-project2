@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { LocalStorage } from "@/lib/storage";
+import { apiRequest } from "@/lib/queryClient";
 
 // Definimos el esquema de validación
 const formSchema = z.object({
@@ -35,34 +35,47 @@ export function DepositForm() {
     try {
       setIsSubmitting(true);
       
-      // Registramos el depósito en nuestro almacenamiento local
-      console.log('Registrando depósito:', values);
+      console.log('Registrando depósito en blockchain:', values);
       
-      // Simulamos un pequeño retardo para representar el tiempo de procesamiento
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Guardamos el evento en el almacenamiento local
-      LocalStorage.saveEvent({
-        eventType: "DepositoLote",
-        description: `${values.bottleCount} botellas depositadas`,
-        location: values.location,
-        timestamp: Date.now(),
-        actor: "0x" + Math.random().toString(16).substring(2, 42), // Simula una dirección de wallet
-        batchId: values.batchId
+      // Enviar al backend blockchain invisible
+      const response = await fetch("/api/blockchain/register-event", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          batchId: values.batchId,
+          eventType: "DepositoLote", 
+          description: `${values.bottleCount} botellas depositadas`,
+          location: values.location
+        })
       });
       
-      // Notificamos el éxito
-      toast({
-        title: "¡Éxito!",
-        description: "Depósito registrado correctamente y almacenado para trazabilidad"
-      });
+      const result = await response.json();
       
-      // Opcional: resetear el formulario para un nuevo depósito
-      form.reset({
-        batchId: values.batchId,
-        bottleCount: "",
-        location: values.location
-      });
+      if (result.success) {
+        let description = "Depósito registrado correctamente";
+        
+        if (result.mode === "blockchain") {
+          description += ` en blockchain (Tx: ${result.txHash?.substring(0, 10)}...)`;
+        } else {
+          description += " localmente";
+        }
+        
+        toast({
+          title: "¡Éxito!",
+          description
+        });
+        
+        // Resetear formulario para nuevo depósito
+        form.reset({
+          batchId: values.batchId,
+          bottleCount: "",
+          location: values.location
+        });
+      } else {
+        throw new Error(result.error || "Error en el registro");
+      }
       
     } catch (error) {
       console.error('Error registering deposit:', error);
