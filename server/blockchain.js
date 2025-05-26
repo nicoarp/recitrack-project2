@@ -224,22 +224,44 @@ export class BlockchainService {
       });
       
       console.log(`🔍 Llamando a contract.getBottleHistory(${bottleIdNumber})...`);
-      const events = await this.contract.getBottleHistory(bottleIdNumber);
       
-      console.log(`📥 RESPUESTA COMPLETA:`, events);
-      console.log(`📊 Tipo:`, typeof events);
-      console.log(`📏 Longitud:`, events?.length);
-      console.log(`🔍 Es array:`, Array.isArray(events));
-      
-      // Verificar si tiene datos
-      if (events && events.length > 0) {
-        console.log(`✅ DATOS ENCONTRADOS - ${events.length} eventos:`);
-        events.forEach((event, i) => {
-          console.log(`   Evento ${i}:`, event);
-        });
-      } else {
-        console.log(`❌ NO HAY DATOS - pero Remix sí devuelve datos para ID ${bottleIdNumber}`);
-        console.log(`🚨 PROBLEMA: Hay inconsistencia entre Remix y nuestro código`);
+      try {
+        const events = await this.contract.getBottleHistory(bottleIdNumber);
+        
+        console.log(`📥 RESPUESTA COMPLETA:`, events);
+        console.log(`📊 Tipo:`, typeof events);
+        console.log(`📏 Longitud:`, events?.length);
+        console.log(`🔍 Es array:`, Array.isArray(events));
+        console.log(`🔄 Valores raw:`, JSON.stringify(events, null, 2));
+        
+        // Verificar si tiene datos
+        if (events && events.length > 0) {
+          console.log(`✅ DATOS ENCONTRADOS - ${events.length} eventos:`);
+          events.forEach((event, i) => {
+            console.log(`   Evento ${i}:`, event);
+          });
+        } else {
+          console.log(`❌ NO HAY DATOS en backend - pero Remix SÍ devuelve para ID ${bottleIdNumber}`);
+          console.log(`🚨 INCONSISTENCIA: Remix funciona, backend no`);
+          
+          // Retornar inmediatamente para debug
+          return {
+            success: false,
+            error: 'Backend no encuentra datos que existen en Remix',
+            debugInfo: {
+              bottleId: bottleIdNumber,
+              contractAddress: this.contract.target,
+              eventsResponse: events,
+              eventsType: typeof events,
+              eventsLength: events?.length
+            }
+          };
+        }
+        
+        return events;
+      } catch (contractError) {
+        console.log(`🚨 ERROR en llamada al contrato:`, contractError);
+        throw contractError;
       }
       
       // Intentar ver si la respuesta tiene propiedades ocultas o formato especial de ethers
