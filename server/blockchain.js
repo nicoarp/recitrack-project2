@@ -216,6 +216,16 @@ export class BlockchainService {
       
       const events = await this.contract.getBottleHistory(bottleIdNumber);
       console.log(`📥 Respuesta raw del contrato:`, events);
+      console.log(`📊 Tipo de respuesta:`, typeof events);
+      console.log(`📏 Longitud de eventos:`, events ? events.length : 'undefined');
+      
+      // También intentar acceder directamente al mapping bottleHistory
+      try {
+        const directAccess = await this.contract.bottleHistory(bottleIdNumber, 0);
+        console.log(`🔍 Acceso directo a bottleHistory[${bottleIdNumber}][0]:`, directAccess);
+      } catch (directError) {
+        console.log(`ℹ️ No se pudo acceder directamente al índice 0 para botella ${bottleIdNumber}`);
+      }
       
       // Verificar si hay eventos
       if (!events || events.length === 0) {
