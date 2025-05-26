@@ -214,17 +214,23 @@ export class BlockchainService {
       const bottleIdNumber = parseInt(bottleId);
       console.log(`🔢 Usando bottleId como número: ${bottleIdNumber}`);
       
+      // Verificar que el contrato está inicializado correctamente
+      console.log(`🔗 Dirección del contrato: ${this.contract.target}`);
+      console.log(`🌐 Red conectada: ${await this.provider.getNetwork()}`);
+      
       const events = await this.contract.getBottleHistory(bottleIdNumber);
-      console.log(`📥 Respuesta raw del contrato:`, events);
+      console.log(`📥 Respuesta raw del contrato:`, JSON.stringify(events, null, 2));
       console.log(`📊 Tipo de respuesta:`, typeof events);
       console.log(`📏 Longitud de eventos:`, events ? events.length : 'undefined');
       
-      // También intentar acceder directamente al mapping bottleHistory
-      try {
-        const directAccess = await this.contract.bottleHistory(bottleIdNumber, 0);
-        console.log(`🔍 Acceso directo a bottleHistory[${bottleIdNumber}][0]:`, directAccess);
-      } catch (directError) {
-        console.log(`ℹ️ No se pudo acceder directamente al índice 0 para botella ${bottleIdNumber}`);
+      // Verificar si es un array válido
+      if (Array.isArray(events)) {
+        console.log(`✅ Es un array válido con ${events.length} elementos`);
+        events.forEach((event, index) => {
+          console.log(`📋 Evento ${index}:`, JSON.stringify(event, null, 2));
+        });
+      } else {
+        console.log(`❌ La respuesta no es un array:`, events);
       }
       
       // Verificar si hay eventos
