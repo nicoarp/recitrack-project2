@@ -101,10 +101,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const result = await blockchainService.registerEvent(
-        eventData.batchId, // Se usa como bottleId en el contrato
+        eventData.batchId,
         eventData.eventType,
         eventData.description,
-        eventData.location
+        eventData.location,
+        '0x0000000000000000000000000000000000000000', // userAddress por defecto
+        1 // quantity por defecto
       );
 
       res.json({
