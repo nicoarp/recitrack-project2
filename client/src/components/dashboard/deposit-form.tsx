@@ -47,7 +47,8 @@ export function DepositForm() {
           batchId: values.batchId,
           eventType: "DepositoLote", 
           description: `${values.bottleCount} botellas depositadas`,
-          location: values.location
+          location: values.location,
+          bottleCount: parseInt(values.bottleCount)
         })
       });
       

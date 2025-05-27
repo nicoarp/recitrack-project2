@@ -184,7 +184,9 @@ export function BatchHistory() {
                               {event.quantity || 1}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {event.userAddress ? formatAddress(event.userAddress) : 'N/A'}
+                              {event.userAddress && event.userAddress !== '0x0000000000000000000000000000000000000000' 
+                                ? formatAddress(event.userAddress) 
+                                : 'Anónimo'}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                               {formatDate(event.timestamp)}

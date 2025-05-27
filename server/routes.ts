@@ -82,7 +82,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     batchId: z.string().min(1, "ID de lote requerido"),
     eventType: z.string().min(1, "Tipo de evento requerido"),
     description: z.string().min(1, "Descripción requerida"),
-    location: z.string().min(1, "Ubicación requerida")
+    location: z.string().min(1, "Ubicación requerida"),
+    bottleCount: z.number().min(1, "Cantidad de botellas requerida")
   });
 
   app.post("/api/blockchain/register-event", async (req, res) => {
@@ -105,8 +106,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         eventData.eventType,
         eventData.description,
         eventData.location,
-        '0x0000000000000000000000000000000000000000', // userAddress por defecto
-        1 // quantity por defecto
+        '0x0000000000000000000000000000000000000000', // userAddress - Anónimo
+        eventData.bottleCount // quantity real
       );
 
       res.json({
