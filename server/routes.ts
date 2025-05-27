@@ -136,7 +136,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return;
       }
 
-      const history = await blockchainService.getBottleHistory(batchId);
+      const history = await blockchainService.getBatchHistory(batchId);
       
       // Si no hay eventos, devolver éxito con array vacío
       res.json({

@@ -165,22 +165,25 @@ export class BlockchainService {
     }
   }
 
-  async registerEvent(bottleId, eventType, description, location) {
+  async registerEvent(batchId, eventType, description, location, userAddress, quantity) {
     if (!this.isInitialized) {
       throw new Error('Servicio blockchain no inicializado');
     }
 
     try {
-      console.log(`📝 Registrando evento: ${eventType} para botella ${bottleId}`);
+      console.log(`📝 Registrando evento: ${eventType} para lote ${batchId}`);
       
-      // Convertir bottleId a número para el contrato
-      const bottleIdNumber = parseInt(bottleId);
+      // Convertir parámetros numéricos
+      const batchIdNumber = parseInt(batchId);
+      const quantityNumber = parseInt(quantity);
       
       const tx = await this.contract.registerEvent(
-        bottleIdNumber,
+        batchIdNumber,
         eventType,
         description,
-        location
+        location,
+        userAddress,
+        quantityNumber
       );
 
       console.log(`⏳ Transacción enviada: ${tx.hash}`);
@@ -202,17 +205,17 @@ export class BlockchainService {
     }
   }
 
-  async getBottleHistory(bottleId) {
+  async getBatchHistory(batchId) {
     if (!this.isInitialized) {
       throw new Error('Servicio blockchain no inicializado');
     }
 
     try {
-      console.log(`🔍 Consultando historial de la botella: ${bottleId}`);
+      console.log(`🔍 Consultando historial del lote: ${batchId}`);
       
-      // Convertir bottleId a número para el contrato
-      const bottleIdNumber = parseInt(bottleId);
-      console.log(`🔢 Usando bottleId como número: ${bottleIdNumber}`);
+      // Convertir batchId a número para el contrato
+      const batchIdNumber = parseInt(batchId);
+      console.log(`🔢 Usando batchId como número: ${batchIdNumber}`);
       
       // Verificar que el contrato está inicializado correctamente
       console.log(`🔗 Dirección del contrato: ${this.contract.target}`);
@@ -223,25 +226,27 @@ export class BlockchainService {
         ensAddress: network.ensAddress
       });
       
-      const events = await this.contract.getBottleHistory(bottleIdNumber);
+      const events = await this.contract.getBatchHistory(batchIdNumber);
       
       if (!events || events.length === 0) {
         return [];
       }
       
-      // Convertir eventos a formato seguro
+      // Convertir eventos a formato seguro con los nuevos campos
       const formattedEvents = [];
       for (const event of events) {
         formattedEvents.push({
           eventType: event.eventType,
           description: event.description,
           location: event.location,
+          userAddress: event.userAddress,
+          quantity: parseInt(event.quantity.toString()),
           timestamp: parseInt(event.timestamp.toString()) * 1000,
           actor: event.actor
         });
       }
       
-      console.log(`✅ ${formattedEvents.length} eventos encontrados para botella ${bottleId}`);
+      console.log(`✅ ${formattedEvents.length} eventos encontrados para lote ${batchId}`);
       return formattedEvents;
     } catch (error) {
       if (error.code === 'BAD_DATA' && error.value === '0x') {
