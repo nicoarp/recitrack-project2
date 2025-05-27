@@ -235,12 +235,22 @@ export class BlockchainService {
       // Convertir eventos a formato seguro con los nuevos campos
       const formattedEvents = [];
       for (const event of events) {
+        console.log('🔍 Datos del evento desde contrato:', {
+          eventType: event.eventType,
+          description: event.description,
+          location: event.location,
+          userAddress: event.userAddress,
+          quantity: event.quantity?.toString(),
+          timestamp: event.timestamp?.toString(),
+          actor: event.actor
+        });
+        
         formattedEvents.push({
           eventType: event.eventType,
           description: event.description,
           location: event.location,
           userAddress: event.userAddress,
-          quantity: parseInt(event.quantity.toString()),
+          quantity: event.quantity ? parseInt(event.quantity.toString()) : 1,
           timestamp: parseInt(event.timestamp.toString()) * 1000,
           actor: event.actor
         });
