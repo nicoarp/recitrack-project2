@@ -103,9 +103,10 @@ export function QRScanner({ onScanResult, onClose }: QRScannerProps) {
       
     } catch (error) {
       console.error('Error procesando QR:', error);
+      console.error('Error details:', error.message, error.stack);
       toast({
         title: "Error",
-        description: "Error al procesar el código QR",
+        description: `Error al procesar el código QR: ${error.message || 'Error desconocido'}`,
         variant: "destructive"
       });
     }
