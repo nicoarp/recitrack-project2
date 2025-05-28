@@ -2,14 +2,22 @@ import { pgTable, text, serial, integer, boolean, timestamp } from "drizzle-orm/
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// User table
+// User table - Preparado para autenticación futura
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
-  email: text("email").notNull(),
+  // Autenticación clásica
+  email: text("email").unique(),
+  password: text("password"),
   name: text("name"),
+  // Autenticación por wallet
+  walletAddress: text("wallet_address").unique(),
+  // Campos adicionales
+  role: text("role").default("user"), // "user", "admin"
+  isActive: boolean("is_active").default(true),
+  totalDeposits: integer("total_deposits").default(0),
+  totalBottles: integer("total_bottles").default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  lastLoginAt: timestamp("last_login_at"),
 });
 
 // Recycling Points table
@@ -23,23 +31,32 @@ export const recyclingPoints = pgTable("recycling_points", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Bottles Deposits table
+// Bottles Deposits table - Soporta usuarios anónimos y autenticados
 export const bottleDeposits = pgTable("bottle_deposits", {
   id: serial("id").primaryKey(),
   batchId: integer("batch_id").notNull(),
   bottleCount: integer("bottle_count").notNull(),
   location: text("location").notNull(),
+  depositId: text("deposit_id").notNull(), // ID del punto de reciclaje
+  // Usuario opcional - null para depósitos anónimos
   userId: integer("user_id").references(() => users.id),
+  // Información de blockchain
   txHash: text("tx_hash"),
+  blockNumber: integer("block_number"),
+  // Timestamps
   timestamp: timestamp("timestamp").defaultNow().notNull(),
+  // Metadatos adicionales para el futuro
+  deviceInfo: text("device_info"), // Para analytics
+  ipAddress: text("ip_address"), // Para geolocalización
 });
 
 // Schemas for insertions
 export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
   email: true,
+  password: true,
   name: true,
+  walletAddress: true,
+  role: true,
 });
 
 export const insertRecyclingPointSchema = createInsertSchema(recyclingPoints).pick({
@@ -54,8 +71,12 @@ export const insertBottleDepositSchema = createInsertSchema(bottleDeposits).pick
   batchId: true,
   bottleCount: true,
   location: true,
+  depositId: true,
   userId: true,
   txHash: true,
+  blockNumber: true,
+  deviceInfo: true,
+  ipAddress: true,
 });
 
 // Type definitions

@@ -18,21 +18,77 @@ import NotFound from "@/pages/not-found";
 import Sidebar from "@/components/layout/sidebar";
 import MobileNav from "@/components/layout/mobile-nav";
 import { useState } from "react";
+import { AuthProvider, useAuth } from "@/hooks/use-auth";
 
-function Router() {
+// Rutas públicas - Accesibles para usuarios anónimos
+function PublicRoutes() {
   return (
     <Switch>
       <Route path="/" component={Dashboard} />
-      <Route path="/deposits" component={Deposits} />
       <Route path="/deposit" component={Deposits} />
-      <Route path="/history" component={History} />
+      <Route path="/deposits" component={Deposits} />
       <Route path="/recycling-points" component={RecyclingPoints} />
-      <Route path="/statistics" component={Statistics} />
-      <Route path="/qr-admin" component={QRAdmin} />
-      <Route path="/profile" component={Profile} />
       <Route component={NotFound} />
     </Switch>
   );
+}
+
+// Rutas autenticadas - Solo para usuarios logueados (futuro)
+function AuthenticatedRoutes() {
+  return (
+    <Switch>
+      <Route path="/profile" component={Profile} />
+      <Route path="/my-history" component={History} />
+      <Route component={PublicRoutes} />
+    </Switch>
+  );
+}
+
+// Rutas de admin - Solo para administradores (futuro)
+function AdminRoutes() {
+  return (
+    <Switch>
+      <Route path="/admin" component={QRAdmin} />
+      <Route path="/qr-admin" component={QRAdmin} />
+      <Route path="/admin/statistics" component={Statistics} />
+      <Route component={AuthenticatedRoutes} />
+    </Switch>
+  );
+}
+
+function Router() {
+  const { isAuthenticated, isAdmin } = useAuth();
+  
+  // Por ahora en MVP, actuar como admin anónimo para acceder a todas las funciones
+  // En el futuro, esto se basará en autenticación real
+  const isMVPMode = true; // Flag para mantener funcionalidad actual
+  
+  if (isMVPMode) {
+    // Mantener todas las rutas accesibles para el MVP
+    return (
+      <Switch>
+        <Route path="/" component={Dashboard} />
+        <Route path="/deposits" component={Deposits} />
+        <Route path="/deposit" component={Deposits} />
+        <Route path="/history" component={History} />
+        <Route path="/recycling-points" component={RecyclingPoints} />
+        <Route path="/statistics" component={Statistics} />
+        <Route path="/qr-admin" component={QRAdmin} />
+        <Route path="/admin" component={QRAdmin} />
+        <Route path="/profile" component={Profile} />
+        <Route component={NotFound} />
+      </Switch>
+    );
+  }
+  
+  // Flujo futuro basado en autenticación
+  if (isAdmin) {
+    return <AdminRoutes />;
+  } else if (isAuthenticated) {
+    return <AuthenticatedRoutes />;
+  } else {
+    return <PublicRoutes />;
+  }
 }
 
 function App() {
