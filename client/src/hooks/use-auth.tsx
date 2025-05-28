@@ -33,20 +33,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Por ahora, mantener como usuario anónimo para el MVP
   const isAuthenticated = !!user;
   const isAdmin = user?.role === 'admin';
-  const canAccessAdminPanel = isAdmin; // En el futuro, agregar más lógica
+  const canAccessAdminPanel = isAdmin;
 
-  // Funciones preparadas para implementación futura
   const loginWithEmail = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      // TODO: Implementar autenticación por email
-      // const response = await fetch('/api/auth/login', { ... });
-      throw new Error('Autenticación por email no implementada aún');
+      // Credenciales de demostración
+      if (email === "admin@ecotraza.com" && password === "admin123") {
+        const adminUser: AuthUser = {
+          id: 1,
+          email: "admin@ecotraza.com", 
+          name: "Administrador EcoTraza",
+          walletAddress: "0x123...abc",
+          role: 'admin',
+          totalDeposits: 15,
+          totalBottles: 145
+        };
+        setUser(adminUser);
+        localStorage.setItem('ecotraza_user', JSON.stringify(adminUser));
+      } else if (email === "user@example.com" && password === "user123") {
+        const normalUser: AuthUser = {
+          id: 2,
+          email: "user@example.com",
+          name: "Usuario Normal",
+          walletAddress: "0x456...def", 
+          role: 'user',
+          totalDeposits: 5,
+          totalBottles: 25
+        };
+        setUser(normalUser);
+        localStorage.setItem('ecotraza_user', JSON.stringify(normalUser));
+      } else {
+        throw new Error('Credenciales incorrectas');
+      }
     } catch (error) {
-      console.error('Error en login:', error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -56,12 +78,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loginWithWallet = async (walletAddress: string) => {
     setIsLoading(true);
     try {
-      // TODO: Implementar autenticación por wallet
-      // const response = await fetch('/api/auth/wallet', { ... });
-      throw new Error('Autenticación por wallet no implementada aún');
-    } catch (error) {
-      console.error('Error en login con wallet:', error);
-      throw error;
+      const walletUser: AuthUser = {
+        id: 3,
+        email: undefined,
+        name: "Usuario Wallet",
+        walletAddress,
+        role: 'user',
+        totalDeposits: 0,
+        totalBottles: 0
+      };
+      setUser(walletUser);
+      localStorage.setItem('ecotraza_user', JSON.stringify(walletUser));
     } finally {
       setIsLoading(false);
     }
@@ -69,8 +96,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = () => {
     setUser(null);
-    // TODO: Limpiar sesión del servidor
+    localStorage.removeItem('ecotraza_user');
   };
+
+  // Recuperar usuario del localStorage al cargar
+  useEffect(() => {
+    const savedUser = localStorage.getItem('ecotraza_user');
+    if (savedUser) {
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch (error) {
+        localStorage.removeItem('ecotraza_user');
+      }
+    }
+  }, []);
 
   const value: AuthContextType = {
     user,

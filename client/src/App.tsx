@@ -57,39 +57,37 @@ function AdminRoutes() {
 }
 
 function Router() {
-  // Temporalmente comentado para MVP - se activará cuando implementemos autenticación
-  // const { isAuthenticated, isAdmin } = useAuth();
+  const { isAuthenticated, isAdmin } = useAuth();
   
-  // Por ahora en MVP, actuar como admin anónimo para acceder a todas las funciones
-  // En el futuro, esto se basará en autenticación real
-  const isMVPMode = true; // Flag para mantener funcionalidad actual
-  
-  if (isMVPMode) {
-    // Mantener todas las rutas accesibles para el MVP
-    return (
-      <Switch>
-        <Route path="/" component={Dashboard} />
-        <Route path="/deposits" component={Deposits} />
-        <Route path="/deposit" component={Deposits} />
+  return (
+    <Switch>
+      {/* Rutas públicas para todos */}
+      <Route path="/" component={Dashboard} />
+      <Route path="/deposits" component={Deposits} />
+      <Route path="/deposit" component={Deposits} />
+      
+      {/* Rutas para usuarios autenticados */}
+      {isAuthenticated && (
         <Route path="/history" component={History} />
-        <Route path="/recycling-points" component={RecyclingPoints} />
-        <Route path="/statistics" component={Statistics} />
-        <Route path="/qr-admin" component={QRAdmin} />
-        <Route path="/admin" component={QRAdmin} />
-        <Route path="/profile" component={Profile} />
-        <Route component={NotFound} />
-      </Switch>
-    );
-  }
-  
-  // Flujo futuro basado en autenticación
-  if (isAdmin) {
-    return <AdminRoutes />;
-  } else if (isAuthenticated) {
-    return <AuthenticatedRoutes />;
-  } else {
-    return <PublicRoutes />;
-  }
+      )}
+      
+      {/* Rutas exclusivas para administradores */}
+      {isAdmin && (
+        <>
+          <Route path="/recycling-points" component={RecyclingPoints} />
+          <Route path="/statistics" component={Statistics} />
+          <Route path="/qr-admin" component={QRAdmin} />
+          <Route path="/admin" component={QRAdmin} />
+        </>
+      )}
+      
+      {/* Perfil y login siempre disponibles */}
+      <Route path="/profile" component={Profile} />
+      <Route path="/login" component={Login} />
+      
+      <Route component={NotFound} />
+    </Switch>
+  );
 }
 
 function App() {
@@ -101,11 +99,12 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <BlockchainProvider>
-        <ThemeProvider defaultTheme="light">
-          <TransactionModalProvider>
-            <TooltipProvider>
-              <div className="min-h-screen flex flex-col md:flex-row">
+      <AuthProvider>
+        <BlockchainProvider>
+          <ThemeProvider defaultTheme="light">
+            <TransactionModalProvider>
+              <TooltipProvider>
+                <div className="min-h-screen flex flex-col md:flex-row">
                 <Sidebar />
                 <div className="fixed inset-0 bg-gray-900 bg-opacity-50 z-50 md:hidden" 
                     style={{ display: isMobileMenuOpen ? 'block' : 'none' }}
@@ -141,6 +140,7 @@ function App() {
           </TransactionModalProvider>
         </ThemeProvider>
       </BlockchainProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
