@@ -41,14 +41,23 @@ export function QRScanner({ onScanResult, onClose }: QRScannerProps) {
           const detector = new (window as any).BarcodeDetector({ formats: ['qr_code'] });
           detector.detect(canvas)
             .then((barcodes: any[]) => {
-              if (barcodes.length > 0) {
+              if (barcodes.length > 0 && isScanning) {
                 console.log('QR detectado automáticamente:', barcodes[0].rawValue);
+                // Detener la detección para evitar múltiples llamadas
+                stopCamera();
+                // Procesar el QR completo (igual que entrada manual)
                 handleQRResult(barcodes[0].rawValue);
               }
             })
             .catch(() => {
               // Si BarcodeDetector falla, continuar intentando
             });
+        } else {
+          // Fallback: mostrar mensaje solo una vez
+          if (!error) {
+            setError('Detección automática no disponible. Use la entrada manual.');
+            console.log('BarcodeDetector no disponible en este navegador');
+          }
         }
       }
     };
