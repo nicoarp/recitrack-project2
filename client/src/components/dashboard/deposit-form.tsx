@@ -59,7 +59,7 @@ export function DepositForm({ prefilledLocation }: DepositFormProps) {
           batchId: values.batchId,
           eventType: "DepositoLote", 
           description: `${values.bottleCount} botellas depositadas`,
-          location: values.location,
+          location: prefilledLocation ? prefilledLocation.name : values.location,
           bottleCount: parseInt(values.bottleCount)
         })
       });
@@ -155,26 +155,48 @@ export function DepositForm({ prefilledLocation }: DepositFormProps) {
         <CardTitle className="text-lg font-semibold text-white">Registrar Depósito</CardTitle>
       </CardHeader>
       <CardContent className="p-6">
-        {/* Botón prominente para escanear QR */}
-        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <div className="text-center space-y-3">
-            <div className="flex items-center justify-center">
-              <FontAwesomeIcon icon={faQrcode} className="text-2xl text-blue-600 mr-3" />
-              <h3 className="text-lg font-semibold text-blue-800">¡Escanea el QR del punto de depósito!</h3>
+        {/* Solo mostrar scanner QR si NO hay ubicación pre-cargada */}
+        {!prefilledLocation && (
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="text-center space-y-3">
+              <div className="flex items-center justify-center">
+                <FontAwesomeIcon icon={faQrcode} className="text-2xl text-blue-600 mr-3" />
+                <h3 className="text-lg font-semibold text-blue-800">¡Escanea el QR del punto de depósito!</h3>
+              </div>
+              <p className="text-sm text-blue-700">
+                Usa tu cámara para escanear el código QR y auto-completar la ubicación
+              </p>
+              <Button 
+                type="button"
+                onClick={openQRScanner}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                <FontAwesomeIcon icon={faQrcode} className="mr-2" />
+                Escanear Código QR
+              </Button>
             </div>
-            <p className="text-sm text-blue-700">
-              Usa tu cámara para escanear el código QR y auto-completar la ubicación
-            </p>
-            <Button 
-              type="button"
-              onClick={openQRScanner}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              <FontAwesomeIcon icon={faQrcode} className="mr-2" />
-              Escanear Código QR
-            </Button>
           </div>
-        </div>
+        )}
+
+        {/* Mostrar ubicación fija si viene desde QR */}
+        {prefilledLocation && (
+          <div className="mb-6 p-4 bg-green-50 border-2 border-green-300 rounded-lg">
+            <div className="text-center space-y-2">
+              <div className="flex items-center justify-center">
+                <FontAwesomeIcon icon={faQrcode} className="text-2xl text-green-600 mr-3" />
+                <h3 className="text-lg font-semibold text-green-800">📍 Ubicación desde QR</h3>
+              </div>
+              <div className="bg-white p-3 rounded border">
+                <p className="font-bold text-gray-900">{prefilledLocation.name}</p>
+                <p className="text-sm text-gray-600">{prefilledLocation.address}</p>
+                <p className="text-xs text-green-600 mt-1">ID: {prefilledLocation.depositId}</p>
+              </div>
+              <p className="text-sm text-green-700">
+                ✅ Ubicación confirmada - No editable para mantener trazabilidad
+              </p>
+            </div>
+          </div>
+        )}
 
         {scannedLocation && (
           <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
@@ -227,29 +249,50 @@ export function DepositForm({ prefilledLocation }: DepositFormProps) {
               )}
             />
             
-            <FormField
-              control={form.control}
-              name="location"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm font-medium text-gray-700">Ubicación:</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
-                        <SelectValue placeholder="Selecciona una ubicación" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="Punto Limpio Central">Punto Limpio Central</SelectItem>
-                      <SelectItem value="Punto Limpio Norte">Punto Limpio Norte</SelectItem>
-                      <SelectItem value="Punto Limpio Sur">Punto Limpio Sur</SelectItem>
-                      <SelectItem value="Centro de Reciclaje Municipal">Centro de Reciclaje Municipal</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/* Solo mostrar selector de ubicación si NO hay ubicación pre-cargada */}
+            {!prefilledLocation && (
+              <FormField
+                control={form.control}
+                name="location"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-medium text-gray-700">Ubicación:</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                          <SelectValue placeholder="Selecciona una ubicación" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Punto Limpio Central">Punto Limpio Central</SelectItem>
+                        <SelectItem value="Punto Limpio Norte">Punto Limpio Norte</SelectItem>
+                        <SelectItem value="Punto Limpio Sur">Punto Limpio Sur</SelectItem>
+                        <SelectItem value="Centro de Reciclaje Municipal">Centro de Reciclaje Municipal</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {/* Mostrar ubicación fija cuando viene desde QR */}
+            {prefilledLocation && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Ubicación:</label>
+                <div className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md text-gray-800">
+                  <div className="flex items-center justify-between">
+                    <span>{prefilledLocation.name}</span>
+                    <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded">
+                      🔒 Fijo desde QR
+                    </span>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500">
+                  Esta ubicación no puede modificarse para mantener la trazabilidad del QR escaneado
+                </p>
+              </div>
+            )}
             
             <Button 
               type="submit" 
