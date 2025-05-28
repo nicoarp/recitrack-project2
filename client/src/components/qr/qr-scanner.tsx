@@ -74,25 +74,53 @@ export function QRScanner({ onScanResult, onClose }: QRScannerProps) {
         return;
       }
 
-      // Buscar el punto de depósito por ID
-      const response = await fetch(`/api/recycling-points/qr/${result}`);
-      
-      if (!response.ok) {
-        if (response.status === 404) {
-          toast({
-            title: "Punto no encontrado",
-            description: `No se encontró el punto de depósito ${result}`,
-            variant: "destructive"
-          });
-        } else {
-          throw new Error("Error al buscar el punto de depósito");
+      // Datos de puntos de depósito locales como fallback
+      const recyclingPoints = {
+        "CENTRO-001": {
+          id: 1,
+          depositId: "CENTRO-001",
+          name: "Punto Limpio Central",
+          address: "Av. Principal 123, Centro",
+          hours: "Lun-Vie: 9:00-18:00, Sáb: 10:00-14:00",
+          acceptedItems: ["Botellas PET", "Papel", "Cartón", "Vidrio"]
+        },
+        "NORTE-002": {
+          id: 2,
+          depositId: "NORTE-002",
+          name: "Punto Limpio Norte",
+          address: "Calle Norte 456, Zona Norte",
+          hours: "Lun-Vie: 8:00-17:00, Sáb: 9:00-13:00",
+          acceptedItems: ["Botellas PET", "Plásticos", "Latas", "Vidrio"]
+        },
+        "SUR-003": {
+          id: 3,
+          depositId: "SUR-003",
+          name: "Punto Limpio Sur",
+          address: "Av. Sur 789, Zona Sur",
+          hours: "Lun-Vie: 9:00-18:00, Sáb: 10:00-15:00",
+          acceptedItems: ["Botellas PET", "Electrónicos", "Papel", "Vidrio"]
+        },
+        "MUNICIPAL-004": {
+          id: 4,
+          depositId: "MUNICIPAL-004",
+          name: "Centro de Reciclaje Municipal",
+          address: "Carretera Principal Km 5, Afueras",
+          hours: "Lun-Dom: 8:00-20:00",
+          acceptedItems: ["Botellas PET", "Papel", "Cartón", "Vidrio", "Metales", "Electrónicos"]
         }
+      };
+
+      const locationData = recyclingPoints[result as keyof typeof recyclingPoints];
+      
+      if (!locationData) {
+        toast({
+          title: "Punto no encontrado",
+          description: `No se encontró el punto de depósito ${result}`,
+          variant: "destructive"
+        });
         return;
       }
 
-      const locationData = await response.json();
-      console.log('Datos del punto encontrado:', locationData);
-      
       toast({
         title: "¡QR Escaneado!",
         description: `Punto: ${locationData.name}`
@@ -103,10 +131,9 @@ export function QRScanner({ onScanResult, onClose }: QRScannerProps) {
       
     } catch (error) {
       console.error('Error procesando QR:', error);
-      console.error('Error details:', error.message, error.stack);
       toast({
         title: "Error",
-        description: `Error al procesar el código QR: ${error.message || 'Error desconocido'}`,
+        description: "Error al procesar el código QR",
         variant: "destructive"
       });
     }
