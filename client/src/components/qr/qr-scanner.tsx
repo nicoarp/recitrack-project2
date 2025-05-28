@@ -91,6 +91,7 @@ export function QRScanner({ onScanResult, onClose }: QRScannerProps) {
       }
 
       const locationData = await response.json();
+      console.log('Datos del punto encontrado:', locationData);
       
       toast({
         title: "¡QR Escaneado!",
