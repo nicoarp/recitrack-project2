@@ -64,15 +64,29 @@ export function QRScanner({ onScanResult, onClose }: QRScannerProps) {
     try {
       console.log('QR escaneado:', result);
       
-      // Validar formato del ID (ej: CENTRO-001, NORTE-002)
-      if (!result.match(/^[A-Z]+-\d+$/)) {
+      // Normalizar el ID para que coincida con nuestro formato
+      let normalizedResult = result.toUpperCase().trim();
+      
+      // Si contiene "CENTRO DE RECICLAJE", convertirlo al formato esperado
+      if (normalizedResult.includes("CENTRO DE RECICLAJE")) {
+        const match = normalizedResult.match(/(\d+)/);
+        if (match) {
+          normalizedResult = `MUNICIPAL-${match[1].padStart(3, '0')}`;
+        }
+      }
+      
+      // Validar formato del ID (ej: CENTRO-001, NORTE-002, MUNICIPAL-001)
+      if (!normalizedResult.match(/^[A-Z]+-\d+$/)) {
         toast({
           title: "QR Inválido",
-          description: "El código QR no tiene el formato correcto",
+          description: `El código QR "${result}" no tiene el formato correcto. Use formato como CENTRO-001`,
           variant: "destructive"
         });
         return;
       }
+      
+      // Usar el resultado normalizado
+      result = normalizedResult;
 
       // Datos de puntos de depósito locales como fallback
       const recyclingPoints = {
