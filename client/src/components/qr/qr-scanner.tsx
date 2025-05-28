@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faQrcode, faTimes, faCamera } from "@fortawesome/free-solid-svg-icons";
+import { faExpand, faTimes, faCamera } from "@fortawesome/free-solid-svg-icons";
 
 interface QRScannerProps {
   onScanResult: (depositId: string, locationData: any) => void;
@@ -120,7 +120,7 @@ export function QRScanner({ onScanResult, onClose }: QRScannerProps) {
       <CardHeader className="bg-primary-500 py-4 px-6">
         <div className="flex justify-between items-center">
           <CardTitle className="text-lg font-semibold text-white flex items-center gap-2">
-            <FontAwesomeIcon icon={faQrcode} />
+            <FontAwesomeIcon icon={faExpand} />
             Escanear QR
           </CardTitle>
           <Button
