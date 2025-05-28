@@ -15,6 +15,7 @@ export const users = pgTable("users", {
 // Recycling Points table
 export const recyclingPoints = pgTable("recycling_points", {
   id: serial("id").primaryKey(),
+  depositId: text("deposit_id").notNull().unique(), // ID único para QR (ej: "PLAZA-001")
   name: text("name").notNull(),
   address: text("address").notNull(),
   hours: text("hours"),
@@ -42,6 +43,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
 });
 
 export const insertRecyclingPointSchema = createInsertSchema(recyclingPoints).pick({
+  depositId: true,
   name: true,
   address: true,
   hours: true,

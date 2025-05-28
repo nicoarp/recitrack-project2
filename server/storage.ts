@@ -17,6 +17,7 @@ export interface IStorage {
   
   // Recycling Point operations
   getRecyclingPoint(id: number): Promise<RecyclingPoint | undefined>;
+  getRecyclingPointByDepositId(depositId: string): Promise<RecyclingPoint | undefined>;
   getAllRecyclingPoints(): Promise<RecyclingPoint[]>;
   createRecyclingPoint(point: InsertRecyclingPoint): Promise<RecyclingPoint>;
   
@@ -53,27 +54,31 @@ export class MemStorage implements IStorage {
   }
 
   private initializeSampleData() {
-    // Sample recycling points
+    // Sample recycling points con IDs únicos para QR
     const recyclingPoints: InsertRecyclingPoint[] = [
       {
+        depositId: "CENTRO-001",
         name: "Punto Limpio Central",
         address: "Av. Principal 123, Centro",
         hours: "Lun-Vie: 9:00-18:00, Sáb: 10:00-14:00",
         acceptedItems: ["Botellas PET", "Papel", "Cartón", "Vidrio"]
       },
       {
+        depositId: "NORTE-002",
         name: "Punto Limpio Norte",
         address: "Calle Norte 456, Zona Norte",
         hours: "Lun-Vie: 8:00-17:00, Sáb: 9:00-13:00",
         acceptedItems: ["Botellas PET", "Plásticos", "Latas", "Vidrio"]
       },
       {
+        depositId: "SUR-003",
         name: "Punto Limpio Sur",
         address: "Av. Sur 789, Zona Sur",
         hours: "Lun-Vie: 9:00-18:00, Sáb: 10:00-15:00",
         acceptedItems: ["Botellas PET", "Electrónicos", "Papel", "Vidrio"]
       },
       {
+        depositId: "MUNICIPAL-004",
         name: "Centro de Reciclaje Municipal",
         address: "Carretera Principal Km 5, Afueras",
         hours: "Lun-Dom: 8:00-20:00",
@@ -166,6 +171,12 @@ export class MemStorage implements IStorage {
   // Recycling Point operations
   async getRecyclingPoint(id: number): Promise<RecyclingPoint | undefined> {
     return this.recyclingPoints.get(id);
+  }
+
+  async getRecyclingPointByDepositId(depositId: string): Promise<RecyclingPoint | undefined> {
+    return Array.from(this.recyclingPoints.values()).find(
+      (point) => point.depositId === depositId
+    );
   }
   
   async getAllRecyclingPoints(): Promise<RecyclingPoint[]> {
