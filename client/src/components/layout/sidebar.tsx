@@ -18,6 +18,7 @@ export default function Sidebar({ isMobile = false, closeMobileMenu }: SidebarPr
     { path: "/deposits", label: "Registrar Depósito", icon: "bottle-water" },
     { path: "/history", label: "Historial", icon: "history" },
     { path: "/recycling-points", label: "Puntos de Reciclaje", icon: "map-marker-alt" },
+    { path: "/qr-admin", label: "Códigos QR", icon: "qrcode" },
     { path: "/statistics", label: "Estadísticas", icon: "chart-line" },
     { path: "/profile", label: "Mi Perfil", icon: "user-circle" },
   ];

@@ -112,12 +112,73 @@ export function DepositForm() {
     }
   };
 
+  const handleQRScan = (depositId: string, locationData: any) => {
+    // Actualizar el formulario con los datos escaneados
+    form.setValue("location", locationData.name);
+    setScannedLocation(locationData);
+    setShowQRScanner(false);
+    
+    toast({
+      title: "¡Ubicación detectada!",
+      description: `${locationData.name} - ${locationData.depositId}`
+    });
+  };
+
+  const openQRScanner = () => {
+    setShowQRScanner(true);
+  };
+
+  const closeQRScanner = () => {
+    setShowQRScanner(false);
+  };
+
+  if (showQRScanner) {
+    return (
+      <QRScanner 
+        onScanResult={handleQRScan}
+        onClose={closeQRScanner}
+      />
+    );
+  }
+
   return (
     <Card className="overflow-hidden">
       <CardHeader className="bg-primary-500 py-4 px-6">
         <CardTitle className="text-lg font-semibold text-white">Registrar Depósito</CardTitle>
       </CardHeader>
       <CardContent className="p-6">
+        {/* Botón prominente para escanear QR */}
+        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="text-center space-y-3">
+            <div className="flex items-center justify-center">
+              <FontAwesomeIcon icon={faQrcode} className="text-2xl text-blue-600 mr-3" />
+              <h3 className="text-lg font-semibold text-blue-800">¡Escanea el QR del punto de depósito!</h3>
+            </div>
+            <p className="text-sm text-blue-700">
+              Usa tu cámara para escanear el código QR y auto-completar la ubicación
+            </p>
+            <Button 
+              type="button"
+              onClick={openQRScanner}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              <FontAwesomeIcon icon={faQrcode} className="mr-2" />
+              Escanear Código QR
+            </Button>
+          </div>
+        </div>
+
+        {scannedLocation && (
+          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+            <div className="flex items-center text-green-800">
+              <FontAwesomeIcon icon={faQrcode} className="mr-2" />
+              <span className="text-sm font-medium">
+                Ubicación detectada: {scannedLocation.name} ({scannedLocation.depositId})
+              </span>
+            </div>
+          </div>
+        )}
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField

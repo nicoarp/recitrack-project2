@@ -13,6 +13,7 @@ import History from "@/pages/history";
 import RecyclingPoints from "@/pages/recycling-points";
 import Statistics from "@/pages/statistics";
 import Profile from "@/pages/profile";
+import QRAdmin from "@/pages/qr-admin";
 import NotFound from "@/pages/not-found";
 import Sidebar from "@/components/layout/sidebar";
 import MobileNav from "@/components/layout/mobile-nav";
@@ -26,6 +27,7 @@ function Router() {
       <Route path="/history" component={History} />
       <Route path="/recycling-points" component={RecyclingPoints} />
       <Route path="/statistics" component={Statistics} />
+      <Route path="/qr-admin" component={QRAdmin} />
       <Route path="/profile" component={Profile} />
       <Route component={NotFound} />
     </Switch>
