@@ -67,12 +67,9 @@ export function QRScanner({ onScanResult, onClose }: QRScannerProps) {
       // Normalizar el ID para que coincida con nuestro formato
       let normalizedResult = result.toUpperCase().trim();
       
-      // Si contiene "CENTRO DE RECICLAJE", convertirlo al formato esperado
+      // Si contiene "CENTRO DE RECICLAJE", convertirlo al ID correcto
       if (normalizedResult.includes("CENTRO DE RECICLAJE")) {
-        const match = normalizedResult.match(/(\d+)/);
-        if (match) {
-          normalizedResult = `MUNICIPAL-${match[1].padStart(3, '0')}`;
-        }
+        normalizedResult = "MUNICIPAL-004"; // El ID real del Centro de Reciclaje Municipal
       }
       
       // Validar formato del ID (ej: CENTRO-001, NORTE-002, MUNICIPAL-001)
