@@ -20,7 +20,15 @@ const formSchema = z.object({
   location: z.string().min(1, "La ubicación es requerida")
 });
 
-export function DepositForm() {
+interface DepositFormProps {
+  prefilledLocation?: {
+    depositId: string;
+    name: string;
+    address: string;
+  } | null;
+}
+
+export function DepositForm({ prefilledLocation }: DepositFormProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showQRScanner, setShowQRScanner] = useState(false);
@@ -31,7 +39,7 @@ export function DepositForm() {
     defaultValues: {
       batchId: "1",
       bottleCount: "5",
-      location: "Punto Limpio Central"
+      location: prefilledLocation ? prefilledLocation.name : (scannedLocation ? scannedLocation.name : "Punto Limpio Central")
     }
   });
 

@@ -33,8 +33,11 @@ export function QRGenerator({ depositId = "", locationName = "" }: QRGeneratorPr
     try {
       setIsGenerating(true);
       
-      // Generar código QR optimizado para escaneo desde pantalla
-      const qrCodeDataUrl = await QRCode.toDataURL(qrData.toUpperCase(), {
+      // Generar QR con enlace web directo al formulario
+      const currentDomain = window.location.origin;
+      const qrUrl = `${currentDomain}/deposit?location=${qrData.toUpperCase()}`;
+      
+      const qrCodeDataUrl = await QRCode.toDataURL(qrUrl, {
         width: 500,    // Tamaño más grande para mejor lectura desde pantalla
         margin: 6,     // Más margen para mejor detección
         color: {
@@ -156,6 +159,9 @@ export function QRGenerator({ depositId = "", locationName = "" }: QRGeneratorPr
                 </div>
                 <p className="mt-2 text-sm font-medium text-gray-700">
                   {qrData.toUpperCase()}
+                </p>
+                <p className="text-xs text-blue-600 mt-1">
+                  🔗 Enlace directo al formulario
                 </p>
               </div>
 
