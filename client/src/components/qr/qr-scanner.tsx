@@ -1,9 +1,10 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faQrcode, faTimes, faCamera } from "@fortawesome/free-solid-svg-icons";
+import { BrowserQRCodeReader } from '@zxing/library';
 
 interface QRScannerProps {
   onScanResult: (depositId: string, locationData: any) => void;
@@ -16,25 +17,47 @@ export function QRScanner({ onScanResult, onClose }: QRScannerProps) {
   const [error, setError] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const codeReaderRef = useRef<BrowserQRCodeReader | null>(null);
+
+  // Limpiar recursos al desmontar el componente
+  useEffect(() => {
+    return () => {
+      stopCamera();
+    };
+  }, []);
 
   const startCamera = async () => {
     try {
       setError(null);
       setIsScanning(true);
 
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { 
-          facingMode: "environment", // Cámara trasera preferida
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        }
-      });
+      // Crear lector QR con configuración optimizada
+      const codeReader = new BrowserQRCodeReader();
+      codeReaderRef.current = codeReader;
 
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.play();
-      }
+      // Configurar opciones de video optimizadas para detectar QR en pantalla
+      const constraints = {
+        video: {
+          facingMode: "environment",
+          width: { ideal: 1280, min: 640 },
+          height: { ideal: 720, min: 480 },
+          aspectRatio: { ideal: 16/9 }
+        }
+      };
+
+      // Comenzar escaneo continuo
+      await codeReader.decodeFromVideoDevice(
+        null, // deviceId (null = cámara por defecto)
+        videoRef.current!,
+        (result, error) => {
+          if (result) {
+            console.log('QR detectado:', result.getText());
+            handleQRResult(result.getText());
+          }
+          // Los errores son normales durante el escaneo continuo
+        }
+      );
+
     } catch (err) {
       console.error('Error accediendo a la cámara:', err);
       setError('No se pudo acceder a la cámara. Verifica los permisos.');
@@ -43,10 +66,22 @@ export function QRScanner({ onScanResult, onClose }: QRScannerProps) {
   };
 
   const stopCamera = () => {
+    // Detener el lector QR
+    if (codeReaderRef.current) {
+      codeReaderRef.current.reset();
+      codeReaderRef.current = null;
+    }
+    
+    // Limpiar el stream de video
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
+    
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    
     setIsScanning(false);
   };
 
