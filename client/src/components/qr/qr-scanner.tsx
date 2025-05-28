@@ -175,6 +175,18 @@ export function QRScanner({ onScanResult, onClose }: QRScannerProps) {
               <p className="text-gray-600">
                 Escanea el código QR del punto de depósito para registrar tu reciclaje
               </p>
+              
+              {/* Consejos para escanear desde pantalla */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <h4 className="font-medium text-blue-800 mb-2">💡 Consejos para escanear desde pantalla:</h4>
+                <ul className="text-sm text-blue-700 space-y-1">
+                  <li>• Aumenta el brillo de la pantalla al máximo</li>
+                  <li>• Aleja o acerca la cámara hasta enfocar bien</li>
+                  <li>• Evita reflejos de luz en la pantalla</li>
+                  <li>• Si no funciona, prueba con el QR impreso</li>
+                </ul>
+              </div>
+              
               <div className="space-y-2">
                 <Button onClick={startCamera} className="w-full">
                   <FontAwesomeIcon icon={faCamera} className="mr-2" />

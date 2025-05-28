@@ -33,15 +33,20 @@ export function QRGenerator({ depositId = "", locationName = "" }: QRGeneratorPr
     try {
       setIsGenerating(true);
       
-      // Generar código QR con el depositId
+      // Generar código QR optimizado para escaneo desde pantalla
       const qrCodeDataUrl = await QRCode.toDataURL(qrData.toUpperCase(), {
-        width: 300,
-        margin: 2,
+        width: 500,    // Tamaño más grande para mejor lectura desde pantalla
+        margin: 6,     // Más margen para mejor detección
         color: {
           dark: '#000000',
           light: '#FFFFFF'
         },
-        errorCorrectionLevel: 'M'
+        errorCorrectionLevel: 'H', // Alta corrección de errores para mejor detección
+        type: 'image/png',
+        quality: 0.95,
+        rendererOpts: {
+          quality: 0.95
+        }
       });
 
       setQrCodeUrl(qrCodeDataUrl);
