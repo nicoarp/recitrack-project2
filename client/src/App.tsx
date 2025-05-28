@@ -15,6 +15,8 @@ import Statistics from "@/pages/statistics";
 import Profile from "@/pages/profile";
 import QRAdmin from "@/pages/qr-admin";
 import Login from "@/pages/login";
+import Help from "@/pages/help";
+import AccessDenied from "@/pages/access-denied";
 import NotFound from "@/pages/not-found";
 import Sidebar from "@/components/layout/sidebar";
 import MobileNav from "@/components/layout/mobile-nav";
@@ -82,9 +84,11 @@ function Router() {
         </>
       )}
       
-      {/* Perfil y login siempre disponibles */}
+      {/* Páginas siempre disponibles */}
       <Route path="/profile" component={Profile} />
       <Route path="/login" component={Login} />
+      <Route path="/help" component={Help} />
+      <Route path="/access-denied" component={AccessDenied} />
       
       <Route component={NotFound} />
     </Switch>

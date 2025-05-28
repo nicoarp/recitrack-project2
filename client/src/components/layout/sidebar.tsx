@@ -27,6 +27,7 @@ export default function Sidebar({ isMobile = false, closeMobileMenu }: SidebarPr
     { path: "/", label: "Inicio", icon: "home" },
     { path: "/deposits", label: "Registrar Depósito", icon: "bottle-water" },
     { path: "/history", label: "Mi Historial", icon: "history" },
+    { path: "/help", label: "Ayuda", icon: "user-circle" },
   ];
 
   // Menú completo para administradores
