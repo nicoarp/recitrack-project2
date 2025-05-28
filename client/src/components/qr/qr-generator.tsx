@@ -186,8 +186,11 @@ export function QRGenerator({ depositId = "", locationName = "" }: QRGeneratorPr
 
               <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
                 <p className="text-sm text-blue-800">
-                  <strong>Instrucciones:</strong> Imprime este código QR y colócalo en el punto de depósito. 
-                  Los usuarios podrán escanearlo para registrar su reciclaje automáticamente.
+                  <strong>¡Nuevo! QR con enlace directo:</strong><br/>
+                  • Imprime y coloca en el punto de depósito<br/>
+                  • Los usuarios escanean con cualquier app QR<br/>
+                  • Se abre directamente el formulario pre-completado<br/>
+                  • Solo ingresan cantidad de botellas y registran
                 </p>
               </div>
             </div>
