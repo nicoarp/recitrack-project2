@@ -1,10 +1,9 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faQrcode, faTimes, faCamera } from "@fortawesome/free-solid-svg-icons";
-import { BrowserQRCodeReader } from '@zxing/library';
 
 interface QRScannerProps {
   onScanResult: (depositId: string, locationData: any) => void;
@@ -17,47 +16,25 @@ export function QRScanner({ onScanResult, onClose }: QRScannerProps) {
   const [error, setError] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const codeReaderRef = useRef<BrowserQRCodeReader | null>(null);
-
-  // Limpiar recursos al desmontar el componente
-  useEffect(() => {
-    return () => {
-      stopCamera();
-    };
-  }, []);
 
   const startCamera = async () => {
     try {
       setError(null);
       setIsScanning(true);
 
-      // Crear lector QR con configuración optimizada
-      const codeReader = new BrowserQRCodeReader();
-      codeReaderRef.current = codeReader;
-
-      // Configurar opciones de video optimizadas para detectar QR en pantalla
-      const constraints = {
-        video: {
-          facingMode: "environment",
-          width: { ideal: 1280, min: 640 },
-          height: { ideal: 720, min: 480 },
-          aspectRatio: { ideal: 16/9 }
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { 
+          facingMode: "environment", // Cámara trasera preferida
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
         }
-      };
+      });
 
-      // Comenzar escaneo continuo
-      await codeReader.decodeFromVideoDevice(
-        null, // deviceId (null = cámara por defecto)
-        videoRef.current!,
-        (result, error) => {
-          if (result) {
-            console.log('QR detectado:', result.getText());
-            handleQRResult(result.getText());
-          }
-          // Los errores son normales durante el escaneo continuo
-        }
-      );
-
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.play();
+      }
     } catch (err) {
       console.error('Error accediendo a la cámara:', err);
       setError('No se pudo acceder a la cámara. Verifica los permisos.');
@@ -66,22 +43,13 @@ export function QRScanner({ onScanResult, onClose }: QRScannerProps) {
   };
 
   const stopCamera = () => {
-    // Detener el lector QR
-    if (codeReaderRef.current) {
-      codeReaderRef.current.reset();
-      codeReaderRef.current = null;
-    }
-    
-    // Limpiar el stream de video
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
-    
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
-    
     setIsScanning(false);
   };
 
@@ -176,14 +144,12 @@ export function QRScanner({ onScanResult, onClose }: QRScannerProps) {
                 Escanea el código QR del punto de depósito para registrar tu reciclaje
               </p>
               
-              {/* Consejos para escanear desde pantalla */}
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                <h4 className="font-medium text-blue-800 mb-2">💡 Consejos para escanear desde pantalla:</h4>
+                <h4 className="font-medium text-blue-800 mb-2">💡 Consejos para escanear:</h4>
                 <ul className="text-sm text-blue-700 space-y-1">
-                  <li>• Aumenta el brillo de la pantalla al máximo</li>
-                  <li>• Aleja o acerca la cámara hasta enfocar bien</li>
-                  <li>• Evita reflejos de luz en la pantalla</li>
-                  <li>• Si no funciona, prueba con el QR impreso</li>
+                  <li>• Enfoca bien el código QR</li>
+                  <li>• Asegúrate de tener buena iluminación</li>
+                  <li>• Si tienes problemas, usa la opción manual</li>
                 </ul>
               </div>
               
