@@ -71,9 +71,10 @@ export function QRScanner({ onScanResult, onClose }: QRScannerProps) {
     // Limpiar ZXing reader
     if (zxingReaderRef.current) {
       try {
-        zxingReaderRef.current.reset();
+        // ZXing se limpia automáticamente
+        zxingReaderRef.current = new BrowserQRCodeReader();
       } catch (err) {
-        console.log("Error al limpiar ZXing reader");
+        console.log("Error al reinicializar ZXing reader");
       }
     }
   };
@@ -165,18 +166,42 @@ export function QRScanner({ onScanResult, onClose }: QRScannerProps) {
   const startZXingScanning = () => {
     if (!zxingReaderRef.current || !videoRef.current) return;
     
-    // ZXing puede trabajar directamente con el elemento video
-    zxingReaderRef.current.decodeFromVideoDevice(
-      undefined, // deviceId
-      videoRef.current,
-      (result, error) => {
-        if (result && isScanning) {
-          handleQRDetected(result.getText(), "ZXing");
+    // Usar ZXing de forma más controlada, sin tomar control del video
+    const tryZXingDecode = () => {
+      if (!isScanning || !zxingReaderRef.current || !videoRef.current) return;
+      
+      try {
+        // Crear canvas temporal para ZXing
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        
+        if (context && videoRef.current.videoWidth > 0) {
+          canvas.width = videoRef.current.videoWidth;
+          canvas.height = videoRef.current.videoHeight;
+          context.drawImage(videoRef.current, 0, 0);
+          
+          // Intentar decodificar desde canvas (método sincrónico)
+          try {
+            const result = zxingReaderRef.current.decodeFromCanvas(canvas);
+            if (result && isScanning) {
+              handleQRDetected(result.getText(), "ZXing");
+            }
+          } catch (decodeError) {
+            // Error silencioso, seguir intentando
+          }
         }
+      } catch (err) {
+        // Error silencioso
       }
-    ).catch(err => {
-      console.log("ZXing scanning error:", err);
-    });
+      
+      // Intentar de nuevo en 1 segundo si sigue escaneando
+      if (isScanning) {
+        setTimeout(tryZXingDecode, 1000);
+      }
+    };
+    
+    // Iniciar detección ZXing
+    setTimeout(tryZXingDecode, 500);
   };
 
   const handleQRResult = (qrText: string) => {
