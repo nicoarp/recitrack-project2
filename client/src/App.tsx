@@ -14,6 +14,7 @@ import RecyclingPoints from "@/pages/recycling-points";
 import Statistics from "@/pages/statistics";
 import Profile from "@/pages/profile";
 import QRAdmin from "@/pages/qr-admin";
+import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
 import Sidebar from "@/components/layout/sidebar";
 import MobileNav from "@/components/layout/mobile-nav";
