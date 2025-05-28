@@ -57,7 +57,8 @@ function AdminRoutes() {
 }
 
 function Router() {
-  const { isAuthenticated, isAdmin } = useAuth();
+  // Temporalmente comentado para MVP - se activará cuando implementemos autenticación
+  // const { isAuthenticated, isAdmin } = useAuth();
   
   // Por ahora en MVP, actuar como admin anónimo para acceder a todas las funciones
   // En el futuro, esto se basará en autenticación real
