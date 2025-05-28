@@ -1,9 +1,13 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faExpand, faTimes, faCamera } from "@fortawesome/free-solid-svg-icons";
+import { BrowserQRCodeReader } from "@zxing/browser";
 
 interface QRScannerProps {
   onScanResult: (depositId: string, locationData: any) => void;
@@ -11,304 +15,290 @@ interface QRScannerProps {
 }
 
 export function QRScanner({ onScanResult, onClose }: QRScannerProps) {
-  const { toast } = useToast();
   const [isScanning, setIsScanning] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [manualInput, setManualInput] = useState("");
+  const [error, setError] = useState("");
+  const [detectionMethod, setDetectionMethod] = useState("");
+  
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const zxingReaderRef = useRef<BrowserQRCodeReader | null>(null);
+  const barcodeDetectorRef = useRef<any>(null);
+  const scanIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
+  const { toast } = useToast();
 
-  const startQRDetection = () => {
-    if (!videoRef.current) return;
+  // Inicializar detectores disponibles
+  useEffect(() => {
+    // Inicializar ZXing como respaldo confiable
+    try {
+      zxingReaderRef.current = new BrowserQRCodeReader();
+      setDetectionMethod("ZXing listo");
+    } catch (err) {
+      console.log("ZXing no disponible");
+    }
 
-    // Crear un canvas para capturar frames del video
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');
-    if (!context) return;
-
-    // Función que escanea cada frame en busca de QR
-    const scanFrame = () => {
-      if (!videoRef.current || !isScanning) return;
-
-      canvas.width = videoRef.current.videoWidth;
-      canvas.height = videoRef.current.videoHeight;
-      
-      if (canvas.width > 0 && canvas.height > 0) {
-        context.drawImage(videoRef.current, 0, 0);
-        
-        // Usar la API nativa BarcodeDetector si está disponible
-        if ('BarcodeDetector' in window) {
-          const detector = new (window as any).BarcodeDetector({ formats: ['qr_code'] });
-          detector.detect(canvas)
-            .then((barcodes: any[]) => {
-              if (barcodes.length > 0 && isScanning) {
-                console.log('QR detectado automáticamente:', barcodes[0].rawValue);
-                // Detener la detección para evitar múltiples llamadas
-                stopCamera();
-                // Procesar el QR completo (igual que entrada manual)
-                handleQRResult(barcodes[0].rawValue);
-              }
-            })
-            .catch(() => {
-              // Si BarcodeDetector falla, continuar intentando
-            });
-        } else {
-          // Fallback: mostrar mensaje solo una vez
-          if (!error) {
-            setError('Detección automática no disponible. Use la entrada manual.');
-            console.log('BarcodeDetector no disponible en este navegador');
-          }
-        }
+    // Verificar BarcodeDetector nativo
+    if ('BarcodeDetector' in window) {
+      try {
+        barcodeDetectorRef.current = new (window as any).BarcodeDetector({ formats: ['qr_code'] });
+        setDetectionMethod("BarcodeDetector + ZXing listos");
+      } catch (err) {
+        console.log("BarcodeDetector no se pudo inicializar");
       }
-    };
+    }
 
-    // Escanear cada 500ms
-    intervalRef.current = setInterval(scanFrame, 500);
+    return () => {
+      stopCamera();
+    };
+  }, []);
+
+  const stopCamera = () => {
+    setIsScanning(false);
+    
+    // Detener intervalos de escaneo
+    if (scanIntervalRef.current) {
+      clearInterval(scanIntervalRef.current);
+      scanIntervalRef.current = null;
+    }
+    
+    // Detener stream de cámara
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+
+    // Limpiar ZXing reader
+    if (zxingReaderRef.current) {
+      try {
+        zxingReaderRef.current.reset();
+      } catch (err) {
+        console.log("Error al limpiar ZXing reader");
+      }
+    }
+  };
+
+  const handleQRDetected = (qrText: string, method: string) => {
+    console.log(`QR detectado con ${method}:`, qrText);
+    
+    // Detener escaneo inmediatamente
+    stopCamera();
+    
+    // Procesar el resultado del QR
+    handleQRResult(qrText);
+    
+    toast({
+      title: "QR Detectado",
+      description: `Código: ${qrText} (${method})`,
+    });
   };
 
   const startCamera = async () => {
     try {
-      setError(null);
+      setError("");
       setIsScanning(true);
 
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { 
-          facingMode: "environment", // Cámara trasera preferida
+          facingMode: "environment",
           width: { ideal: 1280 },
           height: { ideal: 720 }
         }
       });
 
       streamRef.current = stream;
+      
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        videoRef.current.play();
+        await videoRef.current.play();
         
-        // Iniciar detección automática de QR
-        startQRDetection();
+        // Iniciar detección multicapa
+        startMultiLayerDetection();
       }
     } catch (err) {
-      console.error('Error accediendo a la cámara:', err);
-      setError('No se pudo acceder a la cámara. Verifica los permisos.');
+      setError("No se pudo acceder a la cámara");
       setIsScanning(false);
     }
   };
 
-  const stopCamera = () => {
-    // Detener la detección automática
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-    
-    // Detener el stream de video
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
-    }
-    
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-    
-    setIsScanning(false);
-  };
+  const startMultiLayerDetection = () => {
+    if (!videoRef.current) return;
 
-  const handleManualInput = () => {
-    const input = prompt("Ingresa el ID del punto de depósito manualmente:");
-    if (input && input.trim()) {
-      handleQRResult(input.trim().toUpperCase());
+    // Método 1: Intentar con BarcodeDetector nativo (más rápido)
+    if (barcodeDetectorRef.current) {
+      startBarcodeDetectorScanning();
+    }
+    
+    // Método 2: Usar ZXing como respaldo confiable
+    if (zxingReaderRef.current) {
+      startZXingScanning();
+    }
+    
+    // Si ninguno está disponible
+    if (!barcodeDetectorRef.current && !zxingReaderRef.current) {
+      setError("Detección automática no disponible. Use entrada manual.");
     }
   };
 
-  const handleQRResult = async (result: string) => {
-    try {
-      console.log('QR escaneado:', result);
+  const startBarcodeDetectorScanning = () => {
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    
+    scanIntervalRef.current = setInterval(async () => {
+      if (!videoRef.current || !isScanning || !context) return;
       
-      // Normalizar el ID para que coincida con nuestro formato
-      let normalizedResult = result.toUpperCase().trim();
-      
-      // Si contiene "CENTRO DE RECICLAJE", convertirlo al ID correcto
-      if (normalizedResult.includes("CENTRO DE RECICLAJE")) {
-        normalizedResult = "MUNICIPAL-004"; // El ID real del Centro de Reciclaje Municipal
-      }
-      
-      // Validar formato del ID (ej: CENTRO-001, NORTE-002, MUNICIPAL-001)
-      if (!normalizedResult.match(/^[A-Z]+-\d+$/)) {
-        toast({
-          title: "QR Inválido",
-          description: `El código QR "${result}" no tiene el formato correcto. Use formato como CENTRO-001`,
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      // Usar el resultado normalizado
-      result = normalizedResult;
-
-      // Datos de puntos de depósito locales como fallback
-      const recyclingPoints = {
-        "CENTRO-001": {
-          id: 1,
-          depositId: "CENTRO-001",
-          name: "Punto Limpio Central",
-          address: "Av. Principal 123, Centro",
-          hours: "Lun-Vie: 9:00-18:00, Sáb: 10:00-14:00",
-          acceptedItems: ["Botellas PET", "Papel", "Cartón", "Vidrio"]
-        },
-        "NORTE-002": {
-          id: 2,
-          depositId: "NORTE-002",
-          name: "Punto Limpio Norte",
-          address: "Calle Norte 456, Zona Norte",
-          hours: "Lun-Vie: 8:00-17:00, Sáb: 9:00-13:00",
-          acceptedItems: ["Botellas PET", "Plásticos", "Latas", "Vidrio"]
-        },
-        "SUR-003": {
-          id: 3,
-          depositId: "SUR-003",
-          name: "Punto Limpio Sur",
-          address: "Av. Sur 789, Zona Sur",
-          hours: "Lun-Vie: 9:00-18:00, Sáb: 10:00-15:00",
-          acceptedItems: ["Botellas PET", "Electrónicos", "Papel", "Vidrio"]
-        },
-        "MUNICIPAL-004": {
-          id: 4,
-          depositId: "MUNICIPAL-004",
-          name: "Centro de Reciclaje Municipal",
-          address: "Carretera Principal Km 5, Afueras",
-          hours: "Lun-Dom: 8:00-20:00",
-          acceptedItems: ["Botellas PET", "Papel", "Cartón", "Vidrio", "Metales", "Electrónicos"]
-        },
-        "LAGO-005": {
-          id: 5,
-          depositId: "LAGO-005",
-          name: "Casa, Lago Huechen",
-          address: "Lago Huechen",
-          hours: "Lun-Dom: 8:00-20:00",
-          acceptedItems: ["Botellas PET", "Papel", "Cartón", "Vidrio"]
+      try {
+        canvas.width = videoRef.current.videoWidth;
+        canvas.height = videoRef.current.videoHeight;
+        context.drawImage(videoRef.current, 0, 0);
+        
+        const barcodes = await barcodeDetectorRef.current.detect(canvas);
+        if (barcodes.length > 0) {
+          handleQRDetected(barcodes[0].rawValue, "BarcodeDetector");
         }
-      };
-
-      const locationData = recyclingPoints[result as keyof typeof recyclingPoints];
-      
-      if (!locationData) {
-        toast({
-          title: "Punto no encontrado",
-          description: `No se encontró el punto de depósito ${result}`,
-          variant: "destructive"
-        });
-        return;
+      } catch (err) {
+        // Si BarcodeDetector falla, confiar en ZXing
       }
+    }, 500);
+  };
 
-      toast({
-        title: "¡QR Escaneado!",
-        description: `Punto: ${locationData.name}`
-      });
+  const startZXingScanning = () => {
+    if (!zxingReaderRef.current || !videoRef.current) return;
+    
+    // ZXing puede trabajar directamente con el elemento video
+    zxingReaderRef.current.decodeFromVideoDevice(
+      undefined, // deviceId
+      videoRef.current,
+      (result, error) => {
+        if (result && isScanning) {
+          handleQRDetected(result.getText(), "ZXing");
+        }
+      }
+    ).catch(err => {
+      console.log("ZXing scanning error:", err);
+    });
+  };
 
-      stopCamera();
-      onScanResult(result, locationData);
-      
-    } catch (error) {
-      console.error('Error procesando QR:', error);
-      toast({
-        title: "Error",
-        description: "Error al procesar el código QR",
-        variant: "destructive"
-      });
+  const handleQRResult = (qrText: string) => {
+    const trimmedText = qrText.trim().toUpperCase();
+    
+    // Buscar coincidencias en puntos de reciclaje
+    const recyclingPoints = {
+      "CENTRO-001": { name: "Centro de Reciclaje Principal", address: "Av. Principal 123" },
+      "NORTE-002": { name: "Punto Norte", address: "Barrio Norte, Calle 45" },
+      "SUR-003": { name: "Punto Sur", address: "Zona Sur, Av. Libertad" },
+      "MUNICIPAL-004": { name: "Centro Municipal", address: "Plaza Central" },
+      "LAGO-005": { name: "Casa, Lago Huechen", address: "Lago Huechen, Zona Residencial" }
+    };
+
+    // Buscar coincidencia exacta o similar
+    let foundPoint = null;
+    let depositId = "";
+
+    for (const [id, point] of Object.entries(recyclingPoints)) {
+      if (trimmedText.includes(id) || id.includes(trimmedText)) {
+        foundPoint = point;
+        depositId = id;
+        break;
+      }
+    }
+
+    if (foundPoint) {
+      console.log(`Punto encontrado: ${depositId} - ${foundPoint.name}`);
+      onScanResult(depositId, foundPoint);
+    } else {
+      setError(`No se encontró punto de reciclaje para: ${trimmedText}`);
     }
   };
 
-  const handleClose = () => {
-    stopCamera();
-    onClose();
+  const handleManualSubmit = () => {
+    if (manualInput.trim()) {
+      handleQRResult(manualInput);
+      setManualInput("");
+    }
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader className="bg-primary-500 py-4 px-6">
-        <div className="flex justify-between items-center">
-          <CardTitle className="text-lg font-semibold text-white flex items-center gap-2">
-            <FontAwesomeIcon icon={faExpand} />
-            Escanear QR
-          </CardTitle>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleClose}
-            className="text-white hover:bg-white/20"
-          >
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-lg">Escanear Código QR</CardTitle>
+          <Button variant="ghost" size="sm" onClick={onClose}>
             <FontAwesomeIcon icon={faTimes} />
           </Button>
-        </div>
-      </CardHeader>
-      <CardContent className="p-6">
-        <div className="space-y-4">
-          {!isScanning ? (
-            <div className="text-center space-y-4">
-              <div className="w-32 h-32 mx-auto bg-gray-100 rounded-lg flex items-center justify-center">
+        </CardHeader>
+        
+        <CardContent className="space-y-4">
+          {/* Estado del detector */}
+          {detectionMethod && (
+            <div className="text-sm text-green-600 bg-green-50 p-2 rounded">
+              ✓ {detectionMethod}
+            </div>
+          )}
+
+          {/* Video para escaneo */}
+          <div className="relative">
+            <video
+              ref={videoRef}
+              className="w-full h-48 bg-gray-100 rounded"
+              style={{ display: isScanning ? 'block' : 'none' }}
+            />
+            
+            {!isScanning && (
+              <div className="w-full h-48 bg-gray-100 rounded flex items-center justify-center">
                 <FontAwesomeIcon icon={faCamera} className="text-4xl text-gray-400" />
               </div>
-              <p className="text-gray-600">
-                Escanea el código QR del punto de depósito para registrar tu reciclaje
-              </p>
-              
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                <h4 className="font-medium text-blue-800 mb-2">💡 Consejos para escanear:</h4>
-                <ul className="text-sm text-blue-700 space-y-1">
-                  <li>• Enfoca bien el código QR</li>
-                  <li>• Asegúrate de tener buena iluminación</li>
-                  <li>• Si tienes problemas, usa la opción manual</li>
-                </ul>
-              </div>
-              
-              <div className="space-y-2">
-                <Button onClick={startCamera} className="w-full">
-                  <FontAwesomeIcon icon={faCamera} className="mr-2" />
-                  Activar Cámara
-                </Button>
-                <Button variant="outline" onClick={handleManualInput} className="w-full">
-                  Ingresar ID Manualmente
-                </Button>
-              </div>
+            )}
+          </div>
+
+          {/* Controles de cámara */}
+          <div className="flex gap-2">
+            {!isScanning ? (
+              <Button onClick={startCamera} className="flex-1">
+                <FontAwesomeIcon icon={faCamera} className="mr-2" />
+                Activar Cámara
+              </Button>
+            ) : (
+              <Button onClick={stopCamera} variant="outline" className="flex-1">
+                Detener Cámara
+              </Button>
+            )}
+          </div>
+
+          {/* Entrada manual */}
+          <div className="space-y-2">
+            <Label htmlFor="manual-input">O ingrese código manualmente:</Label>
+            <div className="flex gap-2">
+              <Input
+                id="manual-input"
+                value={manualInput}
+                onChange={(e) => setManualInput(e.target.value)}
+                placeholder="Ej: LAGO-005"
+                className="flex-1"
+              />
+              <Button onClick={handleManualSubmit}>
+                Buscar
+              </Button>
             </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="relative">
-                <video
-                  ref={videoRef}
-                  className="w-full h-64 bg-black rounded-lg object-cover"
-                  autoPlay
-                  playsInline
-                  muted
-                />
-                <div className="absolute inset-0 border-2 border-dashed border-white rounded-lg pointer-events-none">
-                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                    <div className="w-32 h-32 border-2 border-white rounded-lg"></div>
-                  </div>
-                </div>
-              </div>
-              <div className="text-center space-y-2">
-                <p className="text-sm text-gray-600">
-                  Apunta la cámara hacia el código QR
-                </p>
-                <Button variant="outline" onClick={stopCamera} className="w-full">
-                  Cancelar Escaneo
-                </Button>
-                <Button variant="ghost" onClick={handleManualInput} className="w-full text-sm">
-                  Ingresar ID Manualmente
-                </Button>
-              </div>
-            </div>
-          )}
-          
+          </div>
+
+          {/* Mensajes de error */}
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-600">{error}</p>
-            </div>
+            <Alert className="border-yellow-200 bg-yellow-50">
+              <AlertDescription className="text-yellow-800">
+                {error}
+              </AlertDescription>
+            </Alert>
           )}
-        </div>
-      </CardContent>
-    </Card>
+
+          {/* Ayuda */}
+          <div className="text-sm text-gray-600 space-y-1">
+            <p>• Apunte la cámara al código QR</p>
+            <p>• O escriba el código manualmente</p>
+            <p>• Códigos válidos: CENTRO-001, NORTE-002, SUR-003, MUNICIPAL-004, LAGO-005</p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
