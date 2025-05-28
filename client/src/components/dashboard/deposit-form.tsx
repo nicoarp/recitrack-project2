@@ -155,28 +155,7 @@ export function DepositForm({ prefilledLocation }: DepositFormProps) {
         <CardTitle className="text-lg font-semibold text-white">Registrar Depósito</CardTitle>
       </CardHeader>
       <CardContent className="p-6">
-        {/* Solo mostrar scanner QR si NO hay ubicación pre-cargada */}
-        {!prefilledLocation && (
-          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <div className="text-center space-y-3">
-              <div className="flex items-center justify-center">
-                <FontAwesomeIcon icon={faQrcode} className="text-2xl text-blue-600 mr-3" />
-                <h3 className="text-lg font-semibold text-blue-800">¡Escanea el QR del punto de depósito!</h3>
-              </div>
-              <p className="text-sm text-blue-700">
-                Usa tu cámara para escanear el código QR y auto-completar la ubicación
-              </p>
-              <Button 
-                type="button"
-                onClick={openQRScanner}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                <FontAwesomeIcon icon={faQrcode} className="mr-2" />
-                Escanear Código QR
-              </Button>
-            </div>
-          </div>
-        )}
+
 
         {/* Mostrar ubicación fija si viene desde QR */}
         {prefilledLocation && (
