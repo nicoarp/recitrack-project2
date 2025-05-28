@@ -16,7 +16,9 @@ import {
   faTrash,
   faSearch,
   faSave,
-  faEdit
+  faEdit,
+  faTools,
+  faCalendar
 } from '@fortawesome/free-solid-svg-icons';
 
 // Agrega los iconos que necesites a la biblioteca
@@ -37,5 +39,7 @@ library.add(
   faTrash,
   faSearch,
   faSave,
-  faEdit
+  faEdit,
+  faTools,
+  faCalendar
 );
