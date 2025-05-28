@@ -16,6 +16,46 @@ export function QRScanner({ onScanResult, onClose }: QRScannerProps) {
   const [error, setError] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const startQRDetection = () => {
+    if (!videoRef.current) return;
+
+    // Crear un canvas para capturar frames del video
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    if (!context) return;
+
+    // Función que escanea cada frame en busca de QR
+    const scanFrame = () => {
+      if (!videoRef.current || !isScanning) return;
+
+      canvas.width = videoRef.current.videoWidth;
+      canvas.height = videoRef.current.videoHeight;
+      
+      if (canvas.width > 0 && canvas.height > 0) {
+        context.drawImage(videoRef.current, 0, 0);
+        
+        // Usar la API nativa BarcodeDetector si está disponible
+        if ('BarcodeDetector' in window) {
+          const detector = new (window as any).BarcodeDetector({ formats: ['qr_code'] });
+          detector.detect(canvas)
+            .then((barcodes: any[]) => {
+              if (barcodes.length > 0) {
+                console.log('QR detectado automáticamente:', barcodes[0].rawValue);
+                handleQRResult(barcodes[0].rawValue);
+              }
+            })
+            .catch(() => {
+              // Si BarcodeDetector falla, continuar intentando
+            });
+        }
+      }
+    };
+
+    // Escanear cada 500ms
+    intervalRef.current = setInterval(scanFrame, 500);
+  };
 
   const startCamera = async () => {
     try {
@@ -34,6 +74,9 @@ export function QRScanner({ onScanResult, onClose }: QRScannerProps) {
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         videoRef.current.play();
+        
+        // Iniciar detección automática de QR
+        startQRDetection();
       }
     } catch (err) {
       console.error('Error accediendo a la cámara:', err);
@@ -43,13 +86,22 @@ export function QRScanner({ onScanResult, onClose }: QRScannerProps) {
   };
 
   const stopCamera = () => {
+    // Detener la detección automática
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    
+    // Detener el stream de video
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
+    
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
+    
     setIsScanning(false);
   };
 
