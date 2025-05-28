@@ -31,6 +31,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(points);
   });
 
+  app.get("/api/recycling-points/qr/:depositId", async (req, res) => {
+    try {
+      const { depositId } = req.params;
+      const point = await storage.getRecyclingPointByDepositId(depositId);
+      
+      if (!point) {
+        res.status(404).json({ message: "Punto de depósito no encontrado" });
+        return;
+      }
+      
+      res.json(point);
+    } catch (error) {
+      res.status(500).json({ message: "Error al buscar punto de depósito" });
+    }
+  });
+
   app.post("/api/recycling-points", async (req, res) => {
     try {
       const pointData = insertRecyclingPointSchema.parse(req.body);
