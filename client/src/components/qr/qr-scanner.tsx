@@ -138,7 +138,7 @@ export function QRScanner({ onScanResult, onClose }: QRScannerProps) {
           {!isScanning ? (
             <div className="text-center space-y-4">
               <div className="w-32 h-32 mx-auto bg-gray-100 rounded-lg flex items-center justify-center">
-                <FontAwesomeIcon icon={faQrcode} className="text-4xl text-gray-400" />
+                <FontAwesomeIcon icon={faCamera} className="text-4xl text-gray-400" />
               </div>
               <p className="text-gray-600">
                 Escanea el código QR del punto de depósito para registrar tu reciclaje
