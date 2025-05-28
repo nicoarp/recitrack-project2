@@ -118,6 +118,14 @@ export function QRScanner({ onScanResult, onClose }: QRScannerProps) {
           address: "Carretera Principal Km 5, Afueras",
           hours: "Lun-Dom: 8:00-20:00",
           acceptedItems: ["Botellas PET", "Papel", "Cartón", "Vidrio", "Metales", "Electrónicos"]
+        },
+        "LAGO-005": {
+          id: 5,
+          depositId: "LAGO-005",
+          name: "Casa, Lago Huechen",
+          address: "Lago Huechen",
+          hours: "Lun-Dom: 8:00-20:00",
+          acceptedItems: ["Botellas PET", "Papel", "Cartón", "Vidrio"]
         }
       };
 

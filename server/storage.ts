@@ -83,6 +83,13 @@ export class MemStorage implements IStorage {
         address: "Carretera Principal Km 5, Afueras",
         hours: "Lun-Dom: 8:00-20:00",
         acceptedItems: ["Botellas PET", "Papel", "Cartón", "Vidrio", "Metales", "Electrónicos"]
+      },
+      {
+        depositId: "LAGO-005",
+        name: "Casa, Lago Huechen",
+        address: "Lago Huechen",
+        hours: "Lun-Dom: 8:00-20:00",
+        acceptedItems: ["Botellas PET", "Papel", "Cartón", "Vidrio"]
       }
     ];
     
