@@ -18,7 +18,7 @@ export class BlockchainService {
     try {
       // Configuración para Sepolia testnet
       const rpcUrl = process.env.SEPOLIA_RPC_URL || 'https://sepolia.infura.io/v3/YOUR_INFURA_KEY';
-      const contractAddress = process.env.CONTRACT_ADDRESS || '0x60C06476501C50C36F76462975EcE12c9cdEA851';
+      const contractAddress = '0x60C06476501C50C36F76462975EcE12c9cdEA851';
       const operatorPrivateKey = process.env.OPERATOR_PRIVATE_KEY;
 
       console.log('🔍 Verificando configuración blockchain...');
