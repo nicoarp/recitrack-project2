@@ -81,6 +81,28 @@ export default function BatchManagement() {
     );
   };
 
+  // Detectar ubicación automáticamente de los depósitos seleccionados
+  const getSelectedDepositsLocation = () => {
+    if (selectedDeposits.length === 0) return null;
+    
+    const selectedDepositObjects = deposits.filter((deposit: any) => 
+      selectedDeposits.includes(deposit.eventId.toString())
+    );
+    
+    const locations = Array.from(new Set(selectedDepositObjects.map((d: any) => d.location)));
+    
+    if (locations.length === 1) {
+      return locations[0];
+    } else if (locations.length > 1) {
+      return "MÚLTIPLES_UBICACIONES";
+    }
+    
+    return null;
+  };
+
+  const selectedLocation = getSelectedDepositsLocation();
+  const hasMultipleLocations = selectedLocation === "MÚLTIPLES_UBICACIONES";
+
   const handleCreateBatch = () => {
     if (selectedDeposits.length === 0) {
       toast({
@@ -91,26 +113,35 @@ export default function BatchManagement() {
       return;
     }
 
-    if (!batchLocation.trim()) {
+    if (hasMultipleLocations) {
+      toast({
+        variant: "destructive",
+        title: "Error de ubicación",
+        description: "No se puede crear un lote con depósitos de diferentes ubicaciones. Seleccione depósitos del mismo punto de reciclaje.",
+      });
+      return;
+    }
+
+    if (!selectedLocation) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Debe especificar la ubicación del lote",
+        description: "No se pudo determinar la ubicación de los depósitos seleccionados",
       });
       return;
     }
 
     // Calcular cantidad total
     const totalQuantity = deposits
-      .filter((deposit: any) => selectedDeposits.includes(deposit.id.toString()))
-      .reduce((sum: number, deposit: any) => sum + deposit.bottleCount, 0);
+      .filter((deposit: any) => selectedDeposits.includes(deposit.eventId.toString()))
+      .reduce((sum: number, deposit: any) => sum + deposit.quantity, 0);
 
     const batchData = {
       eventType: "Batch",
       relatedIds: selectedDeposits.map(id => parseInt(id)),
-      location: batchLocation,
+      location: selectedLocation,
       quantity: totalQuantity,
-      description: batchDescription || `Lote con ${selectedDeposits.length} depósitos (${totalQuantity} botellas)`
+      description: batchDescription || `Lote con ${selectedDeposits.length} depósitos (${totalQuantity} botellas) de ${selectedLocation}`
     };
 
     createBatchMutation.mutate(batchData);
@@ -202,22 +233,40 @@ export default function BatchManagement() {
                 </p>
                 <p className="text-sm text-blue-600">
                   Total: {deposits
-                    .filter((d: any) => selectedDeposits.includes(d.id.toString()))
-                    .reduce((sum: number, d: any) => sum + d.bottleCount, 0)} botellas
+                    .filter((d: any) => selectedDeposits.includes(d.eventId.toString()))
+                    .reduce((sum: number, d: any) => sum + d.quantity, 0)} botellas
                 </p>
               </div>
             )}
 
-            <div>
-              <Label htmlFor="location">Ubicación del Lote</Label>
-              <Input
-                id="location"
-                value={batchLocation}
-                onChange={(e) => setBatchLocation(e.target.value)}
-                placeholder="Ej: Centro de Acopio Norte"
-                className="mt-1"
-              />
-            </div>
+            {/* Mostrar ubicación detectada automáticamente */}
+            {selectedDeposits.length > 0 && (
+              <div>
+                <Label>Ubicación del Lote (Detectada Automáticamente)</Label>
+                <div className={`mt-1 p-3 rounded-md border ${
+                  hasMultipleLocations ? 'bg-red-50 border-red-300' : 'bg-green-50 border-green-300'
+                }`}>
+                  {hasMultipleLocations ? (
+                    <div className="text-red-700">
+                      <FontAwesomeIcon icon="exclamation-triangle" className="mr-2" />
+                      Error: Los depósitos seleccionados pertenecen a diferentes ubicaciones.
+                      <br />
+                      <span className="text-sm">Seleccione depósitos del mismo punto de reciclaje.</span>
+                    </div>
+                  ) : selectedLocation ? (
+                    <div className="text-green-700">
+                      <FontAwesomeIcon icon="map-marker-alt" className="mr-2" />
+                      {selectedLocation}
+                      <span className="text-sm ml-2">(No editable - Garantiza trazabilidad)</span>
+                    </div>
+                  ) : (
+                    <div className="text-gray-500">
+                      Seleccione depósitos para detectar ubicación
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             <div>
               <Label htmlFor="description">Descripción (Opcional)</Label>
@@ -233,7 +282,7 @@ export default function BatchManagement() {
 
             <Button
               onClick={handleCreateBatch}
-              disabled={selectedDeposits.length === 0 || !batchLocation.trim() || createBatchMutation.isPending}
+              disabled={selectedDeposits.length === 0 || hasMultipleLocations || !selectedLocation || createBatchMutation.isPending}
               className="w-full"
             >
               {createBatchMutation.isPending ? (
