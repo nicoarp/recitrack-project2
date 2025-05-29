@@ -376,6 +376,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Endpoint para obtener eventos de proceso disponibles
+  app.get("/api/blockchain/process-events", async (req, res) => {
+    try {
+      if (!blockchainService.isReady()) {
+        res.status(503).json({ 
+          success: false, 
+          error: "Servicio blockchain no disponible",
+          events: [],
+          mode: "offline"
+        });
+        return;
+      }
+
+      // Obtener eventos de tipo Process del contrato
+      try {
+        const processEvents = await blockchainService.getEventsByType('Process');
+        res.json({
+          success: true,
+          events: processEvents,
+          totalEvents: processEvents.length,
+          mode: "blockchain"
+        });
+      } catch (contractError) {
+        console.log("Error accediendo eventos de proceso:", contractError.message);
+        res.status(500).json({ 
+          success: false, 
+          error: `Error de compatibilidad con contrato: ${contractError.message}`,
+          events: [],
+          debug: "No se pudieron obtener eventos de proceso desde blockchain"
+        });
+      }
+    } catch (error) {
+      console.error("Error obteniendo eventos de proceso:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: error.message || "Error al obtener eventos de proceso",
+        events: []
+      });
+    }
+  });
+
   app.get("/api/blockchain/status", async (req, res) => {
     try {
       const isReady = blockchainService.isReady();

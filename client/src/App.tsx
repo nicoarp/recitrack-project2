@@ -20,6 +20,7 @@ import AccessDenied from "@/pages/access-denied";
 import NotFound from "@/pages/not-found";
 import BatchManagement from "@/pages/batch-management";
 import ProcessManagement from "@/pages/process-management";
+import ProcessHistory from "@/pages/process-history";
 import TraceabilityChain from "@/pages/traceability-chain";
 import Sidebar from "@/components/layout/sidebar";
 import MobileNav from "@/components/layout/mobile-nav";
@@ -86,6 +87,7 @@ function Router() {
           <Route path="/admin" component={QRAdmin} />
           <Route path="/batch-management" component={BatchManagement} />
           <Route path="/process-management" component={ProcessManagement} />
+          <Route path="/process-history" component={ProcessHistory} />
           <Route path="/traceability" component={TraceabilityChain} />
         </>
       )}
