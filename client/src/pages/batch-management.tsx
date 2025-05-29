@@ -26,10 +26,22 @@ export default function BatchManagement() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Obtener depósitos disponibles para agrupar
+  // Obtener depósitos disponibles para agrupar desde blockchain
   const { data: deposits = [], isLoading } = useQuery({
-    queryKey: ["/api/bottle-deposits"],
-    select: (data) => data.filter((deposit: any) => !deposit.batchId) // Solo depósitos sin lote asignado
+    queryKey: ["/api/blockchain/deposit-events"],
+    select: (data) => {
+      if (data?.events) {
+        return data.events.map((event: any) => ({
+          id: event.eventId,
+          eventId: event.eventId,
+          location: event.location,
+          quantity: event.quantity,
+          timestamp: new Date(event.timestamp * 1000),
+          description: event.description || `Depósito de ${event.quantity} botellas`
+        }));
+      }
+      return [];
+    }
   });
 
   // Mutación para crear lote

@@ -236,6 +236,50 @@ export class BlockchainService {
     }
   }
 
+  async getEventsByType(eventType) {
+    if (!this.isInitialized) {
+      throw new Error('Servicio blockchain no inicializado');
+    }
+
+    try {
+      console.log(`🔍 Buscando eventos de tipo: ${eventType}`);
+      
+      // Obtener el número total de eventos
+      const nextEventId = await this.contract.nextEventId();
+      const totalEvents = parseInt(nextEventId.toString());
+      
+      const events = [];
+      
+      // Iterar a través de todos los eventos y filtrar por tipo
+      for (let i = 1; i < totalEvents; i++) {
+        try {
+          const event = await this.getEvent(i);
+          if (event && event.eventType === eventType) {
+            events.push({
+              eventId: event.eventId,
+              eventType: event.eventType,
+              location: event.location,
+              quantity: event.quantity,
+              description: event.description,
+              timestamp: event.timestamp,
+              actor: event.actor,
+              relatedIds: event.relatedIds
+            });
+          }
+        } catch (error) {
+          // Si un evento específico no existe, continuar con el siguiente
+          continue;
+        }
+      }
+      
+      console.log(`✅ Encontrados ${events.length} eventos de tipo ${eventType}`);
+      return events;
+    } catch (error) {
+      console.error('❌ Error obteniendo eventos por tipo:', error.message);
+      throw error;
+    }
+  }
+
   // Función auxiliar para formatear eventos al sistema anterior
   formatEventForLegacySystem(event) {
     return {

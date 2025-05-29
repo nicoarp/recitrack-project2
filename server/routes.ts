@@ -294,6 +294,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Endpoint para obtener eventos de depósito disponibles para lotes
+  app.get("/api/blockchain/deposit-events", async (req, res) => {
+    try {
+      if (!blockchainService.isReady()) {
+        res.status(503).json({ 
+          success: false, 
+          error: "Servicio blockchain no disponible",
+          events: [],
+          mode: "offline"
+        });
+        return;
+      }
+
+      // Obtener todos los eventos de tipo Deposit del contrato
+      const depositEvents = await blockchainService.getEventsByType('Deposit');
+      
+      res.json({
+        success: true,
+        events: depositEvents,
+        totalEvents: depositEvents.length,
+        mode: "blockchain"
+      });
+    } catch (error) {
+      console.error("Error obteniendo eventos de depósito:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: error.message || "Error al obtener eventos de depósito",
+        events: []
+      });
+    }
+  });
+
   app.get("/api/blockchain/status", async (req, res) => {
     try {
       const isReady = blockchainService.isReady();
