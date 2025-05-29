@@ -99,7 +99,7 @@ export class BlockchainService {
       
       // Obtener el ID del evento recién creado
       const nextEventId = await this.contract.nextEventId();
-      const currentEventId = nextEventId - 1;
+      const currentEventId = nextEventId - 1n;
       
       return {
         success: true,
