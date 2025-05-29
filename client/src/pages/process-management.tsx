@@ -57,10 +57,8 @@ export default function ProcessManagement() {
   // Mutación para registrar proceso
   const createProcessMutation = useMutation({
     mutationFn: async (processData: any) => {
-      return apiRequest('/api/blockchain/register-multi-stage', {
-        method: 'POST',
-        body: processData
-      });
+      const response = await apiRequest('POST', '/api/blockchain/register-multi-stage', processData);
+      return await response.json();
     },
     onSuccess: (result) => {
       toast({

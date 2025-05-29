@@ -29,8 +29,8 @@ export default function TraceabilityChain() {
   const { data: traceabilityData, isLoading, error, refetch } = useQuery({
     queryKey: ["/api/blockchain/traceability", eventId],
     queryFn: async () => {
-      const response = await apiRequest(`/api/blockchain/traceability/${eventId}`);
-      return response;
+      const response = await apiRequest('GET', `/api/blockchain/traceability/${eventId}`);
+      return await response.json();
     },
     enabled: shouldFetch && eventId.trim() !== "",
   });

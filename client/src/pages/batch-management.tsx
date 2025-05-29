@@ -35,10 +35,8 @@ export default function BatchManagement() {
   // Mutación para crear lote
   const createBatchMutation = useMutation({
     mutationFn: async (batchData: any) => {
-      return apiRequest('/api/blockchain/register-multi-stage', {
-        method: 'POST',
-        body: batchData
-      });
+      const response = await apiRequest('POST', '/api/blockchain/register-multi-stage', batchData);
+      return await response.json();
     },
     onSuccess: (result) => {
       toast({
