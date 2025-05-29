@@ -18,6 +18,9 @@ import Login from "@/pages/login";
 import Help from "@/pages/help";
 import AccessDenied from "@/pages/access-denied";
 import NotFound from "@/pages/not-found";
+import BatchManagement from "@/pages/batch-management";
+import ProcessManagement from "@/pages/process-management";
+import TraceabilityChain from "@/pages/traceability-chain";
 import Sidebar from "@/components/layout/sidebar";
 import MobileNav from "@/components/layout/mobile-nav";
 import { useState } from "react";
@@ -81,6 +84,9 @@ function Router() {
           <Route path="/statistics" component={Statistics} />
           <Route path="/qr-admin" component={QRAdmin} />
           <Route path="/admin" component={QRAdmin} />
+          <Route path="/batch-management" component={BatchManagement} />
+          <Route path="/process-management" component={ProcessManagement} />
+          <Route path="/traceability" component={TraceabilityChain} />
         </>
       )}
       
