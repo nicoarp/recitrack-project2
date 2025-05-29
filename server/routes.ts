@@ -307,15 +307,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return;
       }
 
-      // Obtener todos los eventos de tipo Deposit del contrato
-      const depositEvents = await blockchainService.getEventsByType('Deposit');
-      
-      res.json({
-        success: true,
-        events: depositEvents,
-        totalEvents: depositEvents.length,
-        mode: "blockchain"
-      });
+      // Intentar obtener eventos reales del contrato
+      try {
+        const depositEvents = await blockchainService.getEventsByType('Deposit');
+        res.json({
+          success: true,
+          events: depositEvents,
+          totalEvents: depositEvents.length,
+          mode: "blockchain"
+        });
+      } catch (contractError) {
+        console.log("Error accediendo al contrato:", contractError.message);
+        res.status(500).json({ 
+          success: false, 
+          error: `Error de compatibilidad con contrato: ${contractError.message}`,
+          events: [],
+          debug: "El ABI del contrato no coincide con la implementación desplegada"
+        });
+      }
     } catch (error) {
       console.error("Error obteniendo eventos de depósito:", error);
       res.status(500).json({ 

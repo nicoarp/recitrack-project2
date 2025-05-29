@@ -242,38 +242,42 @@ export class BlockchainService {
     }
 
     try {
-      console.log(`🔍 Buscando eventos de tipo: ${eventType}`);
+      console.log(`🔍 Buscando eventos de tipo: ${eventType} usando eventos de blockchain`);
       
-      // Obtener el número total de eventos
-      const nextEventId = await this.contract.nextEventId();
-      const totalEvents = parseInt(nextEventId.toString());
+      // Usar filtros de eventos en lugar de llamadas directas al contrato
+      const filter = this.contract.filters.EventRegistered();
+      const events = await this.contract.queryFilter(filter, -10000); // Últimos 10000 bloques
       
-      const events = [];
+      const depositEvents = [];
       
-      // Iterar a través de todos los eventos y filtrar por tipo
-      for (let i = 1; i < totalEvents; i++) {
+      for (const event of events) {
         try {
-          const event = await this.getEvent(i);
-          if (event && event.eventType === eventType) {
-            events.push({
-              eventId: event.eventId,
-              eventType: event.eventType,
-              location: event.location,
-              quantity: event.quantity,
-              description: event.description,
-              timestamp: event.timestamp,
-              actor: event.actor,
-              relatedIds: event.relatedIds
+          const args = event.args;
+          const eventTypeNames = ['Deposit', 'Batch', 'Process', 'Product'];
+          const eventTypeName = eventTypeNames[parseInt(args.eventType.toString())] || 'Unknown';
+          
+          if (eventTypeName === eventType) {
+            depositEvents.push({
+              eventId: parseInt(args.eventId.toString()),
+              eventType: eventTypeName,
+              location: args.location,
+              quantity: parseInt(args.quantity.toString()),
+              description: args.description,
+              timestamp: parseInt(args.timestamp.toString()),
+              actor: args.actor,
+              relatedIds: args.relatedIds.map(id => id.toString()),
+              blockNumber: event.blockNumber,
+              transactionHash: event.transactionHash
             });
           }
         } catch (error) {
-          // Si un evento específico no existe, continuar con el siguiente
+          console.log('Error procesando evento:', error.message);
           continue;
         }
       }
       
-      console.log(`✅ Encontrados ${events.length} eventos de tipo ${eventType}`);
-      return events;
+      console.log(`✅ Encontrados ${depositEvents.length} eventos de tipo ${eventType}`);
+      return depositEvents;
     } catch (error) {
       console.error('❌ Error obteniendo eventos por tipo:', error.message);
       throw error;
