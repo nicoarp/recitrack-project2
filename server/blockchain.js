@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 
 // Cargar ABI desde archivo actualizado
-const contractAbiPath = path.join(process.cwd(), 'server', 'contract-abi.json');
+const contractAbiPath = path.join(process.cwd(), 'server', 'contract-abi-updated.json');
 const CONTRACT_ABI = JSON.parse(fs.readFileSync(contractAbiPath, 'utf8'));
 
 export class BlockchainService {
@@ -242,42 +242,41 @@ export class BlockchainService {
     }
 
     try {
-      console.log(`🔍 Buscando eventos de tipo: ${eventType} usando eventos de blockchain`);
+      console.log(`🔍 Buscando eventos de tipo: ${eventType} usando mapping directo`);
       
-      // Usar filtros de eventos en lugar de llamadas directas al contrato
-      const filter = this.contract.filters.EventRegistered();
-      const events = await this.contract.queryFilter(filter, -10000); // Últimos 10000 bloques
+      // Obtener el número total de eventos
+      const nextEventId = await this.contract.nextEventId();
+      const totalEvents = parseInt(nextEventId.toString());
       
-      const depositEvents = [];
+      const events = [];
+      const eventTypeNames = ['Deposit', 'Batch', 'Process', 'Product'];
       
-      for (const event of events) {
+      // Iterar a través de todos los eventos usando el mapping events
+      for (let i = 1; i < totalEvents; i++) {
         try {
-          const args = event.args;
-          const eventTypeNames = ['Deposit', 'Batch', 'Process', 'Product'];
-          const eventTypeName = eventTypeNames[parseInt(args.eventType.toString())] || 'Unknown';
+          const event = await this.contract.events(i);
+          const eventTypeName = eventTypeNames[parseInt(event[0].toString())] || 'Unknown';
           
           if (eventTypeName === eventType) {
-            depositEvents.push({
-              eventId: parseInt(args.eventId.toString()),
+            events.push({
+              eventId: i,
               eventType: eventTypeName,
-              location: args.location,
-              quantity: parseInt(args.quantity.toString()),
-              description: args.description,
-              timestamp: parseInt(args.timestamp.toString()),
-              actor: args.actor,
-              relatedIds: args.relatedIds.map(id => id.toString()),
-              blockNumber: event.blockNumber,
-              transactionHash: event.transactionHash
+              location: event[1],
+              quantity: parseInt(event[2].toString()),
+              actor: event[3],
+              timestamp: parseInt(event[4].toString()),
+              description: event[5],
+              relatedIds: [] // Las relatedIds están en getEvent, no en events mapping
             });
           }
         } catch (error) {
-          console.log('Error procesando evento:', error.message);
+          console.log(`Error accediendo evento ${i}:`, error.message);
           continue;
         }
       }
       
-      console.log(`✅ Encontrados ${depositEvents.length} eventos de tipo ${eventType}`);
-      return depositEvents;
+      console.log(`✅ Encontrados ${events.length} eventos de tipo ${eventType}`);
+      return events;
     } catch (error) {
       console.error('❌ Error obteniendo eventos por tipo:', error.message);
       throw error;
