@@ -28,15 +28,19 @@ export class BlockchainService {
 
       if (!operatorPrivateKey || operatorPrivateKey === '0x0000000000000000000000000000000000000000000000000000000000000000') {
         console.warn('⚠️  OPERATOR_PRIVATE_KEY no configurado. Modo offline activado.');
+        this.isInitialized = false;
         return false;
       }
 
+      // Configurar provider
       this.provider = new ethers.JsonRpcProvider(rpcUrl);
+      
+      // Configurar wallet del operador
       this.operatorWallet = new ethers.Wallet(operatorPrivateKey, this.provider);
+      
+      // Configurar contrato
       this.contract = new ethers.Contract(contractAddress, CONTRACT_ABI, this.operatorWallet);
-
-      // Verificar conexión
-      await this.provider.getNetwork();
+      
       console.log('✅ Conexión blockchain establecida');
       console.log('📍 Operador:', this.operatorWallet.address);
       console.log('🔗 Contrato:', contractAddress);
@@ -44,7 +48,8 @@ export class BlockchainService {
       this.isInitialized = true;
       return true;
     } catch (error) {
-      console.error('❌ Error inicializando blockchain:', error.message);
+      console.error('❌ Error inicializando blockchain:', error);
+      this.isInitialized = false;
       return false;
     }
   }
@@ -213,7 +218,6 @@ export class BlockchainService {
       console.log(`🔍 Consultando historial del lote: ${batchId}`);
       
       // Para el nuevo contrato, buscaremos eventos relacionados con este batchId
-      // Por ahora mantenemos compatibilidad con el sistema anterior
       const eventIdNumber = parseInt(batchId);
       
       try {
@@ -240,25 +244,7 @@ export class BlockchainService {
       location: event.location,
       timestamp: event.timestamp,
       actor: event.actor
-          description: event.description,
-          location: event.location,
-          userAddress: event.userAddress,
-          quantity: event.quantity ? parseInt(event.quantity.toString()) : 1,
-          timestamp: parseInt(event.timestamp.toString()) * 1000,
-          actor: event.actor
-        });
-      }
-      
-      console.log(`✅ ${formattedEvents.length} eventos encontrados para lote ${batchId}`);
-      return formattedEvents;
-    } catch (error) {
-      if (error.code === 'BAD_DATA' && error.value === '0x') {
-        console.log(`📭 No hay datos para botella ${bottleId} - esto es normal si no se han registrado eventos`);
-        return [];
-      }
-      console.error('❌ Error consultando historial:', error.message);
-      throw error;
-    }
+    };
   }
 
   async getOperatorBalance() {
@@ -280,9 +266,8 @@ export class BlockchainService {
   }
 
   isReady() {
-    return this.isInitialized;
+    return this.isInitialized && this.contract && this.operatorWallet;
   }
 }
 
-// Instancia singleton
 export const blockchainService = new BlockchainService();

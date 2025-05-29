@@ -120,13 +120,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return;
       }
 
+      // Adaptar al nuevo formato del contrato
       const result = await blockchainService.registerEvent(
-        eventData.batchId,
-        eventData.eventType,
-        eventData.description,
+        'Deposit', // Tipo de evento para depósitos de usuarios
+        [], // Sin IDs relacionados para depósitos iniciales
         eventData.location,
-        '0x0000000000000000000000000000000000000000', // userAddress - Anónimo
-        eventData.bottleCount // quantity real
+        eventData.bottleCount,
+        eventData.description
       );
 
       res.json({
@@ -134,6 +134,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         txHash: result.txHash,
         blockNumber: result.blockNumber,
         gasUsed: result.gasUsed,
+        eventId: result.eventId,
+        eventType: result.eventType,
         mode: "blockchain"
       });
     } catch (error) {
@@ -141,6 +143,121 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         success: false, 
         error: error.message || "Error al registrar evento" 
+      });
+    }
+  });
+
+  // Nuevo endpoint para registrar eventos multi-etapa específicos
+  app.post('/api/blockchain/register-multi-stage', async (req, res) => {
+    try {
+      const { eventType, relatedIds, location, quantity, description } = req.body;
+
+      const validEventTypes = ['Deposit', 'Batch', 'Process', 'Product'];
+      if (!validEventTypes.includes(eventType)) {
+        return res.status(400).json({ 
+          error: `Tipo de evento inválido. Debe ser: ${validEventTypes.join(', ')}` 
+        });
+      }
+
+      if (!blockchainService.isReady()) {
+        res.status(503).json({ 
+          success: false, 
+          error: "Servicio blockchain no disponible",
+          mode: "offline"
+        });
+        return;
+      }
+
+      const result = await blockchainService.registerEvent(
+        eventType,
+        relatedIds || [],
+        location,
+        quantity,
+        description
+      );
+
+      res.json({
+        success: true,
+        txHash: result.txHash,
+        blockNumber: result.blockNumber,
+        gasUsed: result.gasUsed,
+        eventId: result.eventId,
+        eventType: result.eventType,
+        mode: "blockchain"
+      });
+    } catch (error) {
+      console.error("Error registrando evento multi-etapa:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: error.message || "Error al registrar evento" 
+      });
+    }
+  });
+
+  // Endpoint para obtener un evento específico
+  app.get('/api/blockchain/event/:eventId', async (req, res) => {
+    try {
+      const { eventId } = req.params;
+
+      if (!blockchainService.isReady()) {
+        res.status(503).json({ 
+          success: false, 
+          error: "Servicio blockchain no disponible",
+          mode: "offline"
+        });
+        return;
+      }
+
+      const event = await blockchainService.getEvent(eventId);
+      
+      if (!event) {
+        return res.status(404).json({
+          success: false,
+          error: "Evento no encontrado"
+        });
+      }
+
+      res.json({
+        success: true,
+        event: event,
+        mode: "blockchain"
+      });
+    } catch (error) {
+      console.error("Error consultando evento:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: error.message || "Error al consultar evento" 
+      });
+    }
+  });
+
+  // Endpoint para obtener cadena completa de trazabilidad
+  app.get('/api/blockchain/traceability/:eventId', async (req, res) => {
+    try {
+      const { eventId } = req.params;
+
+      if (!blockchainService.isReady()) {
+        res.status(503).json({ 
+          success: false, 
+          error: "Servicio blockchain no disponible",
+          mode: "offline"
+        });
+        return;
+      }
+
+      const chain = await blockchainService.getTraceabilityChain(eventId);
+
+      res.json({
+        success: true,
+        chain: chain,
+        totalEvents: chain.length,
+        mode: "blockchain"
+      });
+    } catch (error) {
+      console.error("Error construyendo cadena de trazabilidad:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: error.message || "Error al obtener trazabilidad" 
       });
     }
   });
