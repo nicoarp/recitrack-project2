@@ -21,6 +21,8 @@ import NotFound from "@/pages/not-found";
 import BatchManagement from "@/pages/batch-management";
 import ProcessManagement from "@/pages/process-management";
 import ProcessHistory from "@/pages/process-history";
+import ProductManagement from "@/pages/product-management";
+import ProductHistory from "@/pages/product-history";
 import TraceabilityChain from "@/pages/traceability-chain";
 import Sidebar from "@/components/layout/sidebar";
 import MobileNav from "@/components/layout/mobile-nav";
@@ -88,6 +90,8 @@ function Router() {
           <Route path="/batch-management" component={BatchManagement} />
           <Route path="/process-management" component={ProcessManagement} />
           <Route path="/process-history" component={ProcessHistory} />
+          <Route path="/product-management" component={ProductManagement} />
+          <Route path="/product-history" component={ProductHistory} />
           <Route path="/traceability" component={TraceabilityChain} />
         </>
       )}

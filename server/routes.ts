@@ -417,6 +417,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Endpoint para obtener eventos de productos finales
+  app.get("/api/blockchain/product-events", async (req, res) => {
+    try {
+      if (!blockchainService.isReady()) {
+        res.status(503).json({ 
+          success: false, 
+          error: "Servicio blockchain no disponible",
+          events: [],
+          mode: "offline"
+        });
+        return;
+      }
+
+      // Obtener eventos de tipo Product del contrato
+      try {
+        const productEvents = await blockchainService.getEventsByType('Product');
+        res.json({
+          success: true,
+          events: productEvents,
+          totalEvents: productEvents.length,
+          mode: "blockchain"
+        });
+      } catch (contractError) {
+        console.log("Error accediendo eventos de producto:", contractError.message);
+        res.status(500).json({ 
+          success: false, 
+          error: `Error de compatibilidad con contrato: ${contractError.message}`,
+          events: [],
+          debug: "No se pudieron obtener eventos de producto desde blockchain"
+        });
+      }
+    } catch (error) {
+      console.error("Error obteniendo eventos de producto:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: error.message || "Error al obtener eventos de producto",
+        events: []
+      });
+    }
+  });
+
   app.get("/api/blockchain/status", async (req, res) => {
     try {
       const isReady = blockchainService.isReady();
