@@ -34,10 +34,10 @@ export default function Sidebar({ isMobile = false, closeMobileMenu }: SidebarPr
   const adminNavItems = [
     { path: "/", label: "Dashboard Admin", icon: "home" },
     { path: "/recycling-points", label: "Puntos de Depósito", icon: "map-marker-alt" },
-    { path: "/qr-admin", label: "Generador de QR", icon: "qr-code" },
-    { path: "/batch-management", label: "Gestión de Lotes", icon: "archive" },
-    { path: "/process-management", label: "Gestión de Procesos", icon: "gear" },
-    { path: "/traceability", label: "Trazabilidad", icon: "share-alt" },
+    { path: "/qr-admin", label: "Generador de QR", icon: "code" },
+    { path: "/batch-management", label: "Gestión de Lotes", icon: "cubes" },
+    { path: "/process-management", label: "Gestión de Procesos", icon: "cogs" },
+    { path: "/traceability", label: "Trazabilidad", icon: "sitemap" },
     { path: "/statistics", label: "Reportes", icon: "chart-line" },
     { path: "/history", label: "Historial Global", icon: "history" },
   ];
