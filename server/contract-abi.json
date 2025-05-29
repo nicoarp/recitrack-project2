@@ -2,19 +2,14 @@
 	{
 		"inputs": [
 			{
-				"internalType": "uint256",
-				"name": "batchId",
-				"type": "uint256"
-			},
-			{
-				"internalType": "string",
+				"internalType": "enum TraceabilityMVP.EventType",
 				"name": "eventType",
-				"type": "string"
+				"type": "uint8"
 			},
 			{
-				"internalType": "string",
-				"name": "description",
-				"type": "string"
+				"internalType": "uint256[]",
+				"name": "relatedIds",
+				"type": "uint256[]"
 			},
 			{
 				"internalType": "string",
@@ -22,14 +17,14 @@
 				"type": "string"
 			},
 			{
-				"internalType": "address",
-				"name": "userAddress",
-				"type": "address"
-			},
-			{
 				"internalType": "uint256",
 				"name": "quantity",
 				"type": "uint256"
+			},
+			{
+				"internalType": "string",
+				"name": "description",
+				"type": "string"
 			}
 		],
 		"name": "registerEvent",
@@ -43,24 +38,14 @@
 				"internalType": "uint256",
 				"name": "",
 				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
 			}
 		],
-		"name": "batchHistory",
+		"name": "events",
 		"outputs": [
 			{
-				"internalType": "string",
+				"internalType": "enum TraceabilityMVP.EventType",
 				"name": "eventType",
-				"type": "string"
-			},
-			{
-				"internalType": "string",
-				"name": "description",
-				"type": "string"
+				"type": "uint8"
 			},
 			{
 				"internalType": "string",
@@ -68,14 +53,14 @@
 				"type": "string"
 			},
 			{
-				"internalType": "address",
-				"name": "userAddress",
-				"type": "address"
-			},
-			{
 				"internalType": "uint256",
 				"name": "quantity",
 				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "actor",
+				"type": "address"
 			},
 			{
 				"internalType": "uint256",
@@ -83,9 +68,9 @@
 				"type": "uint256"
 			},
 			{
-				"internalType": "address",
-				"name": "actor",
-				"type": "address"
+				"internalType": "string",
+				"name": "description",
+				"type": "string"
 			}
 		],
 		"stateMutability": "view",
@@ -95,114 +80,102 @@
 		"inputs": [
 			{
 				"internalType": "uint256",
-				"name": "batchId",
+				"name": "eventId",
 				"type": "uint256"
 			}
 		],
-		"name": "getBatchHistory",
+		"name": "getEvent",
 		"outputs": [
 			{
-				"components": [
-					{
-						"internalType": "string",
-						"name": "eventType",
-						"type": "string"
-					},
-					{
-						"internalType": "string",
-						"name": "description",
-						"type": "string"
-					},
-					{
-						"internalType": "string",
-						"name": "location",
-						"type": "string"
-					},
-					{
-						"internalType": "address",
-						"name": "userAddress",
-						"type": "address"
-					},
-					{
-						"internalType": "uint256",
-						"name": "quantity",
-						"type": "uint256"
-					},
-					{
-						"internalType": "uint256",
-						"name": "timestamp",
-						"type": "uint256"
-					},
-					{
-						"internalType": "address",
-						"name": "actor",
-						"type": "address"
-					}
-				],
-				"internalType": "struct RecyclingMVP.Event[]",
+				"internalType": "enum TraceabilityMVP.EventType",
 				"name": "",
-				"type": "tuple[]"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
+				"type": "uint8"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "",
+				"type": "uint256[]"
+			},
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			},
 			{
 				"internalType": "uint256",
-				"name": "batchId",
+				"name": "",
 				"type": "uint256"
 			},
 			{
 				"internalType": "address",
-				"name": "user",
+				"name": "",
 				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			},
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
 			}
 		],
-		"name": "getUserEvents",
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "id",
+				"type": "uint256"
+			}
+		],
+		"name": "getLinkedEvents",
 		"outputs": [
 			{
-				"components": [
-					{
-						"internalType": "string",
-						"name": "eventType",
-						"type": "string"
-					},
-					{
-						"internalType": "string",
-						"name": "description",
-						"type": "string"
-					},
-					{
-						"internalType": "string",
-						"name": "location",
-						"type": "string"
-					},
-					{
-						"internalType": "address",
-						"name": "userAddress",
-						"type": "address"
-					},
-					{
-						"internalType": "uint256",
-						"name": "quantity",
-						"type": "uint256"
-					},
-					{
-						"internalType": "uint256",
-						"name": "timestamp",
-						"type": "uint256"
-					},
-					{
-						"internalType": "address",
-						"name": "actor",
-						"type": "address"
-					}
-				],
-				"internalType": "struct RecyclingMVP.Event[]",
+				"internalType": "uint256[]",
 				"name": "",
-				"type": "tuple[]"
+				"type": "uint256[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "links",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "nextEventId",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
 			}
 		],
 		"stateMutability": "view",

@@ -18,7 +18,7 @@ export class BlockchainService {
     try {
       // Configuración para Sepolia testnet
       const rpcUrl = process.env.SEPOLIA_RPC_URL || 'https://sepolia.infura.io/v3/YOUR_INFURA_KEY';
-      const contractAddress = process.env.CONTRACT_ADDRESS || '0x0000000000000000000000000000000000000000';
+      const contractAddress = process.env.CONTRACT_ADDRESS || '0x60C06476501C50C36F76462975EcE12c9cdEA851';
       const operatorPrivateKey = process.env.OPERATOR_PRIVATE_KEY;
 
       console.log('🔍 Verificando configuración blockchain...');
@@ -49,25 +49,40 @@ export class BlockchainService {
     }
   }
 
-  async registerEvent(batchId, eventType, description, location, userAddress, quantity) {
+  async registerEvent(eventType, relatedIds, location, quantity, description) {
     if (!this.isInitialized) {
       throw new Error('Servicio blockchain no inicializado');
     }
 
     try {
-      console.log(`📝 Registrando evento: ${eventType} para lote ${batchId}`);
+      // Mapear tipos de evento a números según el enum del contrato
+      const eventTypeMap = {
+        'Deposit': 0,
+        'Batch': 1, 
+        'Process': 2,
+        'Product': 3
+      };
+
+      const eventTypeNumber = eventTypeMap[eventType];
+      if (eventTypeNumber === undefined) {
+        throw new Error(`Tipo de evento no válido: ${eventType}. Debe ser: Deposit, Batch, Process, Product`);
+      }
+
+      console.log(`📝 Registrando evento: ${eventType} (${eventTypeNumber})`);
+      console.log(`🔗 IDs relacionados: [${relatedIds.join(', ')}]`);
+      console.log(`📍 Ubicación: ${location}`);
+      console.log(`📊 Cantidad: ${quantity}`);
       
       // Convertir parámetros numéricos
-      const batchIdNumber = parseInt(batchId);
       const quantityNumber = parseInt(quantity);
+      const relatedIdsNumbers = relatedIds.map(id => parseInt(id));
       
       const tx = await this.contract.registerEvent(
-        batchIdNumber,
-        eventType,
-        description,
+        eventTypeNumber,
+        relatedIdsNumbers,
         location,
-        userAddress,
-        quantityNumber
+        quantityNumber,
+        description
       );
 
       console.log(`⏳ Transacción enviada: ${tx.hash}`);
@@ -77,14 +92,114 @@ export class BlockchainService {
       
       console.log(`✅ Evento registrado en bloque: ${receipt.blockNumber}`);
       
+      // Obtener el ID del evento recién creado
+      const nextEventId = await this.contract.nextEventId();
+      const currentEventId = nextEventId - 1;
+      
       return {
         success: true,
         txHash: tx.hash,
         blockNumber: receipt.blockNumber,
-        gasUsed: receipt.gasUsed.toString()
+        gasUsed: receipt.gasUsed.toString(),
+        eventId: currentEventId.toString(),
+        eventType: eventType
       };
     } catch (error) {
       console.error('❌ Error registrando evento:', error.message);
+      throw error;
+    }
+  }
+
+  // Nueva función para obtener un evento específico
+  async getEvent(eventId) {
+    if (!this.isInitialized) {
+      throw new Error('Servicio blockchain no inicializado');
+    }
+
+    try {
+      console.log(`🔍 Consultando evento: ${eventId}`);
+      
+      const eventIdNumber = parseInt(eventId);
+      const event = await this.contract.getEvent(eventIdNumber);
+      
+      if (!event) {
+        return null;
+      }
+
+      // Mapear números de tipo de evento a nombres
+      const eventTypeNames = ['Deposit', 'Batch', 'Process', 'Product'];
+      
+      return {
+        eventId: eventIdNumber,
+        eventType: eventTypeNames[event[0]] || 'Unknown',
+        relatedIds: event[1].map(id => id.toString()),
+        location: event[2],
+        quantity: event[3].toString(),
+        actor: event[4],
+        timestamp: parseInt(event[5].toString()),
+        description: event[6]
+      };
+    } catch (error) {
+      console.error('❌ Error consultando evento:', error.message);
+      throw error;
+    }
+  }
+
+  // Nueva función para obtener eventos relacionados
+  async getLinkedEvents(eventId) {
+    if (!this.isInitialized) {
+      throw new Error('Servicio blockchain no inicializado');
+    }
+
+    try {
+      console.log(`🔗 Consultando eventos vinculados a: ${eventId}`);
+      
+      const eventIdNumber = parseInt(eventId);
+      const linkedIds = await this.contract.getLinkedEvents(eventIdNumber);
+      
+      return linkedIds.map(id => id.toString());
+    } catch (error) {
+      console.error('❌ Error consultando eventos vinculados:', error.message);
+      throw error;
+    }
+  }
+
+  // Función actualizada para obtener cadena completa de trazabilidad
+  async getTraceabilityChain(eventId) {
+    if (!this.isInitialized) {
+      throw new Error('Servicio blockchain no inicializado');
+    }
+
+    try {
+      console.log(`🔍 Construyendo cadena de trazabilidad para evento: ${eventId}`);
+      
+      const chain = [];
+      const visited = new Set();
+      
+      // Función recursiva para construir la cadena
+      const buildChain = async (currentEventId) => {
+        if (visited.has(currentEventId)) return;
+        visited.add(currentEventId);
+        
+        const event = await this.getEvent(currentEventId);
+        if (event) {
+          chain.push(event);
+          
+          // Agregar eventos relacionados
+          for (const relatedId of event.relatedIds) {
+            await buildChain(parseInt(relatedId));
+          }
+        }
+      };
+      
+      await buildChain(parseInt(eventId));
+      
+      // Ordenar por timestamp
+      chain.sort((a, b) => a.timestamp - b.timestamp);
+      
+      return chain;
+    } catch (error) {
+      console.error('❌ Error construyendo cadena de trazabilidad:', error.message);
       throw error;
     }
   }
@@ -97,40 +212,34 @@ export class BlockchainService {
     try {
       console.log(`🔍 Consultando historial del lote: ${batchId}`);
       
-      // Convertir batchId a número para el contrato
-      const batchIdNumber = parseInt(batchId);
-      console.log(`🔢 Usando batchId como número: ${batchIdNumber}`);
+      // Para el nuevo contrato, buscaremos eventos relacionados con este batchId
+      // Por ahora mantenemos compatibilidad con el sistema anterior
+      const eventIdNumber = parseInt(batchId);
       
-      // Verificar que el contrato está inicializado correctamente
-      console.log(`🔗 Dirección del contrato: ${this.contract.target}`);
-      const network = await this.provider.getNetwork();
-      console.log(`🌐 Red conectada:`, {
-        name: network.name,
-        chainId: network.chainId,
-        ensAddress: network.ensAddress
-      });
-      
-      const events = await this.contract.getBatchHistory(batchIdNumber);
-      
-      if (!events || events.length === 0) {
-        return [];
+      try {
+        const event = await this.getEvent(eventIdNumber);
+        if (event) {
+          return [this.formatEventForLegacySystem(event)];
+        }
+      } catch (error) {
+        console.log('Evento no encontrado, retornando array vacío');
       }
       
-      // Convertir eventos a formato seguro con los nuevos campos
-      const formattedEvents = [];
-      for (const event of events) {
-        console.log('🔍 Datos del evento desde contrato:', {
-          eventType: event.eventType,
-          description: event.description,
-          location: event.location,
-          userAddress: event.userAddress,
-          quantity: event.quantity?.toString(),
-          timestamp: event.timestamp?.toString(),
-          actor: event.actor
-        });
-        
-        formattedEvents.push({
-          eventType: event.eventType,
+      return [];
+    } catch (error) {
+      console.error('❌ Error consultando historial:', error.message);
+      throw error;
+    }
+  }
+
+  // Función auxiliar para formatear eventos al sistema anterior
+  formatEventForLegacySystem(event) {
+    return {
+      eventType: event.eventType,
+      description: event.description,
+      location: event.location,
+      timestamp: event.timestamp,
+      actor: event.actor
           description: event.description,
           location: event.location,
           userAddress: event.userAddress,
