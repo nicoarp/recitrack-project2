@@ -259,11 +259,7 @@ export default function Statistics() {
                 {(!depositsData || depositsData.length === 0) && (
                   <p className="text-gray-500 text-sm">Los gráficos se mostrarán cuando haya más actividad registrada en blockchain</p>
                 )}
-                  <Tooltip />
-                  <Legend />
-                  <Line type="monotone" dataKey="kg" stroke="#065F46" activeDot={{ r: 8 }} name="Kg Plástico Reciclado" />
-                </LineChart>
-              </ResponsiveContainer>
+              </div>
             </div>
           </CardContent>
         </Card>
