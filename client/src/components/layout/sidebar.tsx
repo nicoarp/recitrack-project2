@@ -37,6 +37,7 @@ export default function Sidebar({ isMobile = false, closeMobileMenu }: SidebarPr
     { path: "/qr-admin", label: "Generador de QR", icon: "code" },
     { path: "/batch-management", label: "Gestión de Lotes", icon: "cubes" },
     { path: "/process-management", label: "Gestión de Procesos", icon: "cogs" },
+    { path: "/process-history", label: "Historial de Procesos", icon: "clock" },
     { path: "/traceability", label: "Trazabilidad", icon: "sitemap" },
     { path: "/statistics", label: "Reportes", icon: "chart-line" },
     { path: "/history", label: "Historial Global", icon: "history" },
