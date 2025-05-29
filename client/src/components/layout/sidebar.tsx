@@ -35,6 +35,9 @@ export default function Sidebar({ isMobile = false, closeMobileMenu }: SidebarPr
     { path: "/", label: "Dashboard Admin", icon: "home" },
     { path: "/recycling-points", label: "Puntos de Depósito", icon: "map-marker-alt" },
     { path: "/qr-admin", label: "Generador de QR", icon: "tools" },
+    { path: "/batch-management", label: "Gestión de Lotes", icon: "layer-group" },
+    { path: "/process-management", label: "Gestión de Procesos", icon: "cogs" },
+    { path: "/traceability", label: "Trazabilidad", icon: "link" },
     { path: "/statistics", label: "Reportes", icon: "chart-line" },
     { path: "/history", label: "Historial Global", icon: "history" },
   ];
