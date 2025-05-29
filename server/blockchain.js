@@ -18,7 +18,7 @@ export class BlockchainService {
     try {
       // Configuración para Sepolia testnet
       const rpcUrl = process.env.SEPOLIA_RPC_URL || 'https://sepolia.infura.io/v3/YOUR_INFURA_KEY';
-      const contractAddress = '0x60C06476501C50C36F76462975EcE12c9cdEA851';
+      const contractAddress = process.env.CONTRACT_ADDRESS;
       const operatorPrivateKey = process.env.OPERATOR_PRIVATE_KEY;
 
       console.log('🔍 Verificando configuración blockchain...');
@@ -136,10 +136,10 @@ export class BlockchainService {
       
       return {
         eventId: eventIdNumber,
-        eventType: eventTypeNames[event[0]] || 'Unknown',
+        eventType: eventTypeNames[parseInt(event[0].toString())] || 'Unknown',
         relatedIds: event[1].map(id => id.toString()),
         location: event[2],
-        quantity: event[3].toString(),
+        quantity: parseInt(event[3].toString()),
         actor: event[4],
         timestamp: parseInt(event[5].toString()),
         description: event[6]
