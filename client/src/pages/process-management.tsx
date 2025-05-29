@@ -27,30 +27,21 @@ export default function ProcessManagement() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Simulamos obtener lotes disponibles - en producción esto vendría del blockchain
+  // Obtener lotes disponibles desde blockchain
   const { data: batches = [], isLoading } = useQuery({
-    queryKey: ["/api/blockchain/batches"],
-    queryFn: async () => {
-      // Por ahora simulamos datos de lotes disponibles
-      // En producción, esto consultaría eventos tipo "Batch" del blockchain
-      return [
-        {
-          eventId: "1001",
-          location: "Centro de Acopio Norte",
-          quantity: 150,
-          timestamp: Date.now() - 86400000,
-          description: "Lote con 5 depósitos (150 botellas)",
-          relatedIds: ["101", "102", "103", "104", "105"]
-        },
-        {
-          eventId: "1002", 
-          location: "Centro de Acopio Sur",
-          quantity: 200,
-          timestamp: Date.now() - 172800000,
-          description: "Lote con 7 depósitos (200 botellas)",
-          relatedIds: ["106", "107", "108", "109", "110", "111", "112"]
-        }
-      ];
+    queryKey: ["/api/blockchain/batch-events"],
+    select: (data) => {
+      if (data?.events) {
+        return data.events.map((event: any) => ({
+          eventId: event.eventId.toString(),
+          location: event.location,
+          quantity: event.quantity,
+          timestamp: event.timestamp * 1000, // Convertir a milliseconds
+          description: event.description || `Lote con ${event.quantity} botellas`,
+          relatedIds: event.relatedIds || []
+        }));
+      }
+      return [];
     }
   });
 

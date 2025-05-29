@@ -335,6 +335,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Endpoint para obtener eventos de lote disponibles para procesar
+  app.get("/api/blockchain/batch-events", async (req, res) => {
+    try {
+      if (!blockchainService.isReady()) {
+        res.status(503).json({ 
+          success: false, 
+          error: "Servicio blockchain no disponible",
+          events: [],
+          mode: "offline"
+        });
+        return;
+      }
+
+      // Obtener eventos de tipo Batch del contrato
+      try {
+        const batchEvents = await blockchainService.getEventsByType('Batch');
+        res.json({
+          success: true,
+          events: batchEvents,
+          totalEvents: batchEvents.length,
+          mode: "blockchain"
+        });
+      } catch (contractError) {
+        console.log("Error accediendo eventos de lote:", contractError.message);
+        res.status(500).json({ 
+          success: false, 
+          error: `Error de compatibilidad con contrato: ${contractError.message}`,
+          events: [],
+          debug: "No se pudieron obtener eventos de lote desde blockchain"
+        });
+      }
+    } catch (error) {
+      console.error("Error obteniendo eventos de lote:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: error.message || "Error al obtener eventos de lote",
+        events: []
+      });
+    }
+  });
+
   app.get("/api/blockchain/status", async (req, res) => {
     try {
       const isReady = blockchainService.isReady();
