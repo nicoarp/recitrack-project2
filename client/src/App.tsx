@@ -100,6 +100,7 @@ function Router() {
       {/* Páginas siempre disponibles */}
       <Route path="/profile" component={Profile} />
       <Route path="/login" component={Login} />
+      <Route path="/register" component={Register} />
       <Route path="/help" component={Help} />
       <Route path="/access-denied" component={AccessDenied} />
       

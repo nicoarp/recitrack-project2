@@ -56,7 +56,7 @@ function ProfileContent() {
                   Iniciar Sesión
                 </Button>
                 <Button 
-                  onClick={() => window.location.href = '/login'}
+                  onClick={() => window.location.href = '/register'}
                   variant="outline"
                   className="border-primary-500 text-primary-500 hover:bg-primary-50 text-lg px-8 py-3"
                   size="lg"

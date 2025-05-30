@@ -89,6 +89,18 @@ export default function Login() {
             </Button>
           </form>
           
+          <div className="mt-6 text-center">
+            <p className="text-sm text-gray-600">
+              ¿No tienes una cuenta?{' '}
+              <button
+                onClick={() => setLocation('/register')}
+                className="font-medium text-primary-600 hover:text-primary-500"
+              >
+                Créala aquí
+              </button>
+            </p>
+          </div>
+
           <div className="mt-6 border-t pt-6">
             <h3 className="text-sm font-medium text-gray-700 mb-3">Cuentas de demostración:</h3>
             <div className="space-y-2 text-xs text-gray-600">
