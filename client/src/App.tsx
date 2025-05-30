@@ -15,6 +15,7 @@ import Statistics from "@/pages/statistics";
 import Profile from "@/pages/profile";
 import QRAdmin from "@/pages/qr-admin";
 import Login from "@/pages/login";
+import Register from "@/pages/register";
 import Help from "@/pages/help";
 import AccessDenied from "@/pages/access-denied";
 import NotFound from "@/pages/not-found";

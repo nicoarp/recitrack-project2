@@ -17,8 +17,9 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   
-  // Métodos preparados para implementación futura
+  // Métodos de autenticación
   loginWithEmail: (email: string, password: string) => Promise<void>;
+  registerWithEmail: (email: string, password: string, name: string) => Promise<void>;
   loginWithWallet: (walletAddress: string) => Promise<void>;
   logout: () => void;
   
@@ -40,13 +41,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loginWithEmail = async (email: string, password: string) => {
     setIsLoading(true);
     try {
+      // Verificar cuentas registradas por usuarios
+      const registeredUsers = JSON.parse(localStorage.getItem('ecotraza_registered_users') || '[]');
+      const registeredUser = registeredUsers.find((u: any) => u.email === email && u.password === password);
+      
+      if (registeredUser) {
+        setUser(registeredUser.user);
+        localStorage.setItem('ecotraza_user', JSON.stringify(registeredUser.user));
+        return;
+      }
+      
       // Credenciales de demostración
       if (email === "admin@ecotraza.com" && password === "admin123") {
         const adminUser: AuthUser = {
           id: 1,
           email: "admin@ecotraza.com", 
           name: "Administrador EcoTraza",
-          walletAddress: "0x123...abc",
+          walletAddress: "0xd1ca86232E3c54725c4cD05c653c78922061180f",
           role: 'admin',
           totalDeposits: 15,
           totalBottles: 145
@@ -68,6 +79,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         throw new Error('Credenciales incorrectas');
       }
+    } catch (error) {
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const registerWithEmail = async (email: string, password: string, name: string) => {
+    setIsLoading(true);
+    try {
+      // Verificar si el usuario ya existe
+      const existingUsers = JSON.parse(localStorage.getItem('ecotraza_registered_users') || '[]');
+      const userExists = existingUsers.find((u: any) => u.email === email);
+      
+      if (userExists) {
+        throw new Error('Ya existe una cuenta con este email');
+      }
+      
+      // Crear nuevo usuario
+      const newUser: AuthUser = {
+        id: Date.now(), // ID único basado en timestamp
+        email: email,
+        name: name,
+        walletAddress: `0x${Math.random().toString(16).substr(2, 40)}`, // Wallet simulada
+        role: 'user',
+        totalDeposits: 0,
+        totalBottles: 0
+      };
+      
+      // Guardar credenciales
+      const newUserCredentials = {
+        email: email,
+        password: password,
+        user: newUser
+      };
+      
+      existingUsers.push(newUserCredentials);
+      localStorage.setItem('ecotraza_registered_users', JSON.stringify(existingUsers));
+      
+      // Iniciar sesión automáticamente
+      setUser(newUser);
+      localStorage.setItem('ecotraza_user', JSON.stringify(newUser));
     } catch (error) {
       throw error;
     } finally {
@@ -116,6 +169,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isAuthenticated,
     isLoading,
     loginWithEmail,
+    registerWithEmail,
     loginWithWallet,
     logout,
     isAdmin,
