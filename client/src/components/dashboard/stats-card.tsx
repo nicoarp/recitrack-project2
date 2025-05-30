@@ -35,12 +35,7 @@ export function StatsGrid() {
   const { data: depositsData = [] } = useQuery({
     queryKey: ["/api/blockchain/deposit-events"],
     staleTime: 0,
-    select: (data: any) => {
-      console.log("🔍 Datos recibidos de blockchain:", data);
-      const events = data?.events || [];
-      console.log("📊 Eventos procesados:", events);
-      return events;
-    }
+    select: (data: any) => data?.events || []
   });
 
   // Obtener estadísticas reales de lotes
@@ -69,12 +64,8 @@ export function StatsGrid() {
 
   // Calcular estadísticas reales
   const totalBottles = depositsData.reduce((sum: number, event: any) => {
-    console.log(`🧮 Sumando evento ${event.eventId}: ${event.quantity} botellas`);
     return sum + (event.quantity || 0);
   }, 0);
-  
-  console.log(`🎯 Total calculado: ${totalBottles} botellas`);
-  console.log(`📋 Array de depósitos completo:`, depositsData);
   
   const totalBatches = batchesData.length;
   const totalProcesses = processesData.length;
