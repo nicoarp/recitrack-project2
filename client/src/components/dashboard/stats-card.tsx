@@ -32,41 +32,54 @@ export function StatsCard({ title, value, icon, iconBgColor, iconColor }: StatsC
 
 export function StatsGrid() {
   // Obtener estadísticas reales de depósitos
-  const { data: depositsData } = useQuery({
+  const { data: depositsData = [] } = useQuery({
     queryKey: ["/api/blockchain/deposit-events"],
-    select: (data) => data?.events || []
+    staleTime: 0,
+    select: (data: any) => {
+      console.log("🔍 Datos recibidos de blockchain:", data);
+      const events = data?.events || [];
+      console.log("📊 Eventos procesados:", events);
+      return events;
+    }
   });
 
   // Obtener estadísticas reales de lotes
-  const { data: batchesData } = useQuery({
+  const { data: batchesData = [] } = useQuery({
     queryKey: ["/api/blockchain/batch-events"],
-    select: (data) => data?.events || []
+    select: (data: any) => data?.events || []
   });
 
   // Obtener estadísticas reales de procesos
-  const { data: processesData } = useQuery({
+  const { data: processesData = [] } = useQuery({
     queryKey: ["/api/blockchain/process-events"],
-    select: (data) => data?.events || []
+    select: (data: any) => data?.events || []
   });
 
   // Obtener estadísticas reales de productos
-  const { data: productsData } = useQuery({
+  const { data: productsData = [] } = useQuery({
     queryKey: ["/api/blockchain/product-events"],
-    select: (data) => data?.events || []
+    select: (data: any) => data?.events || []
   });
 
   // Obtener puntos de reciclaje reales
-  const { data: recyclingPointsData } = useQuery({
+  const { data: recyclingPointsData = [] } = useQuery({
     queryKey: ["/api/recycling-points"],
-    select: (data) => data || []
+    select: (data: any) => data || []
   });
 
   // Calcular estadísticas reales
-  const totalBottles = depositsData?.reduce((sum: number, event: any) => sum + (event.quantity || 0), 0) || 0;
-  const totalBatches = batchesData?.length || 0;
-  const totalProcesses = processesData?.length || 0;
-  const totalProducts = productsData?.length || 0;
-  const totalRecyclingPoints = recyclingPointsData?.length || 0;
+  const totalBottles = depositsData.reduce((sum: number, event: any) => {
+    console.log(`🧮 Sumando evento ${event.eventId}: ${event.quantity} botellas`);
+    return sum + (event.quantity || 0);
+  }, 0);
+  
+  console.log(`🎯 Total calculado: ${totalBottles} botellas`);
+  console.log(`📋 Array de depósitos completo:`, depositsData);
+  
+  const totalBatches = batchesData.length;
+  const totalProcesses = processesData.length;
+  const totalProducts = productsData.length;
+  const totalRecyclingPoints = recyclingPointsData.length;
 
   // Calcular peso estimado (0.025kg por botella PET promedio)
   const estimatedWeight = Math.round(totalBottles * 0.025 * 10) / 10;

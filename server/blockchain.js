@@ -14,6 +14,28 @@ export class BlockchainService {
     this.isInitialized = false;
   }
 
+  // Función auxiliar para reintentos con delay exponencial
+  async retryWithDelay(fn, maxRetries = 3, baseDelay = 1000) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        return await fn();
+      } catch (error) {
+        if (attempt === maxRetries) {
+          throw error;
+        }
+        
+        // Si es error de "Too Many Requests", esperar más tiempo
+        const isRateLimited = error.message.includes('Too Many Requests') || 
+                             error.code === 'BAD_DATA';
+        
+        const delay = isRateLimited ? baseDelay * Math.pow(2, attempt) : baseDelay;
+        console.log(`⏳ Intento ${attempt} falló, reintentando en ${delay}ms...`);
+        
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+
   async initialize() {
     try {
       // Configuración para Sepolia testnet
@@ -244,8 +266,10 @@ export class BlockchainService {
     try {
       console.log(`🔍 Buscando eventos de tipo: ${eventType} usando mapping directo`);
       
-      // Obtener el número total de eventos
-      const nextEventId = await this.contract.nextEventId();
+      // Obtener el número total de eventos con reintentos
+      const nextEventId = await this.retryWithDelay(async () => {
+        return await this.contract.nextEventId();
+      });
       const totalEvents = parseInt(nextEventId.toString());
       
       const events = [];
@@ -254,7 +278,10 @@ export class BlockchainService {
       // Iterar a través de todos los eventos usando el mapping events
       for (let i = 1; i < totalEvents; i++) {
         try {
-          const event = await this.contract.events(i);
+          const event = await this.retryWithDelay(async () => {
+            return await this.contract.events(i);
+          }, 3, 500); // Menor delay para consultas individuales
+          
           const eventTypeName = eventTypeNames[parseInt(event[0].toString())] || 'Unknown';
           
           if (eventTypeName === eventType) {
@@ -270,7 +297,7 @@ export class BlockchainService {
             });
           }
         } catch (error) {
-          console.log(`Error accediendo evento ${i}:`, error.message);
+          console.log(`❌ Error accediendo evento ${i} después de reintentos:`, error.message);
           continue;
         }
       }
