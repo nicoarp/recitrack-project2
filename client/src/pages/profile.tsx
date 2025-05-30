@@ -21,7 +21,7 @@ function ProfileContent() {
     select: (data: any) => {
       if (!data?.events || !user?.walletAddress) return [];
       return data.events.filter((event: any) => 
-        event.actor.toLowerCase() === user.walletAddress.toLowerCase()
+        event.actor.toLowerCase() === user.walletAddress!.toLowerCase()
       );
     }
   });
@@ -147,17 +147,30 @@ function ProfileContent() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {userActivity.map((activity, index) => (
-                  <div key={index} className="flex items-start">
-                    <div className="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 mr-3">
-                      <FontAwesomeIcon icon="bottle-water" />
-                    </div>
-                    <div>
-                      <p className="font-medium">{activity.event}</p>
-                      <p className="text-sm text-gray-500">{activity.location} - {activity.date}</p>
-                    </div>
+                {userDeposits.length > 0 ? (
+                  userDeposits
+                    .sort((a: any, b: any) => b.timestamp - a.timestamp)
+                    .map((deposit: any, index: number) => (
+                      <div key={deposit.eventId} className="flex items-start">
+                        <div className="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 mr-3">
+                          <FontAwesomeIcon icon="bottle-water" />
+                        </div>
+                        <div>
+                          <p className="font-medium">Depósito de {deposit.quantity} botellas</p>
+                          <p className="text-sm text-gray-500">
+                            {deposit.location} - {new Date(deposit.timestamp * 1000).toLocaleDateString('es-ES')}
+                          </p>
+                          <p className="text-xs text-gray-400 mt-1">{deposit.description}</p>
+                        </div>
+                      </div>
+                    ))
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <FontAwesomeIcon icon="info-circle" className="text-4xl mb-3" />
+                    <p>No tienes actividad de reciclaje registrada.</p>
+                    <p className="text-sm mt-1">Realiza tu primer depósito para comenzar a ver tu historial.</p>
                   </div>
-                ))}
+                )}
               </div>
             </CardContent>
           </Card>
@@ -184,7 +197,7 @@ function ProfileContent() {
                     <Label htmlFor="name">Nombre</Label>
                     <Input 
                       id="name" 
-                      defaultValue={userProfile.name} 
+                      defaultValue={user?.name || ''} 
                       disabled={!isEditing} 
                     />
                   </div>
@@ -193,11 +206,23 @@ function ProfileContent() {
                     <Input 
                       id="email" 
                       type="email" 
-                      defaultValue={userProfile.email} 
+                      defaultValue={user?.email || ''} 
                       disabled={!isEditing} 
                     />
                   </div>
                 </div>
+                
+                {user?.walletAddress && (
+                  <div className="space-y-2">
+                    <Label htmlFor="wallet">Dirección de Wallet</Label>
+                    <Input 
+                      id="wallet" 
+                      value={user.walletAddress}
+                      disabled
+                      className="font-mono text-sm"
+                    />
+                  </div>
+                )}
                 
                 {isEditing && (
                   <Button className="mt-4 bg-primary-500 hover:bg-primary-600">
@@ -209,34 +234,23 @@ function ProfileContent() {
               <Separator className="my-6" />
               
               <div>
-                <h3 className="text-lg font-medium mb-4">Preferencias de Notificaciones</h3>
+                <h3 className="text-lg font-medium mb-4">Configuración de Cuenta</h3>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="email-notifications">Notificaciones por Email</Label>
-                    <input 
-                      type="checkbox" 
-                      id="email-notifications" 
-                      className="toggle" 
-                      defaultChecked 
-                    />
+                    <div>
+                      <Label>Tipo de Usuario</Label>
+                      <p className="text-sm text-gray-500">
+                        {user?.role === 'admin' ? 'Administrador' : 'Usuario Regular'}
+                      </p>
+                    </div>
                   </div>
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="activity-summary">Resumen de Actividad Semanal</Label>
-                    <input 
-                      type="checkbox" 
-                      id="activity-summary" 
-                      className="toggle" 
-                      defaultChecked 
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="new-features">Nuevas Funcionalidades</Label>
-                    <input 
-                      type="checkbox" 
-                      id="new-features" 
-                      className="toggle" 
-                      defaultChecked 
-                    />
+                    <div>
+                      <Label>Estado de Wallet</Label>
+                      <p className="text-sm text-gray-500">
+                        {user?.walletAddress ? 'Conectada' : 'No conectada'}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
