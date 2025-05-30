@@ -39,19 +39,68 @@ function ProfileContent() {
       <div className="max-w-4xl mx-auto">
         <Card className="mb-8">
           <CardContent className="pt-6">
-            <div className="text-center py-12">
-              <FontAwesomeIcon icon="user-circle" className="text-6xl text-gray-300 mb-4" />
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Inicia sesión para ver tu perfil</h2>
-              <p className="text-gray-600 mb-6">
-                Para acceder a tus estadísticas personales y historial de reciclaje, 
-                necesitas iniciar sesión en tu cuenta.
+            <div className="text-center py-16">
+              <FontAwesomeIcon icon="user-circle" className="text-8xl text-gray-300 mb-6" />
+              <h2 className="text-3xl font-bold text-gray-900 mb-4">Accede a tu perfil personal</h2>
+              <p className="text-gray-600 mb-8 text-lg max-w-md mx-auto">
+                Crea una cuenta o inicia sesión para ver tus estadísticas de reciclaje, 
+                historial de depósitos y logros personales.
               </p>
-              <Button 
-                onClick={() => window.location.href = '/login'}
-                className="bg-primary-500 hover:bg-primary-600"
-              >
-                Iniciar Sesión
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button 
+                  onClick={() => window.location.href = '/login'}
+                  className="bg-primary-500 hover:bg-primary-600 text-lg px-8 py-3"
+                  size="lg"
+                >
+                  <FontAwesomeIcon icon="sign-in-alt" className="mr-2" />
+                  Iniciar Sesión
+                </Button>
+                <Button 
+                  onClick={() => window.location.href = '/login'}
+                  variant="outline"
+                  className="border-primary-500 text-primary-500 hover:bg-primary-50 text-lg px-8 py-3"
+                  size="lg"
+                >
+                  <FontAwesomeIcon icon="user-plus" className="mr-2" />
+                  Crear Cuenta
+                </Button>
+              </div>
+              <div className="mt-8 text-sm text-gray-500">
+                <p>¿Nuevo en EcoTraza?</p>
+                <p>Únete y comienza a rastrear tu impacto ambiental</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        {/* Card informativa sobre beneficios */}
+        <Card>
+          <CardContent className="pt-6">
+            <h3 className="text-xl font-semibold text-gray-900 mb-4 text-center">
+              ¿Por qué crear una cuenta?
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="text-center">
+                <FontAwesomeIcon icon="chart-line" className="text-3xl text-primary-500 mb-3" />
+                <h4 className="font-medium mb-2">Estadísticas personales</h4>
+                <p className="text-sm text-gray-600">
+                  Rastrea tus botellas recicladas y tu impacto ambiental
+                </p>
+              </div>
+              <div className="text-center">
+                <FontAwesomeIcon icon="history" className="text-3xl text-secondary-500 mb-3" />
+                <h4 className="font-medium mb-2">Historial completo</h4>
+                <p className="text-sm text-gray-600">
+                  Revisa todos tus depósitos y actividad de reciclaje
+                </p>
+              </div>
+              <div className="text-center">
+                <FontAwesomeIcon icon="award" className="text-3xl text-green-500 mb-3" />
+                <h4 className="font-medium mb-2">Logros y reconocimientos</h4>
+                <p className="text-sm text-gray-600">
+                  Gana niveles basados en tu actividad real de reciclaje
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
