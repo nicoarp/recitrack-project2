@@ -106,27 +106,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Se requiere userId o userEmail" });
       }
 
-      // Crear un sistema de seguimiento local para depósitos por usuario
-      // Dado que el blockchain no almacena información de usuario directamente,
-      // necesitamos mantener un registro local de qué depósitos corresponden a qué usuarios
-      
-      // Por ahora, como solución temporal, devolvemos estadísticas basadas en
-      // los depósitos más recientes del blockchain para el usuario actual
-      try {
-        const depositEvents = await blockchainService.getEventsByType('Deposit');
-        
-        // Para usuarios autenticados, mostraremos una porción de los depósitos totales
-        // Esto es temporal hasta implementar un sistema de tracking más robusto
-        let userBottles = 0;
-        let userDeposits = 0;
-        
-        if (userId || userEmail) {
-          // Simular estadísticas basadas en actividad reciente del usuario
-          // En una implementación real, almacenaríamos estas asociaciones en la base de datos
-          const recentEvents = depositEvents.slice(-3); // Últimos 3 eventos como ejemplo
-          userBottles = recentEvents.reduce((sum: number, event: any) => sum + (event.quantity || 0), 0);
-          userDeposits = recentEvents.length;
-        }
+      // Obtener estadísticas directamente de la base de datos local
+      if (userId) {
+        const userIdNumber = parseInt(userId as string);
+        const userBottles = await storage.getUserTotalBottles(userIdNumber);
+        const userDeposits = await storage.getUserTotalDeposits(userIdNumber);
 
         res.json({
           totalBottles: userBottles,
@@ -134,8 +118,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           totalBatches: userDeposits,
           environmentalImpact: (userBottles * 0.075).toFixed(1)
         });
-      } catch (blockchainError) {
-        console.log("Blockchain no disponible, retornando estadísticas iniciales");
+      } else {
+        // Si no hay userId, devolver estadísticas vacías
         res.json({
           totalBottles: 0,
           totalDeposits: 0,
@@ -175,7 +159,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return;
       }
 
-      // Adaptar al nuevo formato del contrato
+      // Registrar en blockchain
       const result = await blockchainService.registerEvent(
         'Deposit', // Tipo de evento para depósitos de usuarios
         [], // Sin IDs relacionados para depósitos iniciales
@@ -185,6 +169,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         eventData.userId,
         eventData.userEmail
       );
+
+      // También guardar en base de datos local para estadísticas de usuario
+      if (eventData.userId) {
+        try {
+          await storage.createBottleDeposit({
+            depositId: `DEPOSIT-${Date.now()}`,
+            batchId: parseInt(eventData.batchId),
+            bottleCount: eventData.bottleCount,
+            location: eventData.location,
+            userId: eventData.userId,
+            txHash: result.txHash
+          });
+        } catch (dbError) {
+          console.log("Error guardando en BD local:", dbError);
+        }
+      }
 
       res.json({
         success: true,

@@ -232,13 +232,30 @@ export class MemStorage implements IStorage {
     const id = this.depositIdCounter++;
     const timestamp = new Date();
     const deposit: BottleDeposit = { 
-      ...insertDeposit, 
-      id, 
-      timestamp,
+      id,
+      depositId: insertDeposit.depositId,
+      batchId: insertDeposit.batchId,
+      bottleCount: insertDeposit.bottleCount,
+      location: insertDeposit.location,
       userId: insertDeposit.userId || null,
-      txHash: insertDeposit.txHash || null
+      txHash: insertDeposit.txHash || null,
+      blockNumber: insertDeposit.blockNumber || null,
+      timestamp,
+      deviceInfo: insertDeposit.deviceInfo || null,
+      ipAddress: insertDeposit.ipAddress || null
     };
     this.bottleDeposits.set(id, deposit);
+    
+    // Update user statistics if deposit is associated with a user
+    if (insertDeposit.userId) {
+      const user = this.users.get(insertDeposit.userId);
+      if (user) {
+        user.totalDeposits = (user.totalDeposits || 0) + 1;
+        user.totalBottles = (user.totalBottles || 0) + insertDeposit.bottleCount;
+        this.users.set(insertDeposit.userId, user);
+      }
+    }
+    
     return deposit;
   }
   
