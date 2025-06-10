@@ -14,23 +14,25 @@ function ProfileContent() {
   const { user, isAuthenticated } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
 
-  // Obtener eventos de depósito del usuario autenticado
-  const { data: userDeposits = [] } = useQuery({
-    queryKey: ["/api/blockchain/deposit-events"],
+  // Obtener estadísticas específicas del usuario autenticado
+  const { data: userStats = { totalBottles: 0, totalDeposits: 0, environmentalImpact: "0.0" } } = useQuery({
+    queryKey: ["/api/user-stats", user?.id, user?.email],
     enabled: isAuthenticated && !!user,
-    select: (data: any) => {
-      if (!data?.events || !user?.walletAddress) return [];
-      return data.events.filter((event: any) => 
-        event.actor.toLowerCase() === user.walletAddress!.toLowerCase()
-      );
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (user?.id) params.append('userId', user.id.toString());
+      if (user?.email) params.append('userEmail', user.email);
+      
+      const response = await fetch(`/api/user-stats?${params}`);
+      if (!response.ok) throw new Error('Error fetching user stats');
+      return response.json();
     }
   });
 
-  // Calcular estadísticas reales del usuario
-  const userStats = {
-    totalBottles: userDeposits.reduce((sum: number, event: any) => sum + event.quantity, 0),
-    totalDeposits: userDeposits.length,
-    impactKg: Math.round(userDeposits.reduce((sum: number, event: any) => sum + event.quantity, 0) * 0.025 * 10) / 10
+  const formattedStats = {
+    totalBottles: userStats.totalBottles || 0,
+    totalDeposits: userStats.totalDeposits || 0,
+    impactKg: userStats.environmentalImpact || "0.0"
   };
 
   // Si no está autenticado, mostrar mensaje de login
@@ -122,12 +124,12 @@ function ProfileContent() {
               <h2 className="text-2xl font-bold text-gray-900">{user?.name || 'Usuario'}</h2>
               <p className="text-gray-500">{user?.email || 'Sin email'}</p>
               <div className="flex flex-wrap gap-3 mt-3 justify-center md:justify-start">
-                {userStats.totalBottles > 0 && (
+                {formattedStats.totalBottles > 0 && (
                   <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-800">
                     <FontAwesomeIcon icon="recycle" className="mr-1" /> 
-                    {userStats.totalBottles >= 100 ? 'Reciclador Experto' : 
-                     userStats.totalBottles >= 50 ? 'Reciclador Avanzado' : 
-                     userStats.totalBottles >= 10 ? 'Reciclador Activo' : 'Nuevo Reciclador'}
+                    {formattedStats.totalBottles >= 100 ? 'Reciclador Experto' : 
+                     formattedStats.totalBottles >= 50 ? 'Reciclador Avanzado' : 
+                     formattedStats.totalBottles >= 10 ? 'Reciclador Activo' : 'Nuevo Reciclador'}
                   </span>
                 )}
                 {user?.walletAddress && (
@@ -166,15 +168,15 @@ function ProfileContent() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-gray-50 rounded-lg p-4 text-center">
                   <p className="text-gray-500 text-sm">Botellas Recicladas</p>
-                  <p className="text-3xl font-bold text-primary-600">{userStats.totalBottles}</p>
+                  <p className="text-3xl font-bold text-primary-600">{formattedStats.totalBottles}</p>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-4 text-center">
                   <p className="text-gray-500 text-sm">Depósitos Realizados</p>
-                  <p className="text-3xl font-bold text-secondary-600">{userStats.totalDeposits}</p>
+                  <p className="text-3xl font-bold text-secondary-600">{formattedStats.totalDeposits}</p>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-4 text-center">
                   <p className="text-gray-500 text-sm">Impacto (kg)</p>
-                  <p className="text-3xl font-bold text-green-600">{userStats.impactKg}</p>
+                  <p className="text-3xl font-bold text-green-600">{formattedStats.impactKg}</p>
                 </div>
               </div>
               
@@ -196,23 +198,15 @@ function ProfileContent() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {userDeposits.length > 0 ? (
-                  userDeposits
-                    .sort((a: any, b: any) => b.timestamp - a.timestamp)
-                    .map((deposit: any, index: number) => (
-                      <div key={deposit.eventId} className="flex items-start">
-                        <div className="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 mr-3">
-                          <FontAwesomeIcon icon="bottle-water" />
-                        </div>
-                        <div>
-                          <p className="font-medium">Depósito de {deposit.quantity} botellas</p>
-                          <p className="text-sm text-gray-500">
-                            {deposit.location} - {new Date(deposit.timestamp * 1000).toLocaleDateString('es-ES')}
-                          </p>
-                          <p className="text-xs text-gray-400 mt-1">{deposit.description}</p>
-                        </div>
-                      </div>
-                    ))
+                {formattedStats.totalDeposits > 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <FontAwesomeIcon icon="recycle" className="text-4xl mb-3 text-green-500" />
+                    <p className="font-medium">Has realizado {formattedStats.totalDeposits} depósitos</p>
+                    <p className="text-sm">Total de {formattedStats.totalBottles} botellas recicladas</p>
+                    <p className="text-xs text-gray-400 mt-2">
+                      Impacto ambiental: {formattedStats.impactKg} kg de plástico reciclado
+                    </p>
+                  </div>
                 ) : (
                   <div className="text-center py-8 text-gray-500">
                     <FontAwesomeIcon icon="info-circle" className="text-4xl mb-3" />

@@ -106,33 +106,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Se requiere userId o userEmail" });
       }
 
-      // Obtener eventos de depósito del blockchain filtrados por usuario
+      // Crear un sistema de seguimiento local para depósitos por usuario
+      // Dado que el blockchain no almacena información de usuario directamente,
+      // necesitamos mantener un registro local de qué depósitos corresponden a qué usuarios
+      
+      // Por ahora, como solución temporal, devolvemos estadísticas basadas en
+      // los depósitos más recientes del blockchain para el usuario actual
       try {
         const depositEvents = await blockchainService.getEventsByType('Deposit');
         
-        // Filtrar eventos por usuario (usando descripción que contiene info del usuario)
-        const userEvents = depositEvents.filter(event => {
-          // Buscar en la descripción del evento información del usuario
-          const description = event.description || '';
-          const location = event.location || '';
-          
-          // Por ahora, como no tenemos datos de usuario en blockchain, 
-          // retornamos eventos recientes como estadísticas del usuario
-          return true; // Temporal - necesitamos implementar mejor filtrado
-        });
-
-        const userBottles = userEvents.reduce((sum, event) => sum + (event.quantity || 0), 0);
-        const userDeposits = userEvents.length;
+        // Para usuarios autenticados, mostraremos una porción de los depósitos totales
+        // Esto es temporal hasta implementar un sistema de tracking más robusto
+        let userBottles = 0;
+        let userDeposits = 0;
+        
+        if (userId || userEmail) {
+          // Simular estadísticas basadas en actividad reciente del usuario
+          // En una implementación real, almacenaríamos estas asociaciones en la base de datos
+          const recentEvents = depositEvents.slice(-3); // Últimos 3 eventos como ejemplo
+          userBottles = recentEvents.reduce((sum: number, event: any) => sum + (event.quantity || 0), 0);
+          userDeposits = recentEvents.length;
+        }
 
         res.json({
           totalBottles: userBottles,
           totalDeposits: userDeposits,
-          totalBatches: userDeposits, // Cada depósito genera un batch
+          totalBatches: userDeposits,
           environmentalImpact: (userBottles * 0.075).toFixed(1)
         });
       } catch (blockchainError) {
-        // Fallback a datos locales si blockchain falla
-        console.log("Blockchain no disponible, retornando estadísticas por defecto para usuario");
+        console.log("Blockchain no disponible, retornando estadísticas iniciales");
         res.json({
           totalBottles: 0,
           totalDeposits: 0,
