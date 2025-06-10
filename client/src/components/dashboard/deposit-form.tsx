@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { QRScanner } from "@/components/qr/qr-scanner";
+import { useAuth } from "@/hooks/use-auth";
 
 // Definimos el esquema de validación
 const formSchema = z.object({
@@ -30,6 +31,7 @@ interface DepositFormProps {
 
 export function DepositForm({ prefilledLocation }: DepositFormProps) {
   const { toast } = useToast();
+  const { user, isAuthenticated } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showQRScanner, setShowQRScanner] = useState(false);
   const [scannedLocation, setScannedLocation] = useState<any>(null);
@@ -60,7 +62,9 @@ export function DepositForm({ prefilledLocation }: DepositFormProps) {
           eventType: "DepositoLote", 
           description: `${values.bottleCount} botellas depositadas`,
           location: prefilledLocation ? prefilledLocation.name : values.location,
-          bottleCount: parseInt(values.bottleCount)
+          bottleCount: parseInt(values.bottleCount),
+          userId: isAuthenticated ? user?.id : null,
+          userEmail: isAuthenticated ? user?.email : null
         })
       });
       

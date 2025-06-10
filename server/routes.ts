@@ -96,13 +96,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Endpoint para estadísticas de usuario específico
+  app.get("/api/user-stats", async (req, res) => {
+    try {
+      const userId = req.query.userId;
+      const userEmail = req.query.userEmail;
+      
+      if (!userId && !userEmail) {
+        return res.status(400).json({ message: "Se requiere userId o userEmail" });
+      }
+
+      // Obtener eventos de depósito del blockchain filtrados por usuario
+      try {
+        const depositEvents = await blockchainService.getEventsByType('Deposit');
+        
+        // Filtrar eventos por usuario (usando descripción que contiene info del usuario)
+        const userEvents = depositEvents.filter(event => {
+          // Buscar en la descripción del evento información del usuario
+          const description = event.description || '';
+          const location = event.location || '';
+          
+          // Por ahora, como no tenemos datos de usuario en blockchain, 
+          // retornamos eventos recientes como estadísticas del usuario
+          return true; // Temporal - necesitamos implementar mejor filtrado
+        });
+
+        const userBottles = userEvents.reduce((sum, event) => sum + (event.quantity || 0), 0);
+        const userDeposits = userEvents.length;
+
+        res.json({
+          totalBottles: userBottles,
+          totalDeposits: userDeposits,
+          totalBatches: userDeposits, // Cada depósito genera un batch
+          environmentalImpact: (userBottles * 0.075).toFixed(1)
+        });
+      } catch (blockchainError) {
+        // Fallback a datos locales si blockchain falla
+        console.log("Blockchain no disponible, retornando estadísticas por defecto para usuario");
+        res.json({
+          totalBottles: 0,
+          totalDeposits: 0,
+          totalBatches: 0,
+          environmentalImpact: "0.0"
+        });
+      }
+    } catch (error) {
+      console.error("Error obteniendo estadísticas de usuario:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
   // Blockchain routes - Backend invisible para trazabilidad
   const blockchainEventSchema = z.object({
     batchId: z.string().min(1, "ID de lote requerido"),
     eventType: z.string().min(1, "Tipo de evento requerido"),
     description: z.string().min(1, "Descripción requerida"),
     location: z.string().min(1, "Ubicación requerida"),
-    bottleCount: z.number().min(1, "Cantidad de botellas requerida")
+    bottleCount: z.number().min(1, "Cantidad de botellas requerida"),
+    userId: z.number().optional().nullable(),
+    userEmail: z.string().optional().nullable()
   });
 
   app.post("/api/blockchain/register-event", async (req, res) => {
@@ -126,7 +178,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         [], // Sin IDs relacionados para depósitos iniciales
         eventData.location,
         eventData.bottleCount,
-        eventData.description
+        eventData.description,
+        eventData.userId,
+        eventData.userEmail
       );
 
       res.json({

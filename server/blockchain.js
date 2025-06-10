@@ -76,7 +76,7 @@ export class BlockchainService {
     }
   }
 
-  async registerEvent(eventType, relatedIds, location, quantity, description) {
+  async registerEvent(eventType, relatedIds, location, quantity, description, userId = null, userEmail = null) {
     if (!this.isInitialized) {
       throw new Error('Servicio blockchain no inicializado');
     }
@@ -99,6 +99,7 @@ export class BlockchainService {
       console.log(`🔗 IDs relacionados: [${relatedIds.join(', ')}]`);
       console.log(`📍 Ubicación: ${location}`);
       console.log(`📊 Cantidad: ${quantity}`);
+      if (userId) console.log(`👤 Usuario: ${userId} (${userEmail})`);
       
       // Convertir parámetros numéricos
       const quantityNumber = parseInt(quantity);
