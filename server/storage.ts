@@ -30,6 +30,11 @@ export interface IStorage {
   getTotalBottles(): Promise<number>;
   getTotalBatches(): Promise<number>;
   getTotalRecyclingPoints(): Promise<number>;
+  
+  // User-specific statistics
+  getUserBottleDeposits(userId: number): Promise<BottleDeposit[]>;
+  getUserTotalBottles(userId: number): Promise<number>;
+  getUserTotalDeposits(userId: number): Promise<number>;
 }
 
 // In-memory storage implementation
@@ -100,16 +105,16 @@ export class MemStorage implements IStorage {
     // Sample users
     const users: InsertUser[] = [
       {
-        username: "usuario1",
         password: "password123",
-        email: "usuario1@example.com",
-        name: "Usuario Uno"
+        email: "admin@ecotraza.com",
+        name: "Administrador",
+        role: "admin"
       },
       {
-        username: "usuario2",
-        password: "password123",
-        email: "usuario2@example.com",
-        name: "Usuario Dos"
+        password: "password123", 
+        email: "user@example.com",
+        name: "Usuario Ejemplo",
+        role: "user"
       }
     ];
     
@@ -120,6 +125,7 @@ export class MemStorage implements IStorage {
     // Sample bottle deposits
     const deposits: InsertBottleDeposit[] = [
       {
+        depositId: "CENTRO-001",
         batchId: 1,
         bottleCount: 15,
         location: "Punto Limpio Central",
@@ -127,6 +133,7 @@ export class MemStorage implements IStorage {
         txHash: "0x123abc..."
       },
       {
+        depositId: "NORTE-002",
         batchId: 1,
         bottleCount: 20,
         location: "Punto Limpio Norte",
@@ -134,6 +141,7 @@ export class MemStorage implements IStorage {
         txHash: "0x456def..."
       },
       {
+        depositId: "CENTRO-001",
         batchId: 2,
         bottleCount: 10,
         location: "Punto Limpio Central",
@@ -154,7 +162,7 @@ export class MemStorage implements IStorage {
 
   async getUserByUsername(username: string): Promise<User | undefined> {
     return Array.from(this.users.values()).find(
-      (user) => user.username === username
+      (user) => user.email === username
     );
   }
   
@@ -166,10 +174,17 @@ export class MemStorage implements IStorage {
     const id = this.userIdCounter++;
     const createdAt = new Date();
     const user: User = { 
-      ...insertUser, 
-      id, 
+      id,
+      email: insertUser.email || null,
+      password: insertUser.password || null,
+      name: insertUser.name || null,
+      walletAddress: insertUser.walletAddress || null,
+      role: insertUser.role || null,
+      isActive: true,
+      totalDeposits: 0,
+      totalBottles: 0,
       createdAt,
-      name: insertUser.name || null 
+      lastLoginAt: null
     };
     this.users.set(id, user);
     return user;
@@ -243,6 +258,23 @@ export class MemStorage implements IStorage {
   
   async getTotalRecyclingPoints(): Promise<number> {
     return this.recyclingPoints.size;
+  }
+  
+  // User-specific statistics
+  async getUserBottleDeposits(userId: number): Promise<BottleDeposit[]> {
+    return Array.from(this.bottleDeposits.values()).filter(
+      deposit => deposit.userId === userId
+    );
+  }
+  
+  async getUserTotalBottles(userId: number): Promise<number> {
+    const userDeposits = await this.getUserBottleDeposits(userId);
+    return userDeposits.reduce((total, deposit) => total + deposit.bottleCount, 0);
+  }
+  
+  async getUserTotalDeposits(userId: number): Promise<number> {
+    const userDeposits = await this.getUserBottleDeposits(userId);
+    return userDeposits.length;
   }
 }
 
