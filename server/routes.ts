@@ -160,7 +160,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return;
       }
 
-      // Registrar en blockchain
+      // Registrar en blockchain con validación robusta
       const result = await blockchainService.registerEvent(
         'Deposit', // Tipo de evento para depósitos de usuarios
         [], // Sin IDs relacionados para depósitos iniciales
@@ -172,7 +172,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         eventData.userEmail
       );
 
-      // También guardar en base de datos local para estadísticas de usuario
+      // Manejar diferentes resultados del contrato
+      if (!result.success) {
+        // Error del contrato - registrar en base de datos con estado de error
+        if (eventData.userId) {
+          try {
+            await storage.createBottleDeposit({
+              depositId: `DEPOSIT-${Date.now()}`,
+              batchId: parseInt(eventData.batchId),
+              bottleCount: eventData.bottleCount,
+              location: eventData.location,
+              userId: eventData.userId,
+              txHash: null,
+              blockNumber: null,
+              eventId: null,
+              evidenceHash: eventData.evidenceHash || "",
+              contractStatus: result.contractStatus || 'failed',
+              contractError: result.error || 'Error desconocido'
+            });
+          } catch (dbError) {
+            console.log("Error guardando en BD local:", dbError);
+          }
+        }
+
+        return res.status(400).json({
+          success: false,
+          error: result.error,
+          errorType: result.errorType,
+          contractStatus: result.contractStatus,
+          mode: "blockchain_error"
+        });
+      }
+
+      // Éxito - guardar en base de datos local con información blockchain
       if (eventData.userId) {
         try {
           await storage.createBottleDeposit({
@@ -181,7 +213,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             bottleCount: eventData.bottleCount,
             location: eventData.location,
             userId: eventData.userId,
-            txHash: result.txHash
+            txHash: result.txHash,
+            blockNumber: result.blockNumber,
+            eventId: result.eventId,
+            evidenceHash: eventData.evidenceHash || "",
+            contractStatus: result.contractStatus || 'confirmed'
           });
         } catch (dbError) {
           console.log("Error guardando en BD local:", dbError);
@@ -195,6 +231,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         gasUsed: result.gasUsed,
         eventId: result.eventId,
         eventType: result.eventType,
+        contractStatus: result.contractStatus,
+        verified: result.verified,
+        attempts: result.attempts,
         mode: "blockchain"
       });
     } catch (error) {
@@ -227,6 +266,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return;
       }
 
+      // Verificar duplicaciones antes de proceder
+      const duplicateCheck = await blockchainService.checkForDuplicateValidation(
+        eventType, 
+        relatedIds || [], 
+        `${eventType.toLowerCase()}_validation`
+      );
+      
+      if (duplicateCheck.isDuplicate) {
+        return res.status(409).json({
+          success: false,
+          error: duplicateCheck.message,
+          errorType: 'DUPLICATE_VALIDATION',
+          existingEventId: duplicateCheck.existingEventId,
+          mode: "validation_error"
+        });
+      }
+
       const result = await blockchainService.registerEvent(
         eventType,
         relatedIds || [],
@@ -236,6 +292,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         evidenceHash
       );
 
+      // Manejar resultado del contrato
+      if (!result.success) {
+        return res.status(400).json({
+          success: false,
+          error: result.error,
+          errorType: result.errorType,
+          contractStatus: result.contractStatus,
+          mode: "blockchain_error"
+        });
+      }
+
       res.json({
         success: true,
         txHash: result.txHash,
@@ -243,6 +310,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         gasUsed: result.gasUsed,
         eventId: result.eventId,
         eventType: result.eventType,
+        contractStatus: result.contractStatus,
+        verified: result.verified,
+        attempts: result.attempts,
         mode: "blockchain"
       });
     } catch (error) {
@@ -541,6 +611,239 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isReady: false,
         error: error.message,
         mode: "offline"
+      });
+    }
+  });
+
+  // === ENDPOINTS DE VALIDACIÓN EN PUNTOS DE CONTROL ===
+
+  // Endpoint para validar lotes (Batch) - Agrupa depósitos
+  app.post('/api/blockchain/validate-batch', async (req, res) => {
+    try {
+      const { depositIds, location, description, evidenceHash = "", validatedBy } = req.body;
+
+      if (!Array.isArray(depositIds) || depositIds.length === 0) {
+        return res.status(400).json({
+          success: false,
+          error: "Se requiere al menos un ID de depósito para crear el lote"
+        });
+      }
+
+      if (!blockchainService.isReady()) {
+        return res.status(503).json({
+          success: false,
+          error: "Servicio blockchain no disponible",
+          mode: "offline"
+        });
+      }
+
+      // Calcular cantidad total de botellas de los depósitos
+      const totalQuantity = depositIds.length * 10; // Estimación simplificada
+
+      console.log(`🔍 Validando lote con depósitos: [${depositIds.join(', ')}]`);
+
+      const result = await blockchainService.registerEvent(
+        'Batch',
+        depositIds, // IDs de los depósitos relacionados
+        location,
+        totalQuantity,
+        description,
+        evidenceHash
+      );
+
+      if (!result.success) {
+        return res.status(400).json({
+          success: false,
+          error: result.error,
+          errorType: result.errorType,
+          contractStatus: result.contractStatus,
+          mode: "blockchain_error"
+        });
+      }
+
+      res.json({
+        success: true,
+        message: "Lote validado exitosamente",
+        txHash: result.txHash,
+        blockNumber: result.blockNumber,
+        gasUsed: result.gasUsed,
+        eventId: result.eventId,
+        eventType: "Batch",
+        relatedDeposits: depositIds,
+        totalQuantity,
+        contractStatus: result.contractStatus,
+        verified: result.verified,
+        attempts: result.attempts,
+        validatedBy,
+        mode: "blockchain"
+      });
+    } catch (error: any) {
+      console.error("Error validando lote:", error);
+      res.status(500).json({
+        success: false,
+        error: error.message || "Error al validar lote"
+      });
+    }
+  });
+
+  // Endpoint para validar procesamiento (Process) - Procesa lotes
+  app.post('/api/blockchain/validate-process', async (req, res) => {
+    try {
+      const { batchIds, location, description, evidenceHash = "", validatedBy, processType } = req.body;
+
+      if (!Array.isArray(batchIds) || batchIds.length === 0) {
+        return res.status(400).json({
+          success: false,
+          error: "Se requiere al menos un ID de lote para el procesamiento"
+        });
+      }
+
+      if (!processType) {
+        return res.status(400).json({
+          success: false,
+          error: "Se requiere especificar el tipo de procesamiento"
+        });
+      }
+
+      if (!blockchainService.isReady()) {
+        return res.status(503).json({
+          success: false,
+          error: "Servicio blockchain no disponible",
+          mode: "offline"
+        });
+      }
+
+      // Calcular cantidad total procesada
+      const totalQuantity = batchIds.length * 50; // Estimación simplificada
+
+      console.log(`🔍 Validando procesamiento de lotes: [${batchIds.join(', ')}]`);
+      console.log(`🏭 Tipo de procesamiento: ${processType}`);
+
+      const result = await blockchainService.registerEvent(
+        'Process',
+        batchIds, // IDs de los lotes relacionados
+        location,
+        totalQuantity,
+        `${processType}: ${description}`,
+        evidenceHash
+      );
+
+      if (!result.success) {
+        return res.status(400).json({
+          success: false,
+          error: result.error,
+          errorType: result.errorType,
+          contractStatus: result.contractStatus,
+          mode: "blockchain_error"
+        });
+      }
+
+      res.json({
+        success: true,
+        message: "Procesamiento validado exitosamente",
+        txHash: result.txHash,
+        blockNumber: result.blockNumber,
+        gasUsed: result.gasUsed,
+        eventId: result.eventId,
+        eventType: "Process",
+        relatedBatches: batchIds,
+        totalQuantity,
+        processType,
+        contractStatus: result.contractStatus,
+        verified: result.verified,
+        attempts: result.attempts,
+        validatedBy,
+        mode: "blockchain"
+      });
+    } catch (error: any) {
+      console.error("Error validando procesamiento:", error);
+      res.status(500).json({
+        success: false,
+        error: error.message || "Error al validar procesamiento"
+      });
+    }
+  });
+
+  // Endpoint para validar producto final (Product) - Producto terminado
+  app.post('/api/blockchain/validate-product', async (req, res) => {
+    try {
+      const { processIds, location, description, evidenceHash = "", validatedBy, productType, qualityScore } = req.body;
+
+      if (!Array.isArray(processIds) || processIds.length === 0) {
+        return res.status(400).json({
+          success: false,
+          error: "Se requiere al menos un ID de proceso para el producto final"
+        });
+      }
+
+      if (!productType) {
+        return res.status(400).json({
+          success: false,
+          error: "Se requiere especificar el tipo de producto"
+        });
+      }
+
+      if (!blockchainService.isReady()) {
+        return res.status(503).json({
+          success: false,
+          error: "Servicio blockchain no disponible",
+          mode: "offline"
+        });
+      }
+
+      // Calcular cantidad de productos finales
+      const totalQuantity = processIds.length * 20; // Estimación simplificada
+
+      console.log(`🔍 Validando producto final de procesos: [${processIds.join(', ')}]`);
+      console.log(`📦 Tipo de producto: ${productType}`);
+      console.log(`⭐ Puntuación de calidad: ${qualityScore || 'No especificada'}`);
+
+      const productDescription = qualityScore 
+        ? `${productType} (Calidad: ${qualityScore}/10): ${description}`
+        : `${productType}: ${description}`;
+
+      const result = await blockchainService.registerEvent(
+        'Product',
+        processIds, // IDs de los procesos relacionados
+        location,
+        totalQuantity,
+        productDescription,
+        evidenceHash
+      );
+
+      if (!result.success) {
+        return res.status(400).json({
+          success: false,
+          error: result.error,
+          errorType: result.errorType,
+          contractStatus: result.contractStatus,
+          mode: "blockchain_error"
+        });
+      }
+
+      res.json({
+        success: true,
+        message: "Producto final validado exitosamente",
+        txHash: result.txHash,
+        blockNumber: result.blockNumber,
+        gasUsed: result.gasUsed,
+        eventId: result.eventId,
+        eventType: "Product",
+        relatedProcesses: processIds,
+        totalQuantity,
+        productType,
+        qualityScore,
+        contractStatus: result.contractStatus,
+        verified: result.verified,
+        attempts: result.attempts,
+        validatedBy,
+        mode: "blockchain"
+      });
+    } catch (error: any) {
+      console.error("Error validando producto:", error);
+      res.status(500).json({
+        success: false,
+        error: error.message || "Error al validar producto"
       });
     }
   });
