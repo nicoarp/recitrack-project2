@@ -27,7 +27,17 @@ A blockchain-powered environmental impact platform that transforms plastic bottl
 
 ## Recent Changes
 
-### December 27, 2024 - Smart Contract ABI Update
+### December 27, 2024 - Robust Contract Validation & Error Handling
+- ✅ **Enhanced Data Models**: Updated shared schema with blockchain events table, evidenceHash fields, and contract status tracking
+- ✅ **Robust Validation System**: Implemented comprehensive input validation for all event types with business logic checks
+- ✅ **Smart Error Handling**: Added categorized error responses with specific handling for contract reverts, insufficient funds, and network issues
+- ✅ **Duplicate Detection**: Implemented validation to prevent double processing in the same phase (Deposit → Batch → Process → Product)
+- ✅ **Transaction Retry Logic**: Added exponential backoff retry system with timeout handling and non-retryable error detection
+- ✅ **Validation Endpoints**: Created specific endpoints for Batch, Process, and Product validation with proper traceability
+- ✅ **Balance Verification**: Added operator balance checks before transactions to prevent failed attempts
+- ✅ **Evidence Hash Support**: Full implementation of evidenceHash parameter throughout the validation pipeline
+
+### Previous: Smart Contract ABI Update
 - ✅ Updated contract ABI to include evidenceHash parameter
 - ✅ Modified registerEvent function to accept evidenceHash
 - ✅ Fixed getEvent function to use events mapping directly (avoiding ethers.js formatting issues)
