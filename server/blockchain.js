@@ -150,42 +150,60 @@ export class BlockchainService {
       console.log(`🔍 Consultando evento: ${eventId}`);
       
       const eventIdNumber = parseInt(eventId);
-      const event = await this.contract.getEvent(eventIdNumber);
       
-      console.log(`📋 Respuesta del contrato:`, event);
-      console.log(`📋 Tipo de respuesta:`, typeof event);
-      console.log(`📋 Longitud del array:`, event.length);
+      // Usar el mapping 'events' directamente ya que funciona correctamente
+      const eventData = await this.contract.events(eventIdNumber);
       
-      if (!event) {
+      console.log(`📋 Respuesta del contrato:`, eventData);
+      console.log(`📋 Tipo de respuesta:`, typeof eventData);
+      
+      if (!eventData) {
         return null;
       }
 
       // Mapear números de tipo de evento a nombres
       const eventTypeNames = ['Deposit', 'Batch', 'Process', 'Product'];
       
-      // Convertir todos los valores de manera segura
-      const eventType = eventTypeNames[Number(event[0])] || 'Unknown';
-      const relatedIds = Array.isArray(event[1]) ? event[1].map(id => id.toString()) : [];
-      const location = event[2];
-      const quantity = Number(event[3]);
-      const actor = event[4];
-      const timestamp = Number(event[5]);
-      const description = event[6];
-      const evidenceHash = event[7] || "";
+      // Convertir todos los valores de manera segura desde el mapping 'events'
+      const eventType = eventTypeNames[Number(eventData.eventType)] || 'Unknown';
       
       return {
         eventId: eventIdNumber,
         eventType,
-        relatedIds,
-        location,
-        quantity,
-        actor,
-        timestamp,
-        description,
-        evidenceHash
+        relatedIds: [], // No disponible en el mapping directo, necesitaríamos usar getEvent
+        location: eventData.location,
+        quantity: Number(eventData.quantity),
+        actor: eventData.actor,
+        timestamp: Number(eventData.timestamp),
+        description: eventData.description,
+        evidenceHash: eventData.evidenceHash || ""
       };
     } catch (error) {
       console.error('❌ Error consultando evento:', error.message);
+      
+      // Como fallback, intentar consultar el evento directamente desde el mapping 'events'
+      try {
+        console.log('🔄 Intentando consulta alternativa...');
+        const eventData = await this.contract.events(eventIdNumber);
+        
+        if (eventData) {
+          const eventTypeNames = ['Deposit', 'Batch', 'Process', 'Product'];
+          return {
+            eventId: eventIdNumber,
+            eventType: eventTypeNames[Number(eventData.eventType)] || 'Unknown',
+            relatedIds: [], // No disponible en el mapping directo
+            location: eventData.location,
+            quantity: Number(eventData.quantity),
+            actor: eventData.actor,
+            timestamp: Number(eventData.timestamp),
+            description: eventData.description,
+            evidenceHash: eventData.evidenceHash || ""
+          };
+        }
+      } catch (fallbackError) {
+        console.error('❌ Error en consulta alternativa:', fallbackError.message);
+      }
+      
       throw error;
     }
   }

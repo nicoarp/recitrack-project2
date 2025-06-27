@@ -257,9 +257,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Endpoint para obtener un evento específico
   app.get('/api/blockchain/event/:eventId', async (req, res) => {
     try {
+      console.log('🔍 DEBUG: Iniciando consulta de evento');
       const { eventId } = req.params;
+      console.log('🔍 DEBUG: eventId extraído:', eventId);
 
       if (!blockchainService.isReady()) {
+        console.log('🔍 DEBUG: Servicio blockchain no está listo');
         res.status(503).json({ 
           success: false, 
           error: "Servicio blockchain no disponible",
@@ -268,7 +271,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return;
       }
 
+      console.log('🔍 DEBUG: Llamando a blockchainService.getEvent');
       const event = await blockchainService.getEvent(eventId);
+      console.log('🔍 DEBUG: Respuesta obtenida:', event);
       
       if (!event) {
         return res.status(404).json({
