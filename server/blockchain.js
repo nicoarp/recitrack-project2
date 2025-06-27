@@ -82,6 +82,9 @@ export class BlockchainService {
     }
 
     try {
+      // Validar entrada de datos
+      await this.validateEventData(eventType, relatedIds, location, quantity, description);
+
       // Mapear tipos de evento a números según el enum del contrato
       const eventTypeMap = {
         'Deposit': 0,
@@ -102,29 +105,57 @@ export class BlockchainService {
       console.log(`🔗 Hash evidencia: ${evidenceHash || 'No especificado'}`);
       if (userId) console.log(`👤 Usuario: ${userId} (${userEmail})`);
       
-      // Convertir parámetros numéricos
-      const quantityNumber = parseInt(quantity);
-      const relatedIdsNumbers = relatedIds.map(id => parseInt(id));
+      // Convertir parámetros numéricos con validación
+      const quantityNumber = this.validateAndParseNumber(quantity, 'quantity');
+      const relatedIdsNumbers = relatedIds.map(id => this.validateAndParseNumber(id, 'relatedId'));
       
-      const tx = await this.contract.registerEvent(
-        eventTypeNumber,
-        relatedIdsNumbers,
-        location,
-        quantityNumber,
-        description,
-        evidenceHash
-      );
+      // Validar que los IDs relacionados existen si se especifican
+      if (relatedIdsNumbers.length > 0) {
+        await this.validateRelatedIds(relatedIdsNumbers, eventType);
+      }
 
-      console.log(`⏳ Transacción enviada: ${tx.hash}`);
+      // Verificar estado del operador antes de la transacción
+      const balance = await this.getOperatorBalance();
+      console.log(`💰 Balance del operador: ${balance} ETH`);
       
-      // Esperar confirmación
-      const receipt = await tx.wait();
+      if (parseFloat(balance) < 0.001) {
+        throw new Error('Balance insuficiente del operador para la transacción');
+      }
+
+      // Verificar duplicaciones antes de proceder
+      const duplicateCheck = await this.checkForDuplicateValidation(eventType, relatedIdsNumbers, 'validation');
+      if (duplicateCheck.isDuplicate) {
+        console.warn(`⚠️ ${duplicateCheck.message}`);
+        // No bloquear, solo advertir
+      }
+
+      // Ejecutar transacción con retry y manejo de errores específicos
+      const result = await this.executeTransactionWithRetry(async () => {
+        return await this.contract.registerEvent(
+          eventTypeNumber,
+          relatedIdsNumbers,
+          location,
+          quantityNumber,
+          description,
+          evidenceHash
+        );
+      });
+
+      const tx = result.transaction;
+      console.log(`⏳ Transacción enviada: ${tx.hash} (intento ${result.attempt})`);
+      
+      // Esperar confirmación con timeout
+      const receipt = await this.waitForTransactionWithTimeout(tx, 120000); // 2 minutos
       
       console.log(`✅ Evento registrado en bloque: ${receipt.blockNumber}`);
+      console.log(`⛽ Gas usado: ${receipt.gasUsed}`);
       
       // Obtener el ID del evento recién creado
       const nextEventId = await this.contract.nextEventId();
       const currentEventId = nextEventId - 1n;
+      
+      // Verificar que el evento se registró correctamente
+      const isVerified = await this.verifyEventRegistration(currentEventId);
       
       return {
         success: true,
@@ -132,11 +163,24 @@ export class BlockchainService {
         blockNumber: receipt.blockNumber,
         gasUsed: receipt.gasUsed.toString(),
         eventId: currentEventId.toString(),
-        eventType: eventType
+        eventType: eventType,
+        contractStatus: 'confirmed',
+        verified: isVerified,
+        attempts: result.attempt
       };
     } catch (error) {
       console.error('❌ Error registrando evento:', error.message);
-      throw error;
+      
+      // Categorizar el error para mejor manejo
+      const categorizedError = this.categorizeContractError(error);
+      
+      return {
+        success: false,
+        error: categorizedError.message,
+        errorType: categorizedError.type,
+        contractStatus: 'failed',
+        originalError: error.message
+      };
     }
   }
 
@@ -377,6 +421,209 @@ export class BlockchainService {
 
   isReady() {
     return this.isInitialized && this.contract && this.operatorWallet;
+  }
+
+  // === FUNCIONES DE VALIDACIÓN Y MANEJO DE ERRORES ===
+
+  async validateEventData(eventType, relatedIds, location, quantity, description) {
+    const validEventTypes = ['Deposit', 'Batch', 'Process', 'Product'];
+    if (!validEventTypes.includes(eventType)) {
+      throw new Error(`Tipo de evento inválido: ${eventType}`);
+    }
+
+    if (!location || location.trim().length < 3) {
+      throw new Error('La ubicación debe tener al menos 3 caracteres');
+    }
+
+    if (!description || description.trim().length < 5) {
+      throw new Error('La descripción debe tener al menos 5 caracteres');
+    }
+
+    if (quantity <= 0) {
+      throw new Error('La cantidad debe ser mayor a 0');
+    }
+
+    if (!Array.isArray(relatedIds)) {
+      throw new Error('relatedIds debe ser un array');
+    }
+  }
+
+  validateAndParseNumber(value, fieldName) {
+    const parsed = parseInt(value);
+    if (isNaN(parsed) || parsed < 0) {
+      throw new Error(`${fieldName} debe ser un número válido y no negativo: ${value}`);
+    }
+    return parsed;
+  }
+
+  async validateRelatedIds(relatedIdsNumbers, eventType) {
+    // Validar que los IDs relacionados existen en el contrato
+    for (const relatedId of relatedIdsNumbers) {
+      try {
+        const existingEvent = await this.contract.events(relatedId);
+        if (!existingEvent) {
+          throw new Error(`El evento relacionado con ID ${relatedId} no existe`);
+        }
+      } catch (error) {
+        console.warn(`⚠️ No se pudo verificar evento relacionado ${relatedId}:`, error.message);
+        // No bloquear la transacción por problemas de verificación
+      }
+    }
+
+    // Validaciones específicas por tipo de evento
+    if (eventType === 'Batch' && relatedIdsNumbers.length === 0) {
+      throw new Error('Los eventos de tipo Batch deben tener al menos un evento Deposit relacionado');
+    }
+
+    if (eventType === 'Process' && relatedIdsNumbers.length === 0) {
+      throw new Error('Los eventos de tipo Process deben tener al menos un evento Batch relacionado');
+    }
+
+    if (eventType === 'Product' && relatedIdsNumbers.length === 0) {
+      throw new Error('Los eventos de tipo Product deben tener al menos un evento Process relacionado');
+    }
+  }
+
+  async executeTransactionWithRetry(transactionFunction, maxRetries = 3) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`🔄 Intento ${attempt} de ejecutar transacción...`);
+        const transaction = await transactionFunction();
+        return { transaction, attempt };
+      } catch (error) {
+        console.log(`❌ Intento ${attempt} falló:`, error.message);
+        
+        // No reintentar en ciertos errores específicos
+        if (this.isNonRetryableError(error)) {
+          throw error;
+        }
+
+        if (attempt === maxRetries) {
+          throw new Error(`Transacción falló después de ${maxRetries} intentos: ${error.message}`);
+        }
+
+        // Esperar antes del siguiente intento con backoff exponencial
+        const delay = Math.min(1000 * Math.pow(2, attempt - 1), 10000);
+        console.log(`⏳ Esperando ${delay}ms antes del siguiente intento...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+
+  async waitForTransactionWithTimeout(transaction, timeoutMs = 120000) {
+    return new Promise(async (resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error(`Timeout: La transacción no se confirmó en ${timeoutMs/1000} segundos`));
+      }, timeoutMs);
+
+      try {
+        const receipt = await transaction.wait();
+        clearTimeout(timeout);
+        resolve(receipt);
+      } catch (error) {
+        clearTimeout(timeout);
+        reject(error);
+      }
+    });
+  }
+
+  async verifyEventRegistration(eventId) {
+    try {
+      console.log(`🔍 Verificando registro del evento ${eventId}...`);
+      const event = await this.contract.events(eventId);
+      if (!event) {
+        throw new Error(`El evento ${eventId} no se encontró después del registro`);
+      }
+      console.log(`✅ Evento ${eventId} verificado correctamente`);
+      return true;
+    } catch (error) {
+      console.warn(`⚠️ No se pudo verificar el evento ${eventId}:`, error.message);
+      return false;
+    }
+  }
+
+  isNonRetryableError(error) {
+    const nonRetryableMessages = [
+      'insufficient funds',
+      'nonce too high',
+      'nonce too low',
+      'replacement transaction underpriced',
+      'execution reverted',
+      'invalid opcode',
+      'out of gas'
+    ];
+
+    const errorMessage = error.message.toLowerCase();
+    return nonRetryableMessages.some(msg => errorMessage.includes(msg));
+  }
+
+  categorizeContractError(error) {
+    const errorMessage = error.message.toLowerCase();
+
+    if (errorMessage.includes('insufficient funds')) {
+      return {
+        type: 'INSUFFICIENT_FUNDS',
+        message: 'Fondos insuficientes para completar la transacción'
+      };
+    }
+
+    if (errorMessage.includes('execution reverted')) {
+      return {
+        type: 'CONTRACT_REVERT',
+        message: 'El contrato rechazó la transacción (posible validación duplicada o lógica de negocio)'
+      };
+    }
+
+    if (errorMessage.includes('out of gas')) {
+      return {
+        type: 'OUT_OF_GAS',
+        message: 'Gas insuficiente para completar la transacción'
+      };
+    }
+
+    if (errorMessage.includes('nonce')) {
+      return {
+        type: 'NONCE_ERROR',
+        message: 'Error de nonce: transacción desincronizada'
+      };
+    }
+
+    if (errorMessage.includes('network') || errorMessage.includes('timeout')) {
+      return {
+        type: 'NETWORK_ERROR',
+        message: 'Error de red o timeout'
+      };
+    }
+
+    return {
+      type: 'UNKNOWN_ERROR',
+      message: `Error desconocido: ${error.message}`
+    };
+  }
+
+  // Función para detectar intentos de doble validación
+  async checkForDuplicateValidation(eventType, relatedIds, validationPhase) {
+    try {
+      // Obtener eventos del mismo tipo y fase de validación
+      const existingEvents = await this.getEventsByType(eventType);
+      
+      for (const event of existingEvents) {
+        // Verificar si algún relatedId ya fue procesado en esta fase
+        if (relatedIds.some(id => event.relatedIds && event.relatedIds.includes(id.toString()))) {
+          console.warn(`⚠️ Posible duplicación detectada para ${eventType} en fase ${validationPhase}`);
+          return {
+            isDuplicate: true,
+            existingEventId: event.eventId,
+            message: `Ya existe un evento ${eventType} que procesa algunos de los IDs relacionados`
+          };
+        }
+      }
+
+      return { isDuplicate: false };
+    } catch (error) {
+      console.warn('⚠️ No se pudo verificar duplicación:', error.message);
+      return { isDuplicate: false }; // No bloquear por problemas de verificación
+    }
   }
 }
 
