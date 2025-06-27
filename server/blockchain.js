@@ -152,6 +152,10 @@ export class BlockchainService {
       const eventIdNumber = parseInt(eventId);
       const event = await this.contract.getEvent(eventIdNumber);
       
+      console.log(`📋 Respuesta del contrato:`, event);
+      console.log(`📋 Tipo de respuesta:`, typeof event);
+      console.log(`📋 Longitud del array:`, event.length);
+      
       if (!event) {
         return null;
       }
@@ -159,15 +163,26 @@ export class BlockchainService {
       // Mapear números de tipo de evento a nombres
       const eventTypeNames = ['Deposit', 'Batch', 'Process', 'Product'];
       
+      // Convertir todos los valores de manera segura
+      const eventType = eventTypeNames[Number(event[0])] || 'Unknown';
+      const relatedIds = Array.isArray(event[1]) ? event[1].map(id => id.toString()) : [];
+      const location = event[2];
+      const quantity = Number(event[3]);
+      const actor = event[4];
+      const timestamp = Number(event[5]);
+      const description = event[6];
+      const evidenceHash = event[7] || "";
+      
       return {
         eventId: eventIdNumber,
-        eventType: eventTypeNames[parseInt(event[0].toString())] || 'Unknown',
-        relatedIds: event[1].map(id => id.toString()),
-        location: event[2],
-        quantity: parseInt(event[3].toString()),
-        actor: event[4],
-        timestamp: parseInt(event[5].toString()),
-        description: event[6]
+        eventType,
+        relatedIds,
+        location,
+        quantity,
+        actor,
+        timestamp,
+        description,
+        evidenceHash
       };
     } catch (error) {
       console.error('❌ Error consultando evento:', error.message);

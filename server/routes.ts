@@ -209,7 +209,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Nuevo endpoint para registrar eventos multi-etapa específicos
   app.post('/api/blockchain/register-multi-stage', async (req, res) => {
     try {
-      const { eventType, relatedIds, location, quantity, description } = req.body;
+      const { eventType, relatedIds, location, quantity, description, evidenceHash = "" } = req.body;
 
       const validEventTypes = ['Deposit', 'Batch', 'Process', 'Product'];
       if (!validEventTypes.includes(eventType)) {
@@ -232,7 +232,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         relatedIds || [],
         location,
         quantity,
-        description
+        description,
+        evidenceHash
       );
 
       res.json({
