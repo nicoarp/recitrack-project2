@@ -141,7 +141,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     location: z.string().min(1, "Ubicación requerida"),
     bottleCount: z.number().min(1, "Cantidad de botellas requerida"),
     userId: z.number().optional().nullable(),
-    userEmail: z.string().optional().nullable()
+    userEmail: z.string().optional().nullable(),
+    evidenceHash: z.string().optional().default("")
   });
 
   app.post("/api/blockchain/register-event", async (req, res) => {
@@ -166,6 +167,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         eventData.location,
         eventData.bottleCount,
         eventData.description,
+        eventData.evidenceHash || "", // Hash de evidencia opcional
         eventData.userId,
         eventData.userEmail
       );

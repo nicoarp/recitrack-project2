@@ -76,7 +76,7 @@ export class BlockchainService {
     }
   }
 
-  async registerEvent(eventType, relatedIds, location, quantity, description, userId = null, userEmail = null) {
+  async registerEvent(eventType, relatedIds, location, quantity, description, evidenceHash = "", userId = null, userEmail = null) {
     if (!this.isInitialized) {
       throw new Error('Servicio blockchain no inicializado');
     }
@@ -99,6 +99,7 @@ export class BlockchainService {
       console.log(`🔗 IDs relacionados: [${relatedIds.join(', ')}]`);
       console.log(`📍 Ubicación: ${location}`);
       console.log(`📊 Cantidad: ${quantity}`);
+      console.log(`🔗 Hash evidencia: ${evidenceHash || 'No especificado'}`);
       if (userId) console.log(`👤 Usuario: ${userId} (${userEmail})`);
       
       // Convertir parámetros numéricos
@@ -110,7 +111,8 @@ export class BlockchainService {
         relatedIdsNumbers,
         location,
         quantityNumber,
-        description
+        description,
+        evidenceHash
       );
 
       console.log(`⏳ Transacción enviada: ${tx.hash}`);
