@@ -4,6 +4,7 @@ import { z } from "zod";
 import { storage } from "./storage";
 import { insertBottleDepositSchema, insertRecyclingPointSchema, insertUserSchema } from "@shared/schema";
 import { blockchainService } from "./blockchain.js";
+import { qrService } from "./qr-service";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes
@@ -844,6 +845,257 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({
         success: false,
         error: error.message || "Error al validar producto"
+      });
+    }
+  });
+
+  // === ENDPOINTS DEL SISTEMA QR ===
+
+  // Generar código QR para un evento
+  app.post('/api/qr/generate', async (req, res) => {
+    try {
+      const { eventId, eventType, metadata, createdBy } = req.body;
+
+      if (!eventType || !['Deposit', 'Batch', 'Process', 'Product'].includes(eventType)) {
+        return res.status(400).json({
+          success: false,
+          error: 'eventType es requerido y debe ser uno de: Deposit, Batch, Process, Product'
+        });
+      }
+
+      console.log(`📱 Generando QR para evento ${eventType}${eventId ? ` (ID: ${eventId})` : ''}`);
+
+      const result = await qrService.generateQrCode({
+        eventId,
+        eventType,
+        metadata,
+        createdBy: createdBy || 'sistema'
+      });
+
+      if (!result.success) {
+        return res.status(500).json({
+          success: false,
+          error: result.error
+        });
+      }
+
+      res.json({
+        success: true,
+        message: 'Código QR generado exitosamente',
+        qrCode: {
+          qrId: result.qrCode!.qrId,
+          eventType: result.qrCode!.eventType,
+          status: result.qrCode!.status,
+          createdAt: result.qrCode!.createdAt
+        },
+        qrImage: result.qrImage
+      });
+    } catch (error: any) {
+      console.error('Error generando código QR:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Error al generar código QR'
+      });
+    }
+  });
+
+  // Validar código QR en punto de control
+  app.post('/api/qr/validate', async (req, res) => {
+    try {
+      const { qrData, phase, validatedBy, location, evidenceHash, evidenceMetadata, notes } = req.body;
+
+      if (!qrData || !phase || !validatedBy || !location) {
+        return res.status(400).json({
+          success: false,
+          error: 'qrData, phase, validatedBy y location son requeridos'
+        });
+      }
+
+      if (!['Deposit', 'Batch', 'Process', 'Product'].includes(phase)) {
+        return res.status(400).json({
+          success: false,
+          error: 'phase debe ser uno de: Deposit, Batch, Process, Product'
+        });
+      }
+
+      // Decodificar datos del QR
+      const decodedQr = qrService.decodeQrData(qrData);
+      if (!decodedQr.success) {
+        return res.status(400).json({
+          success: false,
+          error: decodedQr.error,
+          errorType: 'INVALID_QR_FORMAT'
+        });
+      }
+
+      console.log(`🔍 Validando QR ${decodedQr.qrId} en fase ${phase}`);
+      console.log(`📍 Ubicación: ${location}, Operador: ${validatedBy}`);
+
+      const result = await qrService.validateQrCode({
+        qrId: decodedQr.qrId!,
+        phase,
+        validatedBy,
+        location,
+        evidenceHash,
+        evidenceMetadata,
+        notes
+      });
+
+      if (!result.success) {
+        return res.status(400).json({
+          success: false,
+          error: result.error,
+          errorType: result.errorType
+        });
+      }
+
+      res.json({
+        success: true,
+        message: `Validación ${phase} completada exitosamente`,
+        validation: {
+          qrId: result.validation!.qrId,
+          phase: result.validation!.phase,
+          validatedBy: result.validation!.validatedBy,
+          location: result.validation!.location,
+          timestamp: result.validation!.timestamp,
+          validationStatus: result.validation!.validationStatus
+        },
+        blockchain: result.blockchainResult,
+        qrStatus: result.qrStatus
+      });
+    } catch (error: any) {
+      console.error('Error validando código QR:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Error al validar código QR'
+      });
+    }
+  });
+
+  // Obtener información de un código QR
+  app.get('/api/qr/:qrId', async (req, res) => {
+    try {
+      const { qrId } = req.params;
+
+      const qrCode = await qrService.getQrCodeById(qrId);
+      if (!qrCode) {
+        return res.status(404).json({
+          success: false,
+          error: 'Código QR no encontrado'
+        });
+      }
+
+      const validationHistory = await qrService.getQrValidationHistory(qrId);
+
+      res.json({
+        success: true,
+        qrCode: {
+          qrId: qrCode.qrId,
+          eventId: qrCode.eventId,
+          eventType: qrCode.eventType,
+          status: qrCode.status,
+          metadata: qrCode.metadata,
+          createdBy: qrCode.createdBy,
+          createdAt: qrCode.createdAt
+        },
+        validationHistory: validationHistory.map(v => ({
+          phase: v.phase,
+          previousPhase: v.previousPhase,
+          validatedBy: v.validatedBy,
+          location: v.location,
+          evidenceHash: v.evidenceHash,
+          validationStatus: v.validationStatus,
+          notes: v.notes,
+          timestamp: v.timestamp,
+          txHash: v.txHash,
+          blockNumber: v.blockNumber
+        })),
+        totalValidations: validationHistory.length,
+        currentPhase: validationHistory.length > 0 ? validationHistory[validationHistory.length - 1].phase : 'Ninguna',
+        isCompleted: qrCode.status === 'completed'
+      });
+    } catch (error: any) {
+      console.error('Error obteniendo información QR:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Error al obtener información del QR'
+      });
+    }
+  });
+
+  // Obtener historial completo de validaciones por QR
+  app.get('/api/qr/:qrId/history', async (req, res) => {
+    try {
+      const { qrId } = req.params;
+
+      const qrCode = await qrService.getQrCodeById(qrId);
+      if (!qrCode) {
+        return res.status(404).json({
+          success: false,
+          error: 'Código QR no encontrado'
+        });
+      }
+
+      const validationHistory = await qrService.getQrValidationHistory(qrId);
+
+      res.json({
+        success: true,
+        qrId,
+        eventType: qrCode.eventType,
+        history: validationHistory.map(v => ({
+          id: v.id,
+          phase: v.phase,
+          previousPhase: v.previousPhase,
+          validatedBy: v.validatedBy,
+          location: v.location,
+          evidenceHash: v.evidenceHash,
+          evidenceMetadata: v.evidenceMetadata,
+          validationStatus: v.validationStatus,
+          notes: v.notes,
+          timestamp: v.timestamp,
+          blockchainInfo: {
+            eventId: v.eventId,
+            txHash: v.txHash,
+            blockNumber: v.blockNumber
+          }
+        })),
+        summary: {
+          totalValidations: validationHistory.length,
+          currentPhase: validationHistory.length > 0 ? validationHistory[validationHistory.length - 1].phase : 'Ninguna',
+          isCompleted: qrCode.status === 'completed',
+          phases: ['Deposit', 'Batch', 'Process', 'Product'].map(phase => ({
+            phase,
+            completed: validationHistory.some(v => v.phase === phase),
+            timestamp: validationHistory.find(v => v.phase === phase)?.timestamp
+          }))
+        }
+      });
+    } catch (error: any) {
+      console.error('Error obteniendo historial QR:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Error al obtener historial del QR'
+      });
+    }
+  });
+
+  // Buscar códigos QR por criterios
+  app.get('/api/qr/search', async (req, res) => {
+    try {
+      const { eventType, status, createdBy } = req.query;
+
+      // Esta sería una función adicional en el qrService para búsquedas
+      // Por ahora, respuesta simple
+      res.json({
+        success: true,
+        message: 'Búsqueda de QR implementada en próxima versión',
+        filters: { eventType, status, createdBy }
+      });
+    } catch (error: any) {
+      console.error('Error buscando códigos QR:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Error al buscar códigos QR'
       });
     }
   });

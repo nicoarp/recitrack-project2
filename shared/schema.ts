@@ -209,3 +209,11 @@ export type BottleDeposit = typeof bottleDeposits.$inferSelect;
 
 export type InsertBlockchainEvent = z.infer<typeof insertBlockchainEventSchema>;
 export type BlockchainEvent = typeof blockchainEvents.$inferSelect;
+
+// === TIPOS QR ===
+
+export type InsertQrCode = z.infer<typeof insertQrCodeSchema>;
+export type QrCode = typeof qrCodes.$inferSelect;
+
+export type InsertQrValidation = z.infer<typeof insertQrValidationSchema>;
+export type QrValidation = typeof qrValidations.$inferSelect;
