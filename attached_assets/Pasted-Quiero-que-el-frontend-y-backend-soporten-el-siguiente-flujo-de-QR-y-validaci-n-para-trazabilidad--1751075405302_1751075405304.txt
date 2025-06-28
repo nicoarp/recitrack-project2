@@ -1,0 +1,51 @@
+Quiero que el frontend y backend soporten el siguiente flujo de QR y validación para trazabilidad:
+
+Inicio en punto limpio:
+
+El punto limpio tiene un QR fijo con su ubicación y datos predeterminados.
+
+El recolector escanea ese QR (o ingresa su código) para iniciar la recolección.
+
+Se abre un formulario donde se registran datos: fecha, peso, foto de la báscula (obligatoria), cantidad de botellas, operador, etc.
+
+Solo tras ingresar y validar estos datos, el sistema genera un QR único para el lote.
+
+Este QR contiene el ID del evento/lote (no información sensible).
+
+El QR puede descargarse/imprimirse para viajar con el lote.
+
+El QR amarra toda la trazabilidad posterior a ese origen.
+
+Validación en puntos críticos de la cadena (centro de acopio, procesamiento, etc.):
+
+El operador escanea el QR del lote (con cámara o ingresa el ID manualmente si falla).
+
+El sistema muestra los datos actuales del lote y la fase actual.
+
+El operador debe subir una foto de la báscula y peso actualizado (obligatorio), además de evidencia extra si aplica.
+
+El sistema valida que solo puede haber una validación por fase y que la secuencia sea lógica.
+
+Si todo está correcto, registra el avance en blockchain y en el historial local.
+
+Consulta de historial y status:
+
+Solo usuarios autorizados pueden consultar el historial completo del QR/lote.
+
+Se muestra la secuencia de fases, operadores, fechas, status final (“En proceso”, “Validado”, “Rechazado”).
+
+Manejo de errores y validaciones:
+
+Si falta evidencia, no se permite avanzar.
+
+Mensajes claros para errores: QR inválido, fase incorrecta, doble validación, falta de evidencia, etc.
+
+Impresión/descarga del QR generado:
+
+El QR del lote debe poder imprimirse o descargarse para viajar físicamente con el material.
+
+Validación móvil:
+
+Todo el flujo debe poder ser operado desde dispositivos móviles, permitiendo escaneo y subida de evidencia desde la cámara o galería del celular.
+
+Usa los endpoints existentes y la lógica robusta de blockchain/QR ya implementada. Comenta y documenta bien el flujo para que cualquier usuario o colaborador lo pueda seguir.
