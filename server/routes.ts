@@ -889,7 +889,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // 2. Verificar si es un QR de validación existente en la base de datos
-      const qrRecord = await qrService.getQrCodeById(qrCode);
+      let qrRecord = null;
+      let actualQrId = qrCode;
+      
+      // Intentar parsear como JSON si es un QR complejo
+      try {
+        const parsedQr = JSON.parse(qrCode);
+        if (parsedQr.qrId && parsedQr.system === 'EcoTraza') {
+          actualQrId = parsedQr.qrId;
+          console.log(`🔍 QR complejo detectado, extrayendo ID: ${actualQrId}`);
+        }
+      } catch (e) {
+        // No es JSON, usar el código tal como está
+        actualQrId = qrCode;
+      }
+      
+      // Buscar en la base de datos por el ID extraído
+      qrRecord = await qrService.getQrCodeById(actualQrId);
       if (qrRecord) {
         return res.json({
           success: true,
@@ -898,6 +914,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             qrId: qrRecord.qrId,
             eventType: qrRecord.eventType,
             status: qrRecord.status,
+            metadata: qrRecord.metadata,
             redirectUrl: `/batch-validation?qrId=${qrRecord.qrId}`
           },
           message: `QR de validación encontrado: ${qrRecord.eventType}`
