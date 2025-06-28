@@ -17,15 +17,32 @@ import { useToast } from '@/hooks/use-toast';
 import { useRutInput } from '@/lib/rut-validation';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
-// Schema de validación para el formulario de validación
+// Schema de validación fortalecido para el formulario de validación
 const validationFormSchema = z.object({
+  // Campos obligatorios del operador
+  operatorName: z.string().min(2, 'Nombre del operador requerido (mínimo 2 caracteres)'),
+  operatorRut: z.string().min(8, 'RUT chileno válido requerido'),
   validatedBy: z.string().email('Email válido requerido'),
+  
+  // Fase de validación
   phase: z.enum(['Deposit', 'Batch', 'Process', 'Product'], {
     required_error: 'Selecciona una fase'
   }),
-  location: z.string().min(3, 'Ubicación requerida'),
-  weight: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, 'Peso debe ser mayor a 0'),
-  scalePhoto: z.string().min(1, 'Foto de la báscula es obligatoria'),
+  
+  // Ubicación obligatoria (select de centros registrados)
+  processingCenterId: z.string().min(1, 'Debe seleccionar un centro de procesado registrado'),
+  
+  // Peso obligatorio y validación de diferencias
+  currentWeight: z.string().min(1, 'Peso actual requerido').transform((val) => {
+    const num = parseFloat(val.replace(',', '.'));
+    if (isNaN(num) || num <= 0) {
+      throw new Error('Peso debe ser un número positivo');
+    }
+    return num;
+  }),
+  
+  // Evidencia obligatoria (foto de báscula)
+  scalePhoto: z.string().min(1, 'Foto de la báscula es obligatoria para validar'),
   extraEvidence: z.string().optional(),
   notes: z.string().optional()
 });
@@ -58,10 +75,16 @@ export default function BatchValidation() {
   
   const [uploading, setUploading] = useState(false);
   const [validationComplete, setValidationComplete] = useState(false);
+  const [initialWeight, setInitialWeight] = useState<number | null>(null);
+  const [weightDifference, setWeightDifference] = useState<number | null>(null);
+  const [weightDifferencePercent, setWeightDifferencePercent] = useState<number | null>(null);
+  const [showWeightAlert, setShowWeightAlert] = useState(false);
+  
   const scalePhotoRef = useRef<HTMLInputElement>(null);
   const extraEvidenceRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { handleRutChange, isValidRut, formatRut } = useRutInput();
 
   // Consultar información del QR
   const { data: qrInfo, isLoading: isLoadingQr, error: qrError } = useQuery({
