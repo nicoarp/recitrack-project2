@@ -17,12 +17,18 @@ export function QRScanner({ onScanResult, onClose }: QRScannerProps) {
   const [error, setError] = useState("");
   const [detectionMethod, setDetectionMethod] = useState("");
   const [cameraStatus, setCameraStatus] = useState("inactive");
+  const [debugInfo, setDebugInfo] = useState<string[]>([]);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const barcodeDetectorRef = useRef<any>(null);
   const scanIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  const addDebugInfo = (message: string) => {
+    setDebugInfo(prev => [...prev.slice(-4), `${new Date().toLocaleTimeString()}: ${message}`]);
+    console.log(message);
+  };
 
   // Inicializar detectores disponibles
   useEffect(() => {
@@ -48,7 +54,7 @@ export function QRScanner({ onScanResult, onClose }: QRScannerProps) {
   }, []);
 
   const stopCamera = () => {
-    console.log("Deteniendo cámara...");
+    addDebugInfo("🛑 Deteniendo cámara...");
     setIsScanning(false);
     setCameraStatus("stopping");
 
@@ -62,7 +68,7 @@ export function QRScanner({ onScanResult, onClose }: QRScannerProps) {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => {
         track.stop();
-        console.log("Track detenido:", track.kind);
+        addDebugInfo(`Track detenido: ${track.kind}`);
       });
       streamRef.current = null;
     }
@@ -76,7 +82,7 @@ export function QRScanner({ onScanResult, onClose }: QRScannerProps) {
   };
 
   const handleQRDetected = (qrText: string, method: string) => {
-    console.log(`QR detectado con ${method}:`, qrText);
+    addDebugInfo(`QR detectado con ${method}: ${qrText}`);
 
     // Detener escaneo inmediatamente
     stopCamera();
@@ -88,28 +94,51 @@ export function QRScanner({ onScanResult, onClose }: QRScannerProps) {
   const startCamera = async () => {
     try {
       setError("");
+      setDebugInfo([]);
       setCameraStatus("requesting");
-      console.log("Solicitando acceso a cámara...");
+      addDebugInfo("🎥 Iniciando cámara...");
 
       // Verificar si getUserMedia está disponible
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error("getUserMedia no está soportado en este navegador");
+        throw new Error("getUserMedia no soportado");
+      }
+      addDebugInfo("✅ getUserMedia disponible");
+
+      // Verificar si estamos en HTTPS o localhost
+      const isSecure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+      addDebugInfo(`🔒 Conexión: ${location.protocol} - ${isSecure ? 'Segura' : 'NO segura'}`);
+
+      if (!isSecure) {
+        throw new Error("Se requiere HTTPS para acceder a la cámara");
       }
 
-      const constraints = {
-        video: { 
-          facingMode: "environment", // Cámara trasera
-          width: { ideal: 1280, min: 640 },
-          height: { ideal: 720, min: 480 }
-        },
-        audio: false
-      };
+      // Intentar obtener permisos primero con constraints básicos
+      addDebugInfo("🔐 Solicitando permisos...");
 
-      console.log("Constraints:", constraints);
+      let stream: MediaStream;
+      try {
+        // Intentar primero con cámara trasera
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment" },
+          audio: false
+        });
+        addDebugInfo("✅ Cámara trasera obtenida");
+      } catch (backCameraError) {
+        addDebugInfo("⚠️ Cámara trasera falló, probando frontal...");
+        try {
+          // Si falla, intentar con cualquier cámara
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: false
+          });
+          addDebugInfo("✅ Cámara frontal obtenida");
+        } catch (anyCameraError) {
+          addDebugInfo("❌ No se pudo acceder a ninguna cámara");
+          throw anyCameraError;
+        }
+      }
 
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
-      console.log("Stream obtenido:", stream);
-
+      addDebugInfo(`📊 Stream: ${stream.getVideoTracks().length} tracks`);
       streamRef.current = stream;
       setCameraStatus("active");
 
@@ -118,37 +147,39 @@ export function QRScanner({ onScanResult, onClose }: QRScannerProps) {
 
         // Esperar a que el video esté listo
         videoRef.current.onloadedmetadata = () => {
-          console.log("Video metadata cargada");
+          addDebugInfo("📹 Video metadata cargada");
           videoRef.current?.play().then(() => {
-            console.log("Video iniciado");
+            addDebugInfo("▶️ Video reproduciendo");
             setIsScanning(true);
             // Iniciar detección después de que el video esté reproduciéndose
             setTimeout(() => {
               startDetection();
             }, 500);
           }).catch(err => {
-            console.error("Error al reproducir video:", err);
+            addDebugInfo(`❌ Error al reproducir: ${err.message}`);
             setError("Error al iniciar la reproducción de video");
           });
         };
 
         videoRef.current.onerror = (err) => {
-          console.error("Error en video element:", err);
+          addDebugInfo(`❌ Error en video: ${err}`);
           setError("Error en el elemento de video");
         };
       }
     } catch (err: any) {
-      console.error("Error al acceder a la cámara:", err);
+      addDebugInfo(`❌ Error: ${err.message}`);
       setCameraStatus("error");
 
       if (err.name === 'NotAllowedError') {
-        setError("Permiso de cámara denegado. Por favor, permita el acceso a la cámara.");
+        setError("❌ Permiso denegado. Permite el acceso a la cámara en la configuración del navegador.");
       } else if (err.name === 'NotFoundError') {
-        setError("No se encontró ninguna cámara en el dispositivo.");
+        setError("❌ No se encontró cámara en el dispositivo.");
       } else if (err.name === 'NotReadableError') {
-        setError("La cámara está siendo usada por otra aplicación.");
+        setError("❌ Cámara en uso por otra aplicación.");
+      } else if (err.name === 'OverconstrainedError') {
+        setError("❌ Las especificaciones de cámara no son compatibles.");
       } else {
-        setError(`Error al acceder a la cámara: ${err.message}`);
+        setError(`❌ Error: ${err.message}`);
       }
       setIsScanning(false);
     }
@@ -156,17 +187,17 @@ export function QRScanner({ onScanResult, onClose }: QRScannerProps) {
 
   const startDetection = () => {
     if (!videoRef.current || !isScanning) {
-      console.log("No se puede iniciar detección: video o scanning no disponible");
+      addDebugInfo("⚠️ No se puede iniciar detección");
       return;
     }
 
-    console.log("Iniciando detección...");
+    addDebugInfo("🔍 Iniciando detección...");
 
     // Método 1: Intentar con BarcodeDetector nativo
     if (barcodeDetectorRef.current) {
       startBarcodeDetectorScanning();
     } else {
-      console.log("BarcodeDetector no disponible, usar entrada manual");
+      addDebugInfo("ℹ️ BarcodeDetector no disponible, usar entrada manual");
     }
   };
 
@@ -180,11 +211,11 @@ export function QRScanner({ onScanResult, onClose }: QRScannerProps) {
     const context = canvas.getContext('2d');
 
     if (!context) {
-      console.error("No se pudo obtener contexto 2D del canvas");
+      addDebugInfo("❌ No se pudo obtener contexto 2D del canvas");
       return;
     }
 
-    console.log("Iniciando escaneo con BarcodeDetector...");
+    addDebugInfo("🔄 Iniciando escaneo con BarcodeDetector...");
 
     scanIntervalRef.current = setInterval(async () => {
       if (!videoRef.current || !isScanning || !context) {
@@ -206,7 +237,7 @@ export function QRScanner({ onScanResult, onClose }: QRScannerProps) {
           handleQRDetected(barcodes[0].rawValue, "BarcodeDetector");
         }
       } catch (err) {
-        console.log("Error en detección:", err);
+        // Error silencioso durante escaneo
       }
     }, 500);
   };
@@ -236,7 +267,7 @@ export function QRScanner({ onScanResult, onClose }: QRScannerProps) {
     }
 
     if (foundPoint) {
-      console.log(`Punto encontrado: ${depositId} - ${foundPoint.name}`);
+      addDebugInfo(`✅ Punto encontrado: ${depositId}`);
       onScanResult(depositId, foundPoint);
     } else {
       setError(`No se encontró punto de reciclaje para: ${trimmedText}`);
@@ -281,6 +312,16 @@ export function QRScanner({ onScanResult, onClose }: QRScannerProps) {
         </CardHeader>
 
         <CardContent className="space-y-4">
+          {/* Debug Info */}
+          {debugInfo.length > 0 && (
+            <div className="text-xs bg-gray-100 p-2 rounded max-h-20 overflow-y-auto">
+              <div className="font-semibold mb-1">Debug Log:</div>
+              {debugInfo.map((info, index) => (
+                <div key={index} className="text-gray-700">{info}</div>
+              ))}
+            </div>
+          )}
+
           {/* Estado del detector */}
           {detectionMethod && (
             <div className="text-sm text-green-600 bg-green-50 p-2 rounded">

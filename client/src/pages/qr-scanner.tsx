@@ -20,25 +20,99 @@ export default function QrScanner() {
   const startCamera = async () => {
     try {
       setError('');
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' } 
-      });
+      setScanning(false);
+      
+      console.log('🔍 Iniciando cámara...');
+      
+      // Verificar compatibilidad
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('getUserMedia no soportado');
+      }
+
+      // Configuraciones de video más compatibles
+      const constraints = {
+        video: {
+          facingMode: { ideal: 'environment' },
+          width: { ideal: 640 },
+          height: { ideal: 480 }
+        }
+      };
+
+      console.log('📷 Solicitando permisos de cámara...');
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      
+      console.log('✅ Stream obtenido:', stream);
+      
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        
+        // Esperar a que el video esté listo
+        await new Promise((resolve, reject) => {
+          if (videoRef.current) {
+            videoRef.current.onloadedmetadata = () => {
+              console.log('📹 Video metadata cargada');
+              resolve(true);
+            };
+            videoRef.current.onerror = (error) => {
+              console.error('❌ Error en video:', error);
+              reject(error);
+            };
+          }
+        });
+        
+        // Iniciar reproducción
+        await videoRef.current.play();
+        console.log('▶️ Video iniciado correctamente');
+        
         setScanning(true);
+        toast({
+          title: "Cámara activada",
+          description: "Apunta hacia el código QR para escanearlo"
+        });
       }
-    } catch (err) {
-      setError('No se pudo acceder a la cámara. Usa entrada manual.');
+    } catch (err: any) {
+      console.error('❌ Error cámara:', err);
+      
+      let errorMessage = 'No se pudo acceder a la cámara.';
+      
+      if (err.name === 'NotAllowedError') {
+        errorMessage = 'Permisos de cámara denegados. Permite el acceso y recarga la página.';
+      } else if (err.name === 'NotFoundError') {
+        errorMessage = 'No se encontró cámara. Usa entrada manual.';
+      } else if (err.name === 'NotSupportedError') {
+        errorMessage = 'Cámara no soportada en este navegador.';
+      }
+      
+      setError(errorMessage);
       setManualEntry(true);
+      
+      toast({
+        title: "Error de cámara",
+        description: errorMessage,
+        variant: "destructive"
+      });
     }
   };
 
   const stopCamera = () => {
+    console.log('🛑 Deteniendo cámara...');
+    
     if (videoRef.current?.srcObject) {
       const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
-      tracks.forEach(track => track.stop());
+      tracks.forEach(track => {
+        track.stop();
+        console.log('🔇 Track detenido:', track.kind);
+      });
+      videoRef.current.srcObject = null;
     }
+    
     setScanning(false);
+    setError('');
+    
+    toast({
+      title: "Cámara desactivada",
+      description: "Escaneo cancelado"
+    });
   };
 
   const handleManualSubmit = () => {
@@ -88,9 +162,10 @@ export default function QrScanner() {
                 <Button 
                   onClick={startCamera}
                   className="w-full bg-green-600 hover:bg-green-700"
+                  disabled={scanning}
                 >
                   <Camera className="h-4 w-4 mr-2" />
-                  Escanear con Cámara
+                  {scanning ? 'Activando cámara...' : 'Escanear con Cámara'}
                 </Button>
                 
                 <Button 
@@ -101,6 +176,27 @@ export default function QrScanner() {
                   <FileText className="h-4 w-4 mr-2" />
                   Entrada Manual
                 </Button>
+                
+                {/* Test button para debugging */}
+                <div className="pt-2 border-t">
+                  <Button 
+                    onClick={() => {
+                      console.log('🧪 Test de compatibilidad de cámara');
+                      console.log('navigator.mediaDevices:', !!navigator.mediaDevices);
+                      console.log('getUserMedia:', !!navigator.mediaDevices?.getUserMedia);
+                      console.log('videoRef.current:', !!videoRef.current);
+                      toast({
+                        title: "Test de cámara",
+                        description: "Revisa la consola del navegador para detalles"
+                      });
+                    }}
+                    variant="outline"
+                    size="sm"
+                    className="w-full text-xs"
+                  >
+                    🧪 Test Compatibilidad Cámara
+                  </Button>
+                </div>
 
                 {/* Botones de demostración */}
                 <div className="pt-4 border-t">
@@ -129,21 +225,61 @@ export default function QrScanner() {
 
             {scanning && (
               <div className="space-y-4">
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  className="w-full rounded-lg"
-                  style={{ aspectRatio: '4/3' }}
-                />
+                <div className="relative bg-black rounded-lg overflow-hidden">
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className="w-full h-auto object-cover"
+                    style={{ 
+                      aspectRatio: '4/3',
+                      minHeight: '240px'
+                    }}
+                    onLoadedMetadata={() => {
+                      console.log('📹 Video metadata loaded successfully');
+                    }}
+                    onPlay={() => {
+                      console.log('▶️ Video playing');
+                    }}
+                    onError={(e) => {
+                      console.error('❌ Video error:', e);
+                    }}
+                  />
+                  
+                  {/* Overlay para guía de escaneo */}
+                  <div className="absolute inset-0 pointer-events-none">
+                    <div className="absolute inset-4 border-2 border-white border-dashed rounded-lg opacity-50"></div>
+                    <div className="absolute bottom-4 left-4 right-4 text-center">
+                      <p className="text-white text-sm bg-black bg-opacity-50 rounded px-2 py-1">
+                        Centra el código QR en el marco
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
                 <canvas ref={canvasRef} className="hidden" />
-                <Button 
-                  onClick={stopCamera}
-                  variant="outline"
-                  className="w-full"
-                >
-                  Cancelar Escaneo
-                </Button>
+                
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={stopCamera}
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    Cancelar Escaneo
+                  </Button>
+                  
+                  <Button 
+                    onClick={() => {
+                      setManualEntry(true);
+                      stopCamera();
+                    }}
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    Entrada Manual
+                  </Button>
+                </div>
               </div>
             )}
 
