@@ -4,7 +4,9 @@ import {
   RecyclingPoint, 
   InsertRecyclingPoint, 
   BottleDeposit, 
-  InsertBottleDeposit 
+  InsertBottleDeposit,
+  ProcessingCenter,
+  InsertProcessingCenter
 } from "@shared/schema";
 
 // Interface for storage operations
@@ -26,6 +28,12 @@ export interface IStorage {
   getAllBottleDeposits(): Promise<BottleDeposit[]>;
   createBottleDeposit(deposit: InsertBottleDeposit): Promise<BottleDeposit>;
   
+  // Processing Center operations
+  getProcessingCenter(id: number): Promise<ProcessingCenter | undefined>;
+  getAllProcessingCenters(): Promise<ProcessingCenter[]>;
+  getProcessingCentersByType(type: string): Promise<ProcessingCenter[]>;
+  createProcessingCenter(center: InsertProcessingCenter): Promise<ProcessingCenter>;
+  
   // Statistics
   getTotalBottles(): Promise<number>;
   getTotalBatches(): Promise<number>;
@@ -42,17 +50,21 @@ export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private recyclingPoints: Map<number, RecyclingPoint>;
   private bottleDeposits: Map<number, BottleDeposit>;
+  private processingCenters: Map<number, ProcessingCenter>;
   private userIdCounter: number;
   private pointIdCounter: number;
   private depositIdCounter: number;
+  private processingCenterIdCounter: number;
 
   constructor() {
     this.users = new Map();
     this.recyclingPoints = new Map();
     this.bottleDeposits = new Map();
+    this.processingCenters = new Map();
     this.userIdCounter = 1;
     this.pointIdCounter = 1;
     this.depositIdCounter = 1;
+    this.processingCenterIdCounter = 1;
     
     // Initialize with sample data
     this.initializeSampleData();

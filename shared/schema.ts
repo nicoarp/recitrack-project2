@@ -118,23 +118,23 @@ export const qrValidations = pgTable("qr_validations", {
   phase: text("phase").notNull(), // Fase validada (Deposit, Batch, Process, Product)
   previousPhase: text("previous_phase"), // Fase anterior
   
-  // Campos obligatorios del operador
-  operatorName: text("operator_name").notNull(), // Nombre completo del operador
-  operatorRut: text("operator_rut").notNull(), // RUT chileno del operador
+  // Campos obligatorios del operador (opcionales durante migración)
+  operatorName: text("operator_name"), // Nombre completo del operador
+  operatorRut: text("operator_rut"), // RUT chileno del operador
   validatedBy: text("validated_by"), // Email/ID del operador que realizó la validación
   
   // Ubicación obligatoria (debe ser de centros de procesado registrados)
-  processingCenterId: integer("processing_center_id").notNull(), // ID del centro de procesado
+  processingCenterId: integer("processing_center_id"), // ID del centro de procesado
   location: text("location"), // Ubicación de la validación (duplicado para compatibilidad)
   
   // Peso y diferencias obligatorios
-  currentWeight: real("current_weight").notNull(), // Peso actual en kg
+  currentWeight: real("current_weight"), // Peso actual en kg
   initialWeight: real("initial_weight"), // Peso inicial para cálculo
   weightDifference: real("weight_difference"), // Diferencia calculada
   weightDifferencePercent: real("weight_difference_percent"), // Porcentaje de diferencia
   
-  // Evidencia obligatoria
-  evidenceHash: text("evidence_hash").notNull(), // Hash de evidencia (fotos de báscula obligatorias)
+  // Evidencia obligatoria (opcional durante migración)
+  evidenceHash: text("evidence_hash"), // Hash de evidencia (fotos de báscula obligatorias)
   evidenceMetadata: json("evidence_metadata"), // Metadatos de evidencia (peso, calidad, etc.)
   scalePhotoRequired: boolean("scale_photo_required").default(true), // Foto de báscula obligatoria
   
