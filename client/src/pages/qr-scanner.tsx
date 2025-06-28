@@ -63,27 +63,54 @@ export default function QrScanner() {
     }
   };
 
-  // Función para manejar QR detectado
-  const handleQRDetected = (detectedCode: string) => {
+  // Función para manejar QR detectado - ahora usa el backend
+  const handleQRDetected = async (detectedCode: string) => {
     console.log('✅ Procesando código QR:', detectedCode);
     setQrCode(detectedCode);
     
-    toast({
-      title: "¡Código QR detectado!",
-      description: `Código: ${detectedCode}`,
-    });
+    try {
+      // Enviar QR al backend para resolución
+      const response = await fetch('/api/qr/resolve', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ qrCode: detectedCode }),
+      });
 
-    // Redirigir según el tipo de QR
-    if (detectedCode.includes('CENTRO-') || detectedCode.includes('PUNTO-')) {
-      // QR de punto de reciclaje - ir al formulario de recolección
-      setLocation(`/collection-form?pointId=${detectedCode}`);
-    } else if (detectedCode.startsWith('QR-')) {
-      // QR de validación - ir al formulario de validación
-      setLocation(`/batch-validation?qrId=${detectedCode}`);
-    } else {
-      // QR desconocido - mostrar entrada manual
+      const result = await response.json();
+
+      if (result.success) {
+        toast({
+          title: "¡Código QR detectado!",
+          description: result.message || `Tipo: ${result.type}`,
+        });
+
+        // Redirigir según la respuesta del backend
+        console.log('🎯 Redirección automática:', result.data.redirectUrl);
+        setLocation(result.data.redirectUrl);
+      } else {
+        // QR no reconocido por el backend
+        console.warn('⚠️ QR no reconocido:', result.error);
+        setManualEntry(true);
+        setError(result.error || 'Código QR no reconocido en el sistema');
+        
+        toast({
+          title: "QR no reconocido",
+          description: result.suggestion || 'Usa entrada manual',
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('❌ Error resolviendo QR:', error);
       setManualEntry(true);
-      setError('Código QR no reconocido. Usa entrada manual.');
+      setError('Error conectando con el servidor');
+      
+      toast({
+        title: "Error de conexión",
+        description: "No se pudo validar el QR. Usa entrada manual.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -207,21 +234,52 @@ export default function QrScanner() {
     }
   };
 
-  const handleManualSubmit = () => {
+  const handleManualSubmit = async () => {
     if (!qrCode.trim()) {
       setError('Ingresa un código QR válido');
       return;
     }
     
-    // Validar formato del QR
-    if (qrCode.includes('CENTRO-') || qrCode.includes('PUNTO-')) {
-      // Es un QR de punto de reciclaje
-      setLocation(`/collection-form?pointId=${qrCode}`);
-    } else if (qrCode.startsWith('QR-')) {
-      // Es un QR de validación
-      setLocation(`/batch-validation?qrId=${qrCode}`);
-    } else {
-      setError('Formato de QR no reconocido');
+    try {
+      // Usar el mismo endpoint de resolución para entrada manual
+      const response = await fetch('/api/qr/resolve', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ qrCode: qrCode.trim() }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast({
+          title: "Código validado",
+          description: result.message || `Tipo: ${result.type}`,
+        });
+
+        // Redirigir según la respuesta del backend
+        console.log('🎯 Redirección manual:', result.data.redirectUrl);
+        setLocation(result.data.redirectUrl);
+      } else {
+        // QR no reconocido por el backend
+        setError(result.error || 'Código QR no reconocido en el sistema');
+        
+        toast({
+          title: "QR no válido",
+          description: result.suggestion || 'Verifica el código e intenta de nuevo',
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('❌ Error validando QR manual:', error);
+      setError('Error conectando con el servidor');
+      
+      toast({
+        title: "Error de conexión",
+        description: "No se pudo validar el código. Intenta de nuevo.",
+        variant: "destructive"
+      });
     }
   };
 

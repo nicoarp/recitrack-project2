@@ -851,6 +851,109 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // === ENDPOINTS DEL SISTEMA QR ===
 
+  // Resolver y validar códigos QR escaneados
+  app.post('/api/qr/resolve', async (req, res) => {
+    try {
+      const { qrCode } = req.body;
+      
+      if (!qrCode || typeof qrCode !== 'string') {
+        return res.status(400).json({ 
+          success: false,
+          error: 'Código QR inválido o vacío' 
+        });
+      }
+
+      console.log('🔍 Resolviendo QR:', qrCode);
+
+      // 1. Verificar si es un punto de reciclaje
+      const recyclingPoints = await storage.getAllRecyclingPoints();
+      const matchingPoint = recyclingPoints.find(point => 
+        qrCode === point.depositId || 
+        qrCode.includes(point.depositId) ||
+        qrCode === `PUNTO-${point.depositId}` ||
+        qrCode === `clean-point-${point.depositId}`
+      );
+
+      if (matchingPoint) {
+        return res.json({
+          success: true,
+          type: 'punto-limpio',
+          data: {
+            pointId: matchingPoint.depositId,
+            name: matchingPoint.name,
+            location: matchingPoint.address,
+            redirectUrl: `/collection-form?pointId=${matchingPoint.depositId}`
+          },
+          message: `Punto de reciclaje encontrado: ${matchingPoint.name}`
+        });
+      }
+
+      // 2. Verificar si es un QR de validación existente en la base de datos
+      const qrRecord = await qrService.getQrCodeById(qrCode);
+      if (qrRecord) {
+        return res.json({
+          success: true,
+          type: 'validacion',
+          data: {
+            qrId: qrRecord.qrId,
+            eventType: qrRecord.eventType,
+            status: qrRecord.status,
+            redirectUrl: `/batch-validation?qrId=${qrRecord.qrId}`
+          },
+          message: `QR de validación encontrado: ${qrRecord.eventType}`
+        });
+      }
+
+      // 3. Verificar si es un QR con formato QR-xxxxx (formato estándar de validación)
+      if (qrCode.startsWith('QR-')) {
+        return res.json({
+          success: true,
+          type: 'validacion',
+          data: {
+            qrId: qrCode,
+            redirectUrl: `/batch-validation?qrId=${qrCode}`
+          },
+          message: 'QR de validación detectado'
+        });
+      }
+
+      // 4. Intentar interpretar otros formatos conocidos para puntos de reciclaje
+      if (qrCode.startsWith('CENTRO-') || qrCode.startsWith('PUNTO-')) {
+        const pointId = qrCode.replace(/^(CENTRO-|PUNTO-)/, '');
+        const point = recyclingPoints.find(p => p.depositId.includes(pointId));
+        
+        if (point) {
+          return res.json({
+            success: true,
+            type: 'punto-limpio',
+            data: {
+              pointId: point.depositId,
+              name: point.name,
+              location: point.address,
+              redirectUrl: `/collection-form?pointId=${point.depositId}`
+            },
+            message: `Punto de reciclaje encontrado: ${point.name}`
+          });
+        }
+      }
+
+      // 5. QR no reconocido en el sistema
+      return res.status(404).json({
+        success: false,
+        error: 'Código QR no reconocido en el sistema',
+        suggestion: 'Verifica que el código sea válido o usa entrada manual',
+        receivedCode: qrCode
+      });
+
+    } catch (error) {
+      console.error('❌ Error resolviendo QR:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Error interno del servidor al procesar QR'
+      });
+    }
+  });
+
   // Generar código QR para un evento
   app.post('/api/qr/generate', async (req, res) => {
     try {
