@@ -27,6 +27,14 @@ A blockchain-powered environmental impact platform that transforms plastic bottl
 
 ## Recent Changes
 
+### December 28, 2024 - Simplified Single Validation Process
+- ✅ **Eliminated Dual Validation System**: Removed confusing "standard" vs "enhanced" validation options per user feedback
+- ✅ **Single Validation Route**: Simplified to `/validation` route with comprehensive form (formerly enhanced-validation)
+- ✅ **Updated Dashboard**: Streamlined UI with single "Validar Lote" button instead of multiple options
+- ✅ **Consistent Naming**: Changed component name from EnhancedValidation to ValidationForm for clarity
+- ✅ **User Experience**: Eliminated complexity - now single process with mandatory fields, RUT validation, and evidence requirements
+- ✅ **Route Cleanup**: Removed BatchValidation component and consolidated to single validation workflow
+
 ### December 28, 2024 - Critical QR Lifecycle Fix & QueryClient Resolution
 - ✅ **Dynamic QR Resolution**: Fixed critical issue where system-generated QRs were not recognized by `/api/qr/resolve`
 - ✅ **JSON QR Support**: Enhanced endpoint to parse complex QR formats (JSON with qrId, eventType, system metadata)
