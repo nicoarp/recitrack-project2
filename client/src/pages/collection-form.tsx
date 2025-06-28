@@ -1,9 +1,9 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useLocation, useSearch } from 'wouter';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -42,6 +42,18 @@ export default function CollectionForm() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Obtener datos del punto limpio automáticamente
+  const { data: recyclingPoint, isLoading: loadingPoint } = useQuery({
+    queryKey: ['/api/recycling-points', pointId],
+    queryFn: async () => {
+      const response = await apiRequest('GET', '/api/recycling-points');
+      const points = await response.json();
+      return points.find((p: any) => p.depositId === pointId);
+    },
+    enabled: !!pointId,
+    retry: false
+  });
+
   const form = useForm<CollectionFormData>({
     resolver: zodResolver(collectionFormSchema),
     defaultValues: {
@@ -50,12 +62,20 @@ export default function CollectionForm() {
       operatorEmail: '',
       weight: '',
       bottleCount: '',
-      location: 'Centro de Acopio Norte',
+      location: '',
       notes: '',
       scalePhoto: '',
       extraEvidence: ''
     }
   });
+
+  // Actualizar ubicación cuando se obtienen los datos del punto
+  useEffect(() => {
+    if (recyclingPoint) {
+      form.setValue('location', `${recyclingPoint.name} - ${recyclingPoint.address}`);
+      form.setValue('pointId', recyclingPoint.depositId);
+    }
+  }, [recyclingPoint, form]);
 
   // Función para convertir archivo a base64
   const fileToBase64 = (file: File): Promise<string> => {
@@ -352,6 +372,48 @@ export default function CollectionForm() {
                   />
                 </div>
 
+                {/* Información del Punto Limpio - Automática desde QR */}
+                <div className="space-y-3">
+                  <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                    <MapPin className="h-4 w-4" />
+                    Punto de Recolección
+                  </h3>
+                  
+                  {/* Información bloqueada del punto limpio */}
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <CheckCircle className="h-4 w-4 text-blue-600" />
+                      <span className="text-sm font-medium text-blue-900">
+                        Datos verificados desde QR
+                      </span>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div>
+                        <Label className="text-xs text-blue-700">ID del Punto</Label>
+                        <Input 
+                          value={pointId} 
+                          disabled 
+                          className="bg-blue-100 border-blue-200 text-blue-900 font-mono text-sm"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label className="text-xs text-blue-700">Ubicación Verificada</Label>
+                        <Input 
+                          value={loadingPoint ? "Cargando..." : (recyclingPoint ? `${recyclingPoint.name} - ${recyclingPoint.address}` : "Sin datos")} 
+                          disabled 
+                          className="bg-blue-100 border-blue-200 text-blue-900 text-sm"
+                        />
+                      </div>
+                    </div>
+                    
+                    <p className="text-xs text-blue-600 mt-2">
+                      🔒 Estos datos no pueden modificarse para garantizar la trazabilidad
+                    </p>
+                  </div>
+                </div>
+
                 {/* Información del Lote */}
                 <div className="space-y-3">
                   <h3 className="font-semibold text-gray-900 flex items-center gap-2">
@@ -388,20 +450,6 @@ export default function CollectionForm() {
                       )}
                     />
                   </div>
-
-                  <FormField
-                    control={form.control}
-                    name="location"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Ubicación</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Centro de Acopio Norte" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
                 </div>
 
                 {/* Evidencia Obligatoria */}
