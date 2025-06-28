@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, json } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, json, real } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -82,6 +82,19 @@ export const blockchainEvents = pgTable("blockchain_events", {
 
 // === TABLAS DEL SISTEMA QR ===
 
+// Tabla para centros de procesado registrados
+export const processingCenters = pgTable("processing_centers", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  location: text("location").notNull(),
+  address: text("address"),
+  centerType: text("center_type").notNull(), // batch, process, product
+  status: text("status").default("active"), // active, inactive
+  contactInfo: json("contact_info"), // teléfono, email, etc.
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Tabla para códigos QR y su vinculación física-digital
 export const qrCodes = pgTable("qr_codes", {
   id: serial("id").primaryKey(),
@@ -104,10 +117,28 @@ export const qrValidations = pgTable("qr_validations", {
   eventId: text("event_id"), // ID del evento blockchain generado por esta validación
   phase: text("phase").notNull(), // Fase validada (Deposit, Batch, Process, Product)
   previousPhase: text("previous_phase"), // Fase anterior
-  validatedBy: text("validated_by"), // Operador que realizó la validación
-  location: text("location"), // Ubicación de la validación
-  evidenceHash: text("evidence_hash"), // Hash de evidencia (fotos, documentos)
+  
+  // Campos obligatorios del operador
+  operatorName: text("operator_name").notNull(), // Nombre completo del operador
+  operatorRut: text("operator_rut").notNull(), // RUT chileno del operador
+  validatedBy: text("validated_by"), // Email/ID del operador que realizó la validación
+  
+  // Ubicación obligatoria (debe ser de centros de procesado registrados)
+  processingCenterId: integer("processing_center_id").notNull(), // ID del centro de procesado
+  location: text("location"), // Ubicación de la validación (duplicado para compatibilidad)
+  
+  // Peso y diferencias obligatorios
+  currentWeight: real("current_weight").notNull(), // Peso actual en kg
+  initialWeight: real("initial_weight"), // Peso inicial para cálculo
+  weightDifference: real("weight_difference"), // Diferencia calculada
+  weightDifferencePercent: real("weight_difference_percent"), // Porcentaje de diferencia
+  
+  // Evidencia obligatoria
+  evidenceHash: text("evidence_hash").notNull(), // Hash de evidencia (fotos de báscula obligatorias)
   evidenceMetadata: json("evidence_metadata"), // Metadatos de evidencia (peso, calidad, etc.)
+  scalePhotoRequired: boolean("scale_photo_required").default(true), // Foto de báscula obligatoria
+  
+  // Blockchain y sistema
   txHash: text("tx_hash"), // Hash de transacción blockchain
   blockNumber: integer("block_number"), // Número de bloque
   validationStatus: text("validation_status").default("pending"), // pending, confirmed, failed
@@ -182,15 +213,32 @@ export const insertQrCodeSchema = createInsertSchema(qrCodes).pick({
   createdBy: true,
 });
 
+export const insertProcessingCenterSchema = createInsertSchema(processingCenters).pick({
+  name: true,
+  location: true,
+  address: true,
+  centerType: true,
+  status: true,
+  contactInfo: true,
+});
+
 export const insertQrValidationSchema = createInsertSchema(qrValidations).pick({
   qrId: true,
   eventId: true,
   phase: true,
   previousPhase: true,
+  operatorName: true,
+  operatorRut: true,
   validatedBy: true,
+  processingCenterId: true,
   location: true,
+  currentWeight: true,
+  initialWeight: true,
+  weightDifference: true,
+  weightDifferencePercent: true,
   evidenceHash: true,
   evidenceMetadata: true,
+  scalePhotoRequired: true,
   txHash: true,
   blockNumber: true,
   validationStatus: true,
@@ -214,6 +262,9 @@ export type BlockchainEvent = typeof blockchainEvents.$inferSelect;
 
 export type InsertQrCode = z.infer<typeof insertQrCodeSchema>;
 export type QrCode = typeof qrCodes.$inferSelect;
+
+export type InsertProcessingCenter = z.infer<typeof insertProcessingCenterSchema>;
+export type ProcessingCenter = typeof processingCenters.$inferSelect;
 
 export type InsertQrValidation = z.infer<typeof insertQrValidationSchema>;
 export type QrValidation = typeof qrValidations.$inferSelect;
