@@ -27,13 +27,16 @@ A blockchain-powered environmental impact platform that transforms plastic bottl
 
 ## Recent Changes
 
-### December 28, 2024 - Critical QR Lifecycle Fix
+### December 28, 2024 - Critical QR Lifecycle Fix & QueryClient Resolution
 - ✅ **Dynamic QR Resolution**: Fixed critical issue where system-generated QRs were not recognized by `/api/qr/resolve`
 - ✅ **JSON QR Support**: Enhanced endpoint to parse complex QR formats (JSON with qrId, eventType, system metadata)
+- ✅ **QueryClient URL Construction**: Fixed TanStack Query URL building for parameterized endpoints like `/api/qr/{qrId}`
+- ✅ **Race Condition Prevention**: Resolved frontend validation issues that caused "QR inválido" errors
 - ✅ **End-to-End Traceability**: Restored complete workflow from lote registration → QR generation → QR scanning → validation
 - ✅ **Dual QR Format Support**: System handles both simple ID QRs and complex JSON QRs seamlessly
 - ✅ **Metadata Preservation**: All QR resolution includes complete batch metadata for validation workflows
 - ✅ **Phase Validation**: Confirmed sequential phase validation (Deposit → Batch → Process → Product) working correctly
+- ✅ **Blockchain Integration**: Validated complete flow with successful blockchain transaction recording
 
 ### December 28, 2024 - Image Compression & Upload Optimization
 - ✅ **Automatic Image Compression**: Client-side compression reduces images to 1024x1024 max with 80% quality

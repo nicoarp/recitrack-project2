@@ -249,6 +249,14 @@ export default function BatchValidation() {
   }
 
   if (qrError || !(qrInfo as any)?.success) {
+    // Log detallado del error para debugging
+    console.error('❌ Error en validación QR:', {
+      qrError: qrError,
+      qrInfoSuccess: (qrInfo as any)?.success,
+      qrInfoFull: qrInfo,
+      qrId
+    });
+
     return (
       <div className="min-h-screen bg-gradient-to-b from-red-50 to-white p-4">
         <div className="max-w-md mx-auto">
@@ -259,6 +267,9 @@ export default function BatchValidation() {
               <p className="text-red-700 mb-4">
                 No se pudo encontrar información para este QR
               </p>
+              <div className="text-xs text-gray-600 mb-4 p-2 bg-gray-100 rounded">
+                Debug: QR ID = {qrId} | Error = {qrError?.message || 'Sin error'} | Success = {String((qrInfo as any)?.success)}
+              </div>
               <Button onClick={() => setLocation('/qr-scanner')}>
                 Escanear Otro QR
               </Button>
