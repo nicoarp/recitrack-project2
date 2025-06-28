@@ -165,13 +165,22 @@ export default function CollectionForm() {
   // Mutación para crear el depósito y generar QR
   const createDepositMutation = useMutation({
     mutationFn: async (data: CollectionFormData) => {
-      // Primero registramos el depósito
+      // Validar que todos los campos requeridos estén presentes
+      if (!data.pointId || !data.location || !data.bottleCount) {
+        throw new Error(`Datos faltantes: pointId=${data.pointId}, location=${data.location}, bottleCount=${data.bottleCount}`);
+      }
+
+      // Generar un batchId único basado en timestamp y pointId
+      const batchId = Math.floor(Date.now() / 1000); // timestamp en segundos
+      
+      // Primero registramos el depósito con el schema correcto
       const depositRes = await apiRequest('POST', '/api/bottle-deposits', {
+        batchId: batchId,
+        bottleCount: parseInt(data.bottleCount),
+        location: data.location,
+        depositId: data.pointId,
         userId: 1, // Usuario por defecto para demo
-        recyclingPointId: 1,
-        quantity: parseInt(data.bottleCount),
-        weight: parseFloat(data.weight),
-        notes: data.notes
+        evidenceHash: data.scalePhoto ? 'hash_' + Date.now() : undefined
       });
       const depositResponse = await depositRes.json();
 
@@ -179,7 +188,8 @@ export default function CollectionForm() {
       const qrRes = await apiRequest('POST', '/api/qr/generate', {
         eventType: 'Deposit',
         metadata: {
-          depositId: depositResponse.id || 'dep_' + Date.now(),
+          batchId: batchId,
+          depositId: data.pointId,
           pointId: data.pointId,
           operatorName: data.operatorName,
           operatorEmail: data.operatorEmail,
@@ -213,6 +223,27 @@ export default function CollectionForm() {
   });
 
   const onSubmit = (data: CollectionFormData) => {
+    // Validación adicional antes del envío
+    console.log('🔍 Datos del formulario antes del envío:', data);
+    
+    const missingFields = [];
+    if (!data.pointId) missingFields.push('ID del punto');
+    if (!data.location) missingFields.push('Ubicación');
+    if (!data.bottleCount || data.bottleCount === '0') missingFields.push('Cantidad de botellas'); 
+    if (!data.weight || data.weight === '0') missingFields.push('Peso');
+    if (!data.operatorName) missingFields.push('Nombre del operador');
+    if (!data.operatorEmail) missingFields.push('Email del operador');
+    if (!data.scalePhoto) missingFields.push('Foto de la báscula');
+
+    if (missingFields.length > 0) {
+      toast({
+        title: "Datos incompletos",
+        description: `Faltan los siguientes campos: ${missingFields.join(', ')}`,
+        variant: "destructive"
+      });
+      return;
+    }
+
     createDepositMutation.mutate(data);
   };
 
