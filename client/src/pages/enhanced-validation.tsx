@@ -293,7 +293,7 @@ export default function EnhancedValidation() {
   }
 
   // Error en QR
-  if (qrError || !qrInfo?.success) {
+  if (qrError || !(qrInfo as any)?.success) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-red-50 to-white p-4">
         <div className="max-w-md mx-auto">
@@ -312,7 +312,7 @@ export default function EnhancedValidation() {
     );
   }
 
-  const qrData = qrInfo.qrCode;
+  const qrData = (qrInfo as any).qrCode;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white p-4">
