@@ -29,7 +29,20 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetch(queryKey[0] as string, {
+    // Construir URL correctamente cuando hay parámetros
+    let url = queryKey[0] as string;
+    if (queryKey.length > 1) {
+      // Si hay parámetros adicionales, construir la URL correctamente
+      const params = queryKey.slice(1).filter(param => param !== null && param !== undefined);
+      if (params.length > 0) {
+        // Para rutas como ['/api/qr', qrId] -> '/api/qr/qrId'
+        url = `${url}/${params.join('/')}`;
+      }
+    }
+
+    console.log('🌐 Query URL:', url, 'from queryKey:', queryKey);
+
+    const res = await fetch(url, {
       credentials: "include",
     });
 

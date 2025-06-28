@@ -68,6 +68,15 @@ export default function BatchValidation() {
     retry: false
   });
 
+  // Log para auditar qué está recibiendo el frontend
+  console.log('🔍 Debug QR Info:', {
+    qrId,
+    qrInfo,
+    isLoadingQr,
+    qrError,
+    hasSuccess: qrInfo ? (qrInfo as any)?.success : 'undefined'
+  });
+
   const form = useForm<ValidationFormData>({
     resolver: zodResolver(validationFormSchema),
     defaultValues: {
