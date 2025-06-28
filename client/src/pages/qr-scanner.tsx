@@ -20,8 +20,6 @@ export default function QrScanner() {
   const startCamera = async () => {
     try {
       setError('');
-      setScanning(false);
-      
       console.log('🔍 Iniciando cámara...');
       
       // Verificar compatibilidad
@@ -40,36 +38,43 @@ export default function QrScanner() {
 
       console.log('📷 Solicitando permisos de cámara...');
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
-      
       console.log('✅ Stream obtenido:', stream);
       
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        
-        // Esperar a que el video esté listo
-        await new Promise((resolve, reject) => {
-          if (videoRef.current) {
-            videoRef.current.onloadedmetadata = () => {
-              console.log('📹 Video metadata cargada');
-              resolve(true);
-            };
-            videoRef.current.onerror = (error) => {
-              console.error('❌ Error en video:', error);
-              reject(error);
-            };
-          }
-        });
-        
-        // Iniciar reproducción
-        await videoRef.current.play();
-        console.log('▶️ Video iniciado correctamente');
-        
-        setScanning(true);
-        toast({
-          title: "Cámara activada",
-          description: "Apunta hacia el código QR para escanearlo"
-        });
+      // Activar estado de escaneo primero para mostrar el video
+      setScanning(true);
+      
+      // Esperar a que el DOM se actualice
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Verificar que la referencia del video existe después del render
+      if (!videoRef.current) {
+        console.error('❌ videoRef.current es null después del render');
+        throw new Error('No se pudo acceder al elemento video');
       }
+      
+      console.log('📹 Asignando stream al video element');
+      videoRef.current.srcObject = stream;
+      
+      // Esperar a que el video esté listo y reproducir
+      videoRef.current.onloadedmetadata = async () => {
+        try {
+          console.log('📹 Video metadata cargada');
+          await videoRef.current?.play();
+          console.log('▶️ Video iniciado correctamente');
+          
+          toast({
+            title: "Cámara activada",
+            description: "Apunta hacia el código QR para escanearlo"
+          });
+        } catch (playError) {
+          console.warn('⚠️ Error en autoplay:', playError);
+          toast({
+            title: "Cámara activada",
+            description: "Toca la pantalla para iniciar el video"
+          });
+        }
+      };
+      
     } catch (err: any) {
       console.error('❌ Error cámara:', err);
       
@@ -85,6 +90,7 @@ export default function QrScanner() {
       
       setError(errorMessage);
       setManualEntry(true);
+      setScanning(false);
       
       toast({
         title: "Error de cámara",
