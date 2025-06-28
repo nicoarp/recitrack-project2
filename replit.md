@@ -27,6 +27,14 @@ A blockchain-powered environmental impact platform that transforms plastic bottl
 
 ## Recent Changes
 
+### December 28, 2024 - Image Compression & Upload Optimization
+- ✅ **Automatic Image Compression**: Client-side compression reduces images to 1024x1024 max with 80% quality
+- ✅ **Increased Server Limits**: Backend now accepts up to 10MB payloads for image uploads
+- ✅ **Smart Size Management**: Original files up to 20MB accepted, automatically compressed to optimal size
+- ✅ **Real-time Feedback**: Users see compression results with final file sizes in KB
+- ✅ **Error Prevention**: Clear messages for oversized files with automatic fallback to compression
+- ✅ **Canvas-based Processing**: Native browser compression maintains aspect ratio and quality
+
 ### December 28, 2024 - Scalable QR Resolution System
 - ✅ **Centralized QR Validation**: Implemented `/api/qr/resolve` endpoint for server-side QR validation and resolution
 - ✅ **Eliminated Hardcoded Logic**: Removed all hardcoded QR patterns from frontend - now fully backend-driven
