@@ -57,7 +57,7 @@ interface ProcessingCenter {
   status: string;
 }
 
-export default function ValidationForm() {
+export default function EnhancedValidation() {
   const [, setLocation] = useLocation();
   const search = useSearch();
   const queryParams = new URLSearchParams(search);
@@ -332,8 +332,8 @@ export default function ValidationForm() {
             Volver
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Validación de Lote</h1>
-            <p className="text-gray-600">Proceso único de validación con trazabilidad completa</p>
+            <h1 className="text-2xl font-bold text-gray-900">Validación Fortalecida</h1>
+            <p className="text-gray-600">Sistema de validación con campos obligatorios</p>
           </div>
         </div>
 
@@ -382,7 +382,7 @@ export default function ValidationForm() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Shield className="h-5 w-5" />
-              Formulario de Validación
+              Formulario de Validación Fortalecida
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -679,7 +679,7 @@ export default function ValidationForm() {
                     ) : (
                       <>
                         <CheckCircle className="h-4 w-4 mr-2" />
-                        Completar Validación
+                        Completar Validación Fortalecida
                       </>
                     )}
                   </Button>

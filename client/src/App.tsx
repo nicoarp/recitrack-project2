@@ -30,7 +30,7 @@ import TraceabilityChain from "@/pages/traceability-chain";
 import QrScanner from "@/pages/qr-scanner";
 import CollectionForm from "@/pages/collection-form";
 import BatchValidation from "@/pages/batch-validation";
-import ValidationForm from "@/pages/enhanced-validation";
+import EnhancedValidation from "@/pages/enhanced-validation";
 import QrHistory from "@/pages/qr-history";
 import Sidebar from "@/components/layout/sidebar";
 import MobileNav from "@/components/layout/mobile-nav";
@@ -86,7 +86,8 @@ function Router() {
       {/* Rutas QR - Accesibles para todos */}
       <Route path="/qr-scanner" component={QrScanner} />
       <Route path="/collection-form" component={CollectionForm} />
-      <Route path="/validation" component={ValidationForm} />
+      <Route path="/batch-validation" component={BatchValidation} />
+      <Route path="/enhanced-validation" component={EnhancedValidation} />
       <Route path="/qr-history/:qrId" component={QrHistory} />
       
       {/* Rutas para usuarios autenticados */}
