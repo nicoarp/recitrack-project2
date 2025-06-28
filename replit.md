@@ -27,6 +27,15 @@ A blockchain-powered environmental impact platform that transforms plastic bottl
 
 ## Recent Changes
 
+### December 28, 2024 - Scalable QR Resolution System
+- ✅ **Centralized QR Validation**: Implemented `/api/qr/resolve` endpoint for server-side QR validation and resolution
+- ✅ **Eliminated Hardcoded Logic**: Removed all hardcoded QR patterns from frontend - now fully backend-driven
+- ✅ **Scalable Architecture**: New QR codes automatically work without frontend modifications
+- ✅ **Comprehensive QR Support**: Handles recycling points, validation QRs, and custom formats seamlessly
+- ✅ **Enhanced Error Handling**: Clear error messages and fallback to manual entry for invalid QRs
+- ✅ **Real-time Detection**: ZXing Browser integration with automatic backend validation upon QR detection
+- ✅ **Future-Proof Design**: System ready for new QR types and permission validations
+
 ### December 28, 2024 - Enhanced QR Security & Anti-Fraud System
 - ✅ **Automatic Location Verification**: QR scanner now automatically extracts verified location data from recycling point QRs
 - ✅ **Locked Location Fields**: Collection form displays location and point ID as non-editable fields with blue security styling

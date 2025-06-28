@@ -283,12 +283,9 @@ export default function QrScanner() {
     }
   };
 
-  const simulateQrScan = (type: 'clean-point' | 'batch') => {
-    if (type === 'clean-point') {
-      setLocation('/collection-form?pointId=CENTRO-001');
-    } else {
-      setLocation('/batch-validation?qrId=QR-12345');
-    }
+  const testQrResolve = async (testCode: string) => {
+    // Usar el sistema real de resolución para las pruebas
+    await handleQRDetected(testCode);
   };
 
   // Limpiar recursos al desmontar el componente
@@ -334,7 +331,7 @@ export default function QrScanner() {
                 </p>
                 <div className="flex gap-2">
                   <Button 
-                    onClick={() => simulateQrScan('clean-point')} 
+                    onClick={() => testQrResolve('CENTRO-001')} 
                     variant="secondary" 
                     size="sm" 
                     className="flex-1"
@@ -342,7 +339,7 @@ export default function QrScanner() {
                     Punto Limpio
                   </Button>
                   <Button 
-                    onClick={() => simulateQrScan('batch')} 
+                    onClick={() => testQrResolve('QR-12345')} 
                     variant="secondary" 
                     size="sm" 
                     className="flex-1"
