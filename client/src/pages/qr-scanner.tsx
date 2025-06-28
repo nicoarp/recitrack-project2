@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Camera, Upload, FileText, AlertCircle } from 'lucide-react';
+import { Camera, FileText, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { BrowserQRCodeReader } from '@zxing/browser';
 
 export default function QrScanner() {
   const [, setLocation] = useLocation();
@@ -15,7 +16,100 @@ export default function QrScanner() {
   const [error, setError] = useState('');
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const codeReaderRef = useRef<BrowserQRCodeReader | null>(null);
+  const scanningIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
+
+  // Función para detectar códigos QR en el video
+  const detectQRCode = async () => {
+    if (!videoRef.current || !canvasRef.current || !codeReaderRef.current) {
+      return;
+    }
+
+    try {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      const context = canvas.getContext('2d');
+      
+      if (!context || video.videoWidth === 0 || video.videoHeight === 0) {
+        return;
+      }
+
+      // Configurar canvas con las dimensiones del video
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      
+      // Dibujar frame actual del video en el canvas
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      // Intentar detectar QR del frame actual
+      const result = await codeReaderRef.current.decodeFromCanvas(canvas);
+      
+      if (result && result.getText()) {
+        const detectedCode = result.getText();
+        console.log('🎯 QR detectado:', detectedCode);
+        
+        // Detener el escaneo
+        stopCamera();
+        
+        // Procesar el código QR
+        handleQRDetected(detectedCode);
+      }
+    } catch (error: any) {
+      // Errores normales durante el escaneo (no encontrado) - ignorar
+      if (error?.name !== 'NotFoundException') {
+        console.warn('⚠️ Error en detección QR:', error);
+      }
+    }
+  };
+
+  // Función para manejar QR detectado
+  const handleQRDetected = (detectedCode: string) => {
+    console.log('✅ Procesando código QR:', detectedCode);
+    setQrCode(detectedCode);
+    
+    toast({
+      title: "¡Código QR detectado!",
+      description: `Código: ${detectedCode}`,
+    });
+
+    // Redirigir según el tipo de QR
+    if (detectedCode.includes('CENTRO-') || detectedCode.includes('PUNTO-')) {
+      // QR de punto de reciclaje - ir al formulario de recolección
+      setLocation(`/collection-form?pointId=${detectedCode}`);
+    } else if (detectedCode.startsWith('QR-')) {
+      // QR de validación - ir al formulario de validación
+      setLocation(`/batch-validation?qrId=${detectedCode}`);
+    } else {
+      // QR desconocido - mostrar entrada manual
+      setManualEntry(true);
+      setError('Código QR no reconocido. Usa entrada manual.');
+    }
+  };
+
+  // Función para detener la cámara y limpiar recursos
+  const stopCamera = () => {
+    console.log('🛑 Deteniendo cámara...');
+    
+    // Detener detección automática
+    if (scanningIntervalRef.current) {
+      clearInterval(scanningIntervalRef.current);
+      scanningIntervalRef.current = null;
+      console.log('⏹️ Detección QR detenida');
+    }
+    
+    // Detener stream de video
+    if (videoRef.current && videoRef.current.srcObject) {
+      const stream = videoRef.current.srcObject as MediaStream;
+      stream.getTracks().forEach(track => {
+        track.stop();
+        console.log('📹 Track de cámara detenido');
+      });
+      videoRef.current.srcObject = null;
+    }
+    
+    setScanning(false);
+  };
 
   const startCamera = async () => {
     try {
@@ -55,12 +149,25 @@ export default function QrScanner() {
       console.log('📹 Asignando stream al video element');
       videoRef.current.srcObject = stream;
       
+      // Inicializar el lector QR
+      if (!codeReaderRef.current) {
+        codeReaderRef.current = new BrowserQRCodeReader();
+        console.log('🔍 Lector QR inicializado');
+      }
+      
       // Esperar a que el video esté listo y reproducir
       videoRef.current.onloadedmetadata = async () => {
         try {
           console.log('📹 Video metadata cargada');
           await videoRef.current?.play();
           console.log('▶️ Video iniciado correctamente');
+          
+          // Iniciar detección automática cada 500ms
+          scanningIntervalRef.current = setInterval(() => {
+            detectQRCode();
+          }, 500);
+          
+          console.log('🎯 Detección QR activada cada 500ms');
           
           toast({
             title: "Cámara activada",
@@ -100,27 +207,6 @@ export default function QrScanner() {
     }
   };
 
-  const stopCamera = () => {
-    console.log('🛑 Deteniendo cámara...');
-    
-    if (videoRef.current?.srcObject) {
-      const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
-      tracks.forEach(track => {
-        track.stop();
-        console.log('🔇 Track detenido:', track.kind);
-      });
-      videoRef.current.srcObject = null;
-    }
-    
-    setScanning(false);
-    setError('');
-    
-    toast({
-      title: "Cámara desactivada",
-      description: "Escaneo cancelado"
-    });
-  };
-
   const handleManualSubmit = () => {
     if (!qrCode.trim()) {
       setError('Ingresa un código QR válido');
@@ -128,12 +214,14 @@ export default function QrScanner() {
     }
     
     // Validar formato del QR
-    if (qrCode.includes('clean-point-')) {
-      // Es un QR de punto limpio
-      setLocation(`/collection-form?pointId=${qrCode.replace('clean-point-', '')}`);
-    } else {
-      // Es un QR de lote para validación
+    if (qrCode.includes('CENTRO-') || qrCode.includes('PUNTO-')) {
+      // Es un QR de punto de reciclaje
+      setLocation(`/collection-form?pointId=${qrCode}`);
+    } else if (qrCode.startsWith('QR-')) {
+      // Es un QR de validación
       setLocation(`/batch-validation?qrId=${qrCode}`);
+    } else {
+      setError('Formato de QR no reconocido');
     }
   };
 
@@ -141,11 +229,11 @@ export default function QrScanner() {
     if (type === 'clean-point') {
       setLocation('/collection-form?pointId=CENTRO-001');
     } else {
-      // Usar uno de los QRs generados anteriormente
-      setLocation('/batch-validation?qrId=fe5d495d-2ca8-4b8d-9148-9c859d1ff4cd');
+      setLocation('/batch-validation?qrId=QR-12345');
     }
   };
 
+  // Limpiar recursos al desmontar el componente
   useEffect(() => {
     return () => {
       stopCamera();
@@ -153,197 +241,134 @@ export default function QrScanner() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-50 to-white p-4">
-      <div className="max-w-md mx-auto space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Camera className="h-5 w-5" />
-              Escáner QR - EcoTraza
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {!scanning && !manualEntry && (
-              <div className="space-y-4">
-                <Button 
-                  onClick={startCamera}
-                  className="w-full bg-green-600 hover:bg-green-700"
-                  disabled={scanning}
-                >
-                  <Camera className="h-4 w-4 mr-2" />
-                  {scanning ? 'Activando cámara...' : 'Escanear con Cámara'}
-                </Button>
-                
-                <Button 
-                  onClick={() => setManualEntry(true)}
-                  variant="outline"
-                  className="w-full"
-                >
-                  <FileText className="h-4 w-4 mr-2" />
-                  Entrada Manual
-                </Button>
-                
-                {/* Test button para debugging */}
-                <div className="pt-2 border-t">
-                  <Button 
-                    onClick={() => {
-                      console.log('🧪 Test de compatibilidad de cámara');
-                      console.log('navigator.mediaDevices:', !!navigator.mediaDevices);
-                      console.log('getUserMedia:', !!navigator.mediaDevices?.getUserMedia);
-                      console.log('videoRef.current:', !!videoRef.current);
-                      toast({
-                        title: "Test de cámara",
-                        description: "Revisa la consola del navegador para detalles"
-                      });
-                    }}
-                    variant="outline"
-                    size="sm"
-                    className="w-full text-xs"
-                  >
-                    🧪 Test Compatibilidad Cámara
-                  </Button>
-                </div>
+    <div className="p-4 max-w-md mx-auto space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Camera className="h-5 w-5" />
+            Escáner QR
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {!scanning && !manualEntry && (
+            <div className="space-y-3">
+              <Button 
+                onClick={startCamera} 
+                className="w-full"
+                size="lg"
+              >
+                <Camera className="mr-2 h-4 w-4" />
+                Escanear con Cámara
+              </Button>
+              
+              <Button 
+                onClick={() => setManualEntry(true)} 
+                variant="outline" 
+                className="w-full"
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Entrada Manual
+              </Button>
 
-                {/* Botones de demostración */}
-                <div className="pt-4 border-t">
-                  <p className="text-sm text-gray-600 mb-2">Demostración:</p>
-                  <div className="space-y-2">
-                    <Button 
-                      onClick={() => simulateQrScan('clean-point')}
-                      variant="outline"
-                      size="sm"
-                      className="w-full"
-                    >
-                      Simular QR Punto Limpio
-                    </Button>
-                    <Button 
-                      onClick={() => simulateQrScan('batch')}
-                      variant="outline"
-                      size="sm"
-                      className="w-full"
-                    >
-                      Simular QR Lote Existente
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {scanning && (
-              <div className="space-y-4">
-                <div className="relative bg-black rounded-lg overflow-hidden">
-                  <video
-                    ref={videoRef}
-                    autoPlay
-                    playsInline
-                    muted
-                    className="w-full h-auto object-cover"
-                    style={{ 
-                      aspectRatio: '4/3',
-                      minHeight: '240px'
-                    }}
-                    onLoadedMetadata={() => {
-                      console.log('📹 Video metadata loaded successfully');
-                    }}
-                    onPlay={() => {
-                      console.log('▶️ Video playing');
-                    }}
-                    onError={(e) => {
-                      console.error('❌ Video error:', e);
-                    }}
-                  />
-                  
-                  {/* Overlay para guía de escaneo */}
-                  <div className="absolute inset-0 pointer-events-none">
-                    <div className="absolute inset-4 border-2 border-white border-dashed rounded-lg opacity-50"></div>
-                    <div className="absolute bottom-4 left-4 right-4 text-center">
-                      <p className="text-white text-sm bg-black bg-opacity-50 rounded px-2 py-1">
-                        Centra el código QR en el marco
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                
-                <canvas ref={canvasRef} className="hidden" />
-                
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground text-center">
+                  Pruebas rápidas:
+                </p>
                 <div className="flex gap-2">
                   <Button 
-                    onClick={stopCamera}
-                    variant="outline"
+                    onClick={() => simulateQrScan('clean-point')} 
+                    variant="secondary" 
+                    size="sm" 
                     className="flex-1"
                   >
-                    Cancelar Escaneo
+                    Punto Limpio
                   </Button>
-                  
                   <Button 
-                    onClick={() => {
-                      setManualEntry(true);
-                      stopCamera();
-                    }}
-                    variant="outline"
+                    onClick={() => simulateQrScan('batch')} 
+                    variant="secondary" 
+                    size="sm" 
                     className="flex-1"
                   >
-                    Entrada Manual
+                    Validación
                   </Button>
                 </div>
-              </div>
-            )}
-
-            {manualEntry && (
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="qrCode">Código QR o ID del Lote</Label>
-                  <Input
-                    id="qrCode"
-                    value={qrCode}
-                    onChange={(e) => setQrCode(e.target.value)}
-                    placeholder="Ej: CENTRO-001 o fe5d495d-2ca8..."
-                    className="mt-1"
-                  />
-                </div>
-                
-                <div className="flex gap-2">
-                  <Button 
-                    onClick={handleManualSubmit}
-                    className="flex-1 bg-green-600 hover:bg-green-700"
-                  >
-                    Continuar
-                  </Button>
-                  <Button 
-                    onClick={() => {
-                      setManualEntry(false);
-                      setQrCode('');
-                      setError('');
-                    }}
-                    variant="outline"
-                  >
-                    Cancelar
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {error && (
-              <div className="flex items-center gap-2 p-3 bg-red-50 text-red-700 rounded-lg">
-                <AlertCircle className="h-4 w-4" />
-                <span className="text-sm">{error}</span>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="bg-blue-50">
-          <CardContent className="pt-6">
-            <div className="text-center space-y-2">
-              <h3 className="font-semibold text-blue-900">¿Qué tipo de QR vas a escanear?</h3>
-              <div className="text-sm text-blue-700 space-y-1">
-                <p><strong>QR Punto Limpio:</strong> Para iniciar una nueva recolección</p>
-                <p><strong>QR de Lote:</strong> Para validar un lote existente</p>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          )}
+
+          {scanning && (
+            <div className="space-y-4">
+              <div className="relative">
+                <video
+                  ref={videoRef}
+                  className="w-full h-64 bg-black rounded-lg object-cover"
+                  playsInline
+                  muted
+                />
+                <div className="absolute inset-0 border-2 border-blue-500 rounded-lg pointer-events-none">
+                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-48 h-48 border-2 border-green-400 rounded-lg shadow-lg">
+                    <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-green-400"></div>
+                    <div className="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-green-400"></div>
+                    <div className="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 border-green-400"></div>
+                    <div className="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-green-400"></div>
+                  </div>
+                </div>
+              </div>
+              
+              <Button 
+                onClick={stopCamera} 
+                variant="destructive" 
+                className="w-full"
+              >
+                Cancelar Escaneo
+              </Button>
+            </div>
+          )}
+
+          {manualEntry && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="qrInput">Código QR</Label>
+                <Input
+                  id="qrInput"
+                  value={qrCode}
+                  onChange={(e) => setQrCode(e.target.value)}
+                  placeholder="Ej: CENTRO-001 o QR-12345"
+                />
+              </div>
+              
+              <div className="flex gap-2">
+                <Button 
+                  onClick={handleManualSubmit} 
+                  className="flex-1"
+                  disabled={!qrCode.trim()}
+                >
+                  Procesar
+                </Button>
+                <Button 
+                  onClick={() => setManualEntry(false)} 
+                  variant="outline"
+                >
+                  Volver
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {error && (
+            <div className="flex items-center gap-2 p-3 bg-red-50 text-red-700 rounded-lg">
+              <AlertCircle className="h-4 w-4" />
+              <span className="text-sm">{error}</span>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Canvas oculto para detección QR */}
+      <canvas 
+        ref={canvasRef} 
+        style={{ display: 'none' }}
+      />
     </div>
   );
 }
