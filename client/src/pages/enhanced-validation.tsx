@@ -102,8 +102,8 @@ export default function EnhancedValidation() {
 
   // Extraer peso inicial del metadata del QR
   useState(() => {
-    if (qrInfo?.success && qrInfo?.qrCode?.metadata?.weight) {
-      const weight = parseFloat(qrInfo.qrCode.metadata.weight.replace(/[^0-9.]/g, ""));
+    if (qrInfo && (qrInfo as any).success && (qrInfo as any).qrCode?.metadata?.weight) {
+      const weight = parseFloat((qrInfo as any).qrCode.metadata.weight.replace(/[^0-9.]/g, ""));
       if (!isNaN(weight)) {
         setInitialWeight(weight);
       }
@@ -238,13 +238,9 @@ export default function EnhancedValidation() {
         notes: data.notes
       };
 
-      return apiRequest("/api/qr/validate", {
-        method: "POST",
-        body: JSON.stringify(validationData),
-        headers: { "Content-Type": "application/json" }
-      });
+      return apiRequest("/api/qr/validate", validationData);
     },
-    onSuccess: (result) => {
+    onSuccess: (result: any) => {
       toast({
         title: "✅ Validación completada",
         description: `Evento ${result.validation?.phase} registrado exitosamente en blockchain`,
