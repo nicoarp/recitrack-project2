@@ -77,7 +77,53 @@ export default function CollectionForm() {
     }
   }, [recyclingPoint, form]);
 
-  // Función para convertir archivo a base64
+  // Función para comprimir y redimensionar imagen
+  const compressImage = (file: File, maxWidth: number = 1024, maxHeight: number = 1024, quality: number = 0.8): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      
+      img.onload = () => {
+        // Calcular dimensiones manteniendo aspect ratio
+        let { width, height } = img;
+        
+        if (width > height) {
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = (width * maxHeight) / height;
+            height = maxHeight;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Dibujar imagen redimensionada
+        ctx?.drawImage(img, 0, 0, width, height);
+        
+        // Convertir a base64 con compresión
+        const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
+        resolve(compressedBase64);
+      };
+      
+      img.onerror = reject;
+      
+      // Convertir archivo a URL para cargar en imagen
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  // Función para convertir archivo a base64 (mantenida para compatibilidad)
   const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -101,10 +147,11 @@ export default function CollectionForm() {
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) { // 5MB max
+    // Permitir archivos más grandes ya que se comprimirán automáticamente
+    if (file.size > 20 * 1024 * 1024) { // 20MB max original
       toast({
-        title: "Error", 
-        description: "La imagen debe ser menor a 5MB",
+        title: "Imagen demasiado grande",
+        description: "La imagen debe ser menor a 20MB",
         variant: "destructive"
       });
       return;
@@ -112,16 +159,22 @@ export default function CollectionForm() {
 
     setUploading(true);
     try {
-      const base64 = await fileToBase64(file);
-      form.setValue('scalePhoto', base64);
+      // Comprimir imagen automáticamente
+      const compressedBase64 = await compressImage(file, 1024, 1024, 0.8);
+      
+      // Verificar tamaño final
+      const compressedSizeKB = Math.round((compressedBase64.length * 3) / 4 / 1024);
+      
+      form.setValue('scalePhoto', compressedBase64);
       toast({
-        title: "Foto cargada",
-        description: "Foto de báscula cargada correctamente"
+        title: "Foto procesada",
+        description: `Foto de báscula cargada y comprimida (${compressedSizeKB}KB)`
       });
     } catch (error) {
+      console.error('Error comprimiendo imagen:', error);
       toast({
         title: "Error",
-        description: "Error al cargar la foto",
+        description: "Error al procesar la imagen. Intenta con otra foto.",
         variant: "destructive"
       });
     } finally {
@@ -143,18 +196,34 @@ export default function CollectionForm() {
       return;
     }
 
+    // Permitir archivos más grandes ya que se comprimirán automáticamente
+    if (file.size > 20 * 1024 * 1024) { // 20MB max original
+      toast({
+        title: "Imagen demasiado grande",
+        description: "La imagen debe ser menor a 20MB",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setUploading(true);
     try {
-      const base64 = await fileToBase64(file);
-      form.setValue('extraEvidence', base64);
+      // Comprimir imagen automáticamente
+      const compressedBase64 = await compressImage(file, 1024, 1024, 0.8);
+      
+      // Verificar tamaño final
+      const compressedSizeKB = Math.round((compressedBase64.length * 3) / 4 / 1024);
+      
+      form.setValue('extraEvidence', compressedBase64);
       toast({
-        title: "Evidencia cargada",
-        description: "Evidencia extra cargada correctamente"
+        title: "Evidencia procesada",
+        description: `Evidencia extra cargada y comprimida (${compressedSizeKB}KB)`
       });
     } catch (error) {
+      console.error('Error comprimiendo evidencia:', error);
       toast({
         title: "Error",
-        description: "Error al cargar la evidencia",
+        description: "Error al procesar la imagen. Intenta con otra foto.",
         variant: "destructive"
       });
     } finally {
