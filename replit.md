@@ -27,6 +27,15 @@ A blockchain-powered environmental impact platform that transforms plastic bottl
 
 ## Recent Changes
 
+### December 28, 2024 - Enhanced QR Security & Anti-Fraud System
+- ✅ **Automatic Location Verification**: QR scanner now automatically extracts verified location data from recycling point QRs
+- ✅ **Locked Location Fields**: Collection form displays location and point ID as non-editable fields with blue security styling
+- ✅ **Anti-Fraud Protection**: Users cannot modify location data - only weight, photos, and operator details are editable
+- ✅ **Visual Security Indicators**: Locked fields show verification checkmarks and clear "cannot be modified" messages
+- ✅ **Database Integration**: Form automatically queries recycling point data from database using pointId parameter
+- ✅ **Enhanced UI/UX**: Added quick access buttons to dashboard for easier QR workflow navigation
+- ✅ **Trazability Assurance**: All events now register with immutable location data tied to authentic recycling points
+
 ### December 27, 2024 - Complete QR System Integration
 - ✅ **QR Code Generation**: Implemented comprehensive QR generation with UUID-based unique codes containing event metadata and system identification
 - ✅ **QR Database Models**: Created `qrCodes` and `qrValidations` tables for complete QR lifecycle tracking with evidence metadata support
