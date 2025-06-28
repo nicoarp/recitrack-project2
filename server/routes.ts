@@ -65,6 +65,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // === ENDPOINTS CENTROS DE PROCESADO ===
+  
+  app.get("/api/processing-centers", async (_req, res) => {
+    try {
+      const centers = await storage.getAllProcessingCenters();
+      res.json(centers);
+    } catch (error) {
+      console.error("Error al obtener centros de procesado:", error);
+      res.status(500).json({ message: "Error al obtener centros de procesado" });
+    }
+  });
+
+  app.get("/api/processing-centers/type/:type", async (req, res) => {
+    try {
+      const { type } = req.params;
+      const centers = await storage.getProcessingCentersByType(type);
+      res.json(centers);
+    } catch (error) {
+      console.error("Error al obtener centros por tipo:", error);
+      res.status(500).json({ message: "Error al obtener centros de procesado" });
+    }
+  });
+
+  app.get("/api/processing-centers/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const center = await storage.getProcessingCenter(id);
+      if (!center) {
+        return res.status(404).json({ message: "Centro de procesado no encontrado" });
+      }
+      res.json(center);
+    } catch (error) {
+      console.error("Error al obtener centro de procesado:", error);
+      res.status(500).json({ message: "Error al buscar centro de procesado" });
+    }
+  });
+
   app.get("/api/bottle-deposits", async (_req, res) => {
     const deposits = await storage.getAllBottleDeposits();
     res.json(deposits);

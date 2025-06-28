@@ -12,8 +12,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Camera, Upload, CheckCircle, AlertCircle, Package, MapPin, User, Clock, Weight } from 'lucide-react';
+import { Camera, Upload, CheckCircle, AlertCircle, Package, MapPin, User, Clock, Weight, AlertTriangle, Lock, Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useRutInput } from '@/lib/rut-validation';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 // Schema de validación para el formulario de validación
 const validationFormSchema = z.object({

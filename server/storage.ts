@@ -114,6 +114,74 @@ export class MemStorage implements IStorage {
       this.createRecyclingPoint(point);
     });
     
+    // Sample processing centers
+    const processingCenters: InsertProcessingCenter[] = [
+      {
+        name: "Centro de Clasificación Santiago",
+        location: "Santiago Centro",
+        address: "Av. Libertador Bernardo O'Higgins 1234, Santiago",
+        centerType: "batch",
+        status: "active",
+        contactInfo: {
+          phone: "+56 2 2345 6789",
+          email: "clasificacion@ecotraza.cl",
+          manager: "María González"
+        }
+      },
+      {
+        name: "Planta de Procesamiento Norte",
+        location: "La Serena",
+        address: "Ruta 5 Norte Km 512, La Serena",
+        centerType: "process",
+        status: "active",
+        contactInfo: {
+          phone: "+56 51 223 4567",
+          email: "procesamiento@ecotraza.cl",
+          manager: "Carlos Pérez"
+        }
+      },
+      {
+        name: "Fábrica de Productos Finales",
+        location: "Valparaíso",
+        address: "Puerto Industrial, Valparaíso",
+        centerType: "product",
+        status: "active",
+        contactInfo: {
+          phone: "+56 32 234 5678",
+          email: "produccion@ecotraza.cl",
+          manager: "Ana López"
+        }
+      },
+      {
+        name: "Centro de Lote Temuco",
+        location: "Temuco",
+        address: "Av. Alemania 456, Temuco",
+        centerType: "batch",
+        status: "active",
+        contactInfo: {
+          phone: "+56 45 234 5678",
+          email: "lote.temuco@ecotraza.cl",
+          manager: "Roberto Silva"
+        }
+      },
+      {
+        name: "Procesadora Concepción",
+        location: "Concepción",
+        address: "Zona Industrial Bio Bio, Concepción",
+        centerType: "process",
+        status: "active",
+        contactInfo: {
+          phone: "+56 41 234 5678",
+          email: "proceso.conce@ecotraza.cl",
+          manager: "Patricia Morales"
+        }
+      }
+    ];
+    
+    processingCenters.forEach(center => {
+      this.createProcessingCenter(center);
+    });
+    
     // Sample users
     const users: InsertUser[] = [
       {
@@ -252,6 +320,10 @@ export class MemStorage implements IStorage {
       userId: insertDeposit.userId || null,
       txHash: insertDeposit.txHash || null,
       blockNumber: insertDeposit.blockNumber || null,
+      eventId: insertDeposit.eventId || null,
+      evidenceHash: insertDeposit.evidenceHash || null,
+      contractStatus: insertDeposit.contractStatus || null,
+      contractError: insertDeposit.contractError || null,
       timestamp,
       deviceInfo: insertDeposit.deviceInfo || null,
       ipAddress: insertDeposit.ipAddress || null
@@ -304,6 +376,41 @@ export class MemStorage implements IStorage {
   async getUserTotalDeposits(userId: number): Promise<number> {
     const userDeposits = await this.getUserBottleDeposits(userId);
     return userDeposits.length;
+  }
+
+  // Processing Center operations
+  async getProcessingCenter(id: number): Promise<ProcessingCenter | undefined> {
+    return this.processingCenters.get(id);
+  }
+
+  async getAllProcessingCenters(): Promise<ProcessingCenter[]> {
+    return Array.from(this.processingCenters.values());
+  }
+
+  async getProcessingCentersByType(type: string): Promise<ProcessingCenter[]> {
+    return Array.from(this.processingCenters.values()).filter(
+      center => center.centerType === type && center.status === 'active'
+    );
+  }
+
+  async createProcessingCenter(insertCenter: InsertProcessingCenter): Promise<ProcessingCenter> {
+    const id = this.processingCenterIdCounter++;
+    const now = new Date();
+    
+    const center: ProcessingCenter = { 
+      id,
+      name: insertCenter.name,
+      location: insertCenter.location,
+      address: insertCenter.address || null,
+      centerType: insertCenter.centerType,
+      status: insertCenter.status || 'active',
+      contactInfo: insertCenter.contactInfo || null,
+      createdAt: now,
+      updatedAt: now,
+    };
+    
+    this.processingCenters.set(id, center);
+    return center;
   }
 }
 
