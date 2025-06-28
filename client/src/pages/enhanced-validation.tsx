@@ -17,13 +17,15 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Camera, Upload, CheckCircle, AlertCircle, Package, MapPin, User, Clock, Weight, AlertTriangle, Lock, Shield, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useRutInput } from "@/lib/rut-validation";
+import { useRutInput, validateRut } from "@/lib/rut-validation";
 
 // Schema de validación fortalecido
 const enhancedValidationSchema = z.object({
   // Campos obligatorios del operador
   operatorName: z.string().min(2, "Nombre del operador requerido (mínimo 2 caracteres)"),
-  operatorRut: z.string().min(8, "RUT chileno válido requerido"),
+  operatorRut: z.string().min(8, "RUT chileno válido requerido").refine((rut) => {
+    return validateRut(rut);
+  }, "RUT chileno inválido (formato: 12.345.678-9)"),
   validatedBy: z.string().email("Email válido requerido"),
   
   // Fase de validación
@@ -665,7 +667,12 @@ export default function EnhancedValidation() {
                   <Button
                     type="submit"
                     className="w-full"
-                    disabled={validationMutation.isPending || !form.watch("scalePhoto")}
+                    disabled={
+                      validationMutation.isPending || 
+                      !form.watch("scalePhoto") ||
+                      !form.watch("operatorRut") ||
+                      !isValidRut(form.watch("operatorRut"))
+                    }
                   >
                     {validationMutation.isPending ? (
                       <>
@@ -683,6 +690,12 @@ export default function EnhancedValidation() {
                   {!form.watch("scalePhoto") && (
                     <p className="text-xs text-red-600 text-center mt-2">
                       Debe subir la foto de la báscula para continuar
+                    </p>
+                  )}
+                  
+                  {(!form.watch("operatorRut") || !isValidRut(form.watch("operatorRut"))) && (
+                    <p className="text-xs text-red-600 text-center mt-2">
+                      Debe ingresar un RUT chileno válido (formato: 12.345.678-9)
                     </p>
                   )}
                 </div>
