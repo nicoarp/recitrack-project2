@@ -27,7 +27,7 @@ export default function Dashboard() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Link href="/qr-scanner">
               <Button className="w-full h-16 flex flex-col gap-2 bg-blue-600 hover:bg-blue-700">
                 <Scan className="h-6 w-6" />
@@ -35,23 +35,16 @@ export default function Dashboard() {
               </Button>
             </Link>
             
-            <Link href="/enhanced-validation">
+            <Link href="/validation">
               <Button className="w-full h-16 flex flex-col gap-2 bg-green-600 hover:bg-green-700">
                 <Package className="h-6 w-6" />
-                <span>Validación Fortalecida</span>
-              </Button>
-            </Link>
-            
-            <Link href="/batch-validation">
-              <Button className="w-full h-16 flex flex-col gap-2 bg-purple-600 hover:bg-purple-700">
-                <FontAwesomeIcon icon="clipboard-check" className="h-6 w-6" />
-                <span>Validación Estándar</span>
+                <span>Validar Lote</span>
               </Button>
             </Link>
           </div>
           <p className="text-xs text-gray-600 mt-3 text-center">
-            • Validación Fortalecida: Con campos obligatorios, RUT chileno y control de peso
-            • Validación Estándar: Proceso básico de validación
+            • Proceso único de validación con campos obligatorios, RUT chileno y control de peso
+            • Ubicación verificada desde centros registrados - evidencia fotográfica requerida
           </p>
         </CardContent>
       </Card>
