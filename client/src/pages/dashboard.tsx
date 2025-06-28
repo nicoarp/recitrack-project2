@@ -17,6 +17,44 @@ export default function Dashboard() {
         <h1 className="text-2xl font-bold text-gray-900">¡Bienvenido a EcoTraza!</h1>
         <p className="mt-2 text-gray-600">Tu plataforma de trazabilidad de reciclaje con tecnología blockchain</p>
       </div>
+
+      {/* Accesos Rápidos QR */}
+      <Card className="mb-8 border-blue-200 bg-gradient-to-r from-blue-50 to-green-50">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-blue-800">
+            <QrCode className="h-5 w-5" />
+            Accesos Rápidos - Sistema QR
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Link href="/qr-scanner">
+              <Button className="w-full h-16 flex flex-col gap-2 bg-blue-600 hover:bg-blue-700">
+                <Scan className="h-6 w-6" />
+                <span>Escanear QR</span>
+              </Button>
+            </Link>
+            
+            <Link href="/enhanced-validation">
+              <Button className="w-full h-16 flex flex-col gap-2 bg-green-600 hover:bg-green-700">
+                <Package className="h-6 w-6" />
+                <span>Validación Fortalecida</span>
+              </Button>
+            </Link>
+            
+            <Link href="/batch-validation">
+              <Button className="w-full h-16 flex flex-col gap-2 bg-purple-600 hover:bg-purple-700">
+                <FontAwesomeIcon icon="clipboard-check" className="h-6 w-6" />
+                <span>Validación Estándar</span>
+              </Button>
+            </Link>
+          </div>
+          <p className="text-xs text-gray-600 mt-3 text-center">
+            • Validación Fortalecida: Con campos obligatorios, RUT chileno y control de peso
+            • Validación Estándar: Proceso básico de validación
+          </p>
+        </CardContent>
+      </Card>
       
       {/* Quick Access QR Buttons */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
