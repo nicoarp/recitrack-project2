@@ -1,10 +1,13 @@
 import React from "react";
+import { Link } from "wouter";
 import { WalletStatus } from "@/components/dashboard/wallet-status";
 import { StatsGrid } from "@/components/dashboard/stats-card";
 import { BatchHistory } from "@/components/dashboard/batch-history";
 import { FeaturedContent } from "@/components/dashboard/featured-content";
 import { BlockchainProvider } from "@/hooks/use-blockchain";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { QrCode, Scan, Package } from "lucide-react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 export default function Dashboard() {
@@ -13,6 +16,36 @@ export default function Dashboard() {
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">¡Bienvenido a EcoTraza!</h1>
         <p className="mt-2 text-gray-600">Tu plataforma de trazabilidad de reciclaje con tecnología blockchain</p>
+      </div>
+      
+      {/* Quick Access QR Buttons */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+        <Link href="/qr-scanner">
+          <Button className="w-full h-16 bg-green-600 hover:bg-green-700 text-white">
+            <div className="flex flex-col items-center gap-1">
+              <QrCode className="h-6 w-6" />
+              <span className="text-sm font-medium">Escanear QR</span>
+            </div>
+          </Button>
+        </Link>
+        
+        <Link href="/collection-form?pointId=CENTRO-001">
+          <Button variant="outline" className="w-full h-16 border-green-200 hover:bg-green-50">
+            <div className="flex flex-col items-center gap-1">
+              <Package className="h-6 w-6 text-green-600" />
+              <span className="text-sm font-medium text-green-700">Nueva Recolección</span>
+            </div>
+          </Button>
+        </Link>
+        
+        <Link href="/history">
+          <Button variant="outline" className="w-full h-16 border-blue-200 hover:bg-blue-50">
+            <div className="flex flex-col items-center gap-1">
+              <Scan className="h-6 w-6 text-blue-600" />
+              <span className="text-sm font-medium text-blue-700">Ver Historial</span>
+            </div>
+          </Button>
+        </Link>
       </div>
       
       <WalletStatus />

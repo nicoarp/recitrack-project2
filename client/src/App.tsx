@@ -25,6 +25,12 @@ import ProcessHistory from "@/pages/process-history";
 import ProductManagement from "@/pages/product-management";
 import ProductHistory from "@/pages/product-history";
 import TraceabilityChain from "@/pages/traceability-chain";
+
+// QR Flow pages
+import QrScanner from "@/pages/qr-scanner";
+import CollectionForm from "@/pages/collection-form";
+import BatchValidation from "@/pages/batch-validation";
+import QrHistory from "@/pages/qr-history";
 import Sidebar from "@/components/layout/sidebar";
 import MobileNav from "@/components/layout/mobile-nav";
 import { useState } from "react";
@@ -75,6 +81,12 @@ function Router() {
       <Route path="/" component={Dashboard} />
       <Route path="/deposits" component={Deposits} />
       <Route path="/deposit" component={Deposits} />
+      
+      {/* Rutas QR - Accesibles para todos */}
+      <Route path="/qr-scanner" component={QrScanner} />
+      <Route path="/collection-form" component={CollectionForm} />
+      <Route path="/batch-validation" component={BatchValidation} />
+      <Route path="/qr-history/:qrId" component={QrHistory} />
       
       {/* Rutas para usuarios autenticados */}
       {isAuthenticated && (
