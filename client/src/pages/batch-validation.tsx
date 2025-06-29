@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Camera, Upload, CheckCircle, AlertCircle, Package, MapPin, User, Clock, Weight, AlertTriangle, Lock, Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useRutInput } from '@/lib/rut-validation';
+import { useRutInput, validateRut, formatRut } from '@/lib/rut-validation';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 // Schema de validación fortalecido para el formulario de validación
@@ -105,10 +105,12 @@ export default function BatchValidation() {
   const form = useForm<ValidationFormData>({
     resolver: zodResolver(validationFormSchema),
     defaultValues: {
+      operatorName: '',
+      operatorRut: '',
       validatedBy: '',
-      phase: undefined,
-      location: '',
-      weight: '',
+      phase: 'Batch',
+      processingCenterId: '',
+      currentWeight: 0,
       scalePhoto: '',
       extraEvidence: '',
       notes: ''
@@ -205,10 +207,12 @@ export default function BatchValidation() {
         qrData: JSON.stringify(qrData),
         phase: data.phase,
         validatedBy: data.validatedBy,
-        location: data.location,
+        operatorName: data.operatorName,
+        operatorRut: data.operatorRut,
+        processingCenterId: data.processingCenterId,
         evidenceHash: `0x${Date.now().toString(16)}`, // Simulamos hash de evidencia
         evidenceMetadata: {
-          weight: data.weight + 'kg',
+          currentWeight: data.currentWeight + 'kg',
           scalePhoto: data.scalePhoto,
           extraEvidence: data.extraEvidence
         },
@@ -445,6 +449,55 @@ export default function BatchValidation() {
           <CardContent>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                {/* Información del Operador */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                    <User className="h-5 w-5" />
+                    Información del Operador
+                  </h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="operatorName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nombre del Operador *</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Nombre completo" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="operatorRut"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>RUT del Operador *</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="12.345.678-9"
+                              {...field}
+                              onChange={(e) => {
+                                const formatted = handleRutChange(e.target.value);
+                                field.onChange(formatted);
+                              }}
+                              className={!isValidRut(field.value) && field.value ? "border-red-500" : ""}
+                            />
+                          </FormControl>
+                          {field.value && !isValidRut(field.value) && (
+                            <p className="text-sm text-red-600">RUT inválido (formato: 12.345.678-9)</p>
+                          )}
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+
                 {/* Información del Validador */}
                 <FormField
                   control={form.control}
@@ -485,17 +538,28 @@ export default function BatchValidation() {
                   )}
                 />
 
-                {/* Ubicación y Peso */}
+                {/* Centro de Procesamiento y Peso */}
                 <div className="grid grid-cols-1 gap-3">
                   <FormField
                     control={form.control}
-                    name="location"
+                    name="processingCenterId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Ubicación Actual</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Centro de Procesamiento" {...field} />
-                        </FormControl>
+                        <FormLabel>Centro de Procesamiento *</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecciona el centro" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="CENTRO-001">Punto Limpio Central - Santiago Centro</SelectItem>
+                            <SelectItem value="CENTRO-002">EcoRecicla Las Condes - Las Condes</SelectItem>
+                            <SelectItem value="CENTRO-003">Verde Maipú - Maipú</SelectItem>
+                            <SelectItem value="CENTRO-004">ReciclaVita - Valparaíso</SelectItem>
+                            <SelectItem value="CENTRO-005">EcoSur - Concepción</SelectItem>
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -503,12 +567,18 @@ export default function BatchValidation() {
 
                   <FormField
                     control={form.control}
-                    name="weight"
+                    name="currentWeight"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Peso Actual (kg)</FormLabel>
+                        <FormLabel>Peso Actual (kg) *</FormLabel>
                         <FormControl>
-                          <Input placeholder="2.3" type="number" step="0.1" {...field} />
+                          <Input 
+                            placeholder="2.3" 
+                            type="number" 
+                            step="0.1" 
+                            {...field} 
+                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
