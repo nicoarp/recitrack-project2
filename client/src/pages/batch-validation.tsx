@@ -688,7 +688,14 @@ export default function BatchValidation() {
                 <Button 
                   type="submit" 
                   className="w-full bg-blue-600 hover:bg-blue-700"
-                  disabled={validateQrMutation.isPending || uploading}
+                  disabled={
+                    validateQrMutation.isPending || 
+                    uploading || 
+                    !isValidRut(form.watch('operatorRut')) ||
+                    !form.watch('operatorName') ||
+                    !form.watch('validatedBy') ||
+                    !form.watch('scalePhoto')
+                  }
                 >
                   {validateQrMutation.isPending ? 'Validando...' : 'Validar Lote'}
                 </Button>

@@ -27,6 +27,16 @@ A blockchain-powered environmental impact platform that transforms plastic bottl
 
 ## Recent Changes
 
+### December 29, 2024 - RUT Field Implementation & Route Cleanup
+- ✅ **RUT Field Implementation**: Successfully added operatorRut field to batch-validation.tsx with Chilean RUT format validation (12.345.678-9)
+- ✅ **Form Integration**: Complete form fields including operatorName and operatorRut with real-time validation and error display
+- ✅ **Submit Button Logic**: Enhanced submit button to disable when RUT invalid, empty required fields, or missing evidence photos
+- ✅ **Route Cleanup**: Removed enhanced-validation.tsx file and route to avoid confusion - all RUT functionality in main batch-validation flow
+- ✅ **Schema Alignment**: Updated form to use current schema fields (processingCenterId, currentWeight) instead of legacy field names
+- ✅ **Visual Feedback**: Added red border styling for invalid RUT input with clear error messages below field
+- ✅ **Chilean Format**: Implemented automatic RUT formatting with dot separators and dash before check digit
+- ✅ **Backend Integration**: Form submits operatorRut field properly through validation API with evidence metadata
+
 ### December 28, 2024 - Critical QR Lifecycle Fix & QueryClient Resolution
 - ✅ **Dynamic QR Resolution**: Fixed critical issue where system-generated QRs were not recognized by `/api/qr/resolve`
 - ✅ **JSON QR Support**: Enhanced endpoint to parse complex QR formats (JSON with qrId, eventType, system metadata)
