@@ -110,7 +110,7 @@ export default function BatchValidation() {
       validatedBy: '',
       phase: 'Batch',
       processingCenterId: '',
-      currentWeight: 0,
+      currentWeight: '',
       scalePhoto: '',
       extraEvidence: '',
       notes: ''
@@ -576,8 +576,7 @@ export default function BatchValidation() {
                             placeholder="2.3" 
                             type="number" 
                             step="0.1" 
-                            {...field} 
-                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                            {...field}
                           />
                         </FormControl>
                         <FormMessage />
