@@ -6,7 +6,7 @@ interface AuthUser {
   email?: string;
   name?: string;
   walletAddress?: string;
-  role: 'user' | 'admin' | 'acopio' | 'batch_operator';
+  role: 'recolector' | 'centro_acopio' | 'admin';
   totalDeposits: number;
   totalBottles: number;
 }
@@ -23,9 +23,19 @@ interface AuthContextType {
   loginWithWallet: (walletAddress: string) => Promise<void>;
   logout: () => void;
   
-  // Permisos
+  // Permisos específicos por rol
+  isRecolector: boolean;
+  isCentroAcopio: boolean;
   isAdmin: boolean;
+  canScanQR: boolean;
+  canRegisterDeposit: boolean;
+  canViewPersonalHistory: boolean;
+  canCreateBatches: boolean;
+  canValidateBatches: boolean;
+  canViewBatchHistory: boolean;
   canAccessAdminPanel: boolean;
+  canViewGlobalHistory: boolean;
+  canManageUsers: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -35,8 +45,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
 
   const isAuthenticated = !!user;
+  
+  // Roles específicos
+  const isRecolector = user?.role === 'recolector';
+  const isCentroAcopio = user?.role === 'centro_acopio';
   const isAdmin = user?.role === 'admin';
+
+  // Permisos por rol
+  const canScanQR = isRecolector || isCentroAcopio || isAdmin;
+  const canRegisterDeposit = isRecolector || isAdmin;
+  const canViewPersonalHistory = isRecolector || isAdmin;
+  const canCreateBatches = isCentroAcopio || isAdmin;
+  const canValidateBatches = isCentroAcopio || isAdmin;
+  const canViewBatchHistory = isCentroAcopio || isAdmin;
   const canAccessAdminPanel = isAdmin;
+  const canViewGlobalHistory = isAdmin;
+  const canManageUsers = isAdmin;
 
   const loginWithEmail = async (email: string, password: string) => {
     setIsLoading(true);
@@ -51,7 +75,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
       
-      // Credenciales de demostración
+      // Credenciales de demostración por rol
       if (email === "admin@ecotraza.com" && password === "admin123") {
         const adminUser: AuthUser = {
           id: 1,
@@ -64,18 +88,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
         setUser(adminUser);
         localStorage.setItem('ecotraza_user', JSON.stringify(adminUser));
-      } else if (email === "user@example.com" && password === "user123") {
-        const normalUser: AuthUser = {
+      } else if (email === "recolector@ecotraza.com" && password === "recolector123") {
+        const recolectorUser: AuthUser = {
           id: 2,
-          email: "user@example.com",
-          name: "Usuario Normal",
+          email: "recolector@ecotraza.com",
+          name: "Juan Pérez - Recolector",
           walletAddress: "0x456...def", 
-          role: 'user',
+          role: 'recolector',
           totalDeposits: 5,
           totalBottles: 25
         };
-        setUser(normalUser);
-        localStorage.setItem('ecotraza_user', JSON.stringify(normalUser));
+        setUser(recolectorUser);
+        localStorage.setItem('ecotraza_user', JSON.stringify(recolectorUser));
+      } else if (email === "centro@ecotraza.com" && password === "centro123") {
+        const centroUser: AuthUser = {
+          id: 3,
+          email: "centro@ecotraza.com",
+          name: "María González - Centro Acopio",
+          walletAddress: "0x789...ghi", 
+          role: 'centro_acopio',
+          totalDeposits: 12,
+          totalBottles: 120
+        };
+        setUser(centroUser);
+        localStorage.setItem('ecotraza_user', JSON.stringify(centroUser));
       } else {
         throw new Error('Credenciales incorrectas');
       }
@@ -97,13 +133,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error('Ya existe una cuenta con este email');
       }
       
-      // Crear nuevo usuario
+      // Crear nuevo usuario (por defecto recolector)
       const newUser: AuthUser = {
         id: Date.now(), // ID único basado en timestamp
         email: email,
         name: name,
         walletAddress: `0x${Math.random().toString(16).substr(2, 40)}`, // Wallet simulada
-        role: 'user',
+        role: 'recolector',
         totalDeposits: 0,
         totalBottles: 0
       };
@@ -136,7 +172,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email: undefined,
         name: "Usuario Wallet",
         walletAddress,
-        role: 'user',
+        role: 'recolector',
         totalDeposits: 0,
         totalBottles: 0
       };
