@@ -52,7 +52,7 @@ async function testSecurityValidations() {
       body: JSON.stringify({
         depositIds: ['CENTRO-001-DEP', 'NORTE-002-DEP'], // Diferentes centros
         totalWeight: 5.0,
-        userId: 6, // Juan Pérez (Operador Central) - rol acopio
+        userId: 3, // Juan Pérez (Operador Central) - rol acopio
         operatorName: 'Juan Pérez',
         operatorRut: '11.111.111-1',
         evidencePhoto: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABA...'
@@ -79,7 +79,7 @@ async function testSecurityValidations() {
       body: JSON.stringify({
         depositIds: ['SUR-003-DEP'], // Centro Sur
         totalWeight: 3.0,
-        userId: 6, // Juan Pérez (Operador Central) - rol acopio
+        userId: 3, // Juan Pérez (Operador Central) - rol acopio
         operatorName: 'Juan Pérez',
         operatorRut: '11.111.111-1',
         evidencePhoto: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABA...'
@@ -106,7 +106,7 @@ async function testSecurityValidations() {
       body: JSON.stringify({
         depositIds: ['CENTRO-001-DEP', 'CENTRO-001-DEP'], // ID duplicado
         totalWeight: 4.0,
-        userId: 3, // Usuario acopio válido
+        userId: 3, // Juan Pérez (Operador Central) - rol acopio
         operatorName: 'Juan Pérez',
         operatorRut: '11.111.111-1',
         evidencePhoto: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABA...'
@@ -133,7 +133,7 @@ async function testSecurityValidations() {
       body: JSON.stringify({
         depositIds: ['VALID-DEP-001', 'VALID-DEP-002'],
         totalWeight: 6.0,
-        userId: 3, // Juan Pérez (Operador Central)
+        userId: 3, // Juan Pérez (Operador Central) - rol acopio
         operatorName: 'Juan Pérez',
         operatorRut: '11.111.111-1',
         evidencePhoto: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABA...',
