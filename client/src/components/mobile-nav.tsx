@@ -1,39 +1,52 @@
 import { Link, useLocation } from 'wouter';
-import { Home, QrCode, History, Package, Settings } from 'lucide-react';
+import { Home, QrCode, History, Package, Settings, Users, BarChart3, Archive } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-const navItems = [
-  {
-    href: '/dashboard',
-    icon: Home,
-    label: 'Inicio'
-  },
-  {
-    href: '/qr-scanner',
-    icon: QrCode,
-    label: 'QR'
-  },
-  {
-    href: '/history',
-    icon: History,
-    label: 'Historial'
-  },
-  {
-    href: '/process-management',
-    icon: Package,
-    label: 'Lotes'
-  }
-];
+import { useAuth } from '@/hooks/use-auth';
 
 export function MobileNav() {
   const [location] = useLocation();
+  const { isAuthenticated, isRecolector, isCentroAcopio, isAdmin } = useAuth();
+
+  // Seleccionar items según el rol
+  const getNavItems = () => {
+    if (!isAuthenticated) return [
+      { href: '/', icon: Home, label: 'Inicio' },
+      { href: '/qr-scanner', icon: QrCode, label: 'QR' }
+    ];
+
+    if (isRecolector) return [
+      { href: '/', icon: Home, label: 'Inicio' },
+      { href: '/qr-scanner', icon: QrCode, label: 'QR' },
+      { href: '/deposits', icon: Package, label: 'Depósito' },
+      { href: '/history', icon: History, label: 'Historial' }
+    ];
+
+    if (isCentroAcopio) return [
+      { href: '/', icon: Home, label: 'Inicio' },
+      { href: '/qr-scanner', icon: QrCode, label: 'QR' },
+      { href: '/batch-grouping', icon: Package, label: 'Lotes' },
+      { href: '/batch-history', icon: History, label: 'Historial' }
+    ];
+
+    if (isAdmin) return [
+      { href: '/', icon: Home, label: 'Inicio' },
+      { href: '/qr-scanner', icon: QrCode, label: 'QR' },
+      { href: '/batch-grouping', icon: Package, label: 'Lotes' },
+      { href: '/user-management', icon: Users, label: 'Usuarios' },
+      { href: '/statistics', icon: BarChart3, label: 'Métricas' }
+    ];
+
+    return [];
+  };
+
+  const navItems = getNavItems();
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-2 z-50">
       <nav className="flex justify-around">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const isActive = location === item.href || (item.href !== '/dashboard' && location.startsWith(item.href));
+          const isActive = location === item.href || (item.href !== '/' && location.startsWith(item.href));
           
           return (
             <Link

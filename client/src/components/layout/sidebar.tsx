@@ -13,42 +13,57 @@ interface SidebarProps {
 export default function Sidebar({ isMobile = false, closeMobileMenu }: SidebarProps) {
   const [location] = useLocation();
   const { isConnected, connectWallet } = useBlockchain();
-  const { isAuthenticated, isAdmin, user, logout } = useAuth();
+  const { isAuthenticated, isRecolector, isCentroAcopio, isAdmin, user, logout } = useAuth();
 
   // Menú para usuarios públicos (no autenticados)
   const publicNavItems = [
     { path: "/", label: "Inicio", icon: "home" },
-    { path: "/deposits", label: "Registrar Depósito", icon: "bottle-water" },
+    { path: "/qr-scanner", label: "Escanear QR", icon: "qrcode" },
     { path: "/help", label: "Ayuda", icon: "user-circle" },
   ];
 
-  // Menú para usuarios autenticados normales
-  const userNavItems = [
+  // Menú para RECOLECTOR: Solo escaneo QR, registro de depósitos e historial personal
+  const recolectorNavItems = [
     { path: "/", label: "Inicio", icon: "home" },
+    { path: "/qr-scanner", label: "Escanear QR", icon: "qrcode" },
     { path: "/deposits", label: "Registrar Depósito", icon: "bottle-water" },
     { path: "/history", label: "Mi Historial", icon: "history" },
-    { path: "/help", label: "Ayuda", icon: "user-circle" },
   ];
 
-  // Menú completo para administradores
+  // Menú para CENTRO DE ACOPIO: Agrupar lotes, validar e historial de lotes
+  const centroAcopioNavItems = [
+    { path: "/", label: "Dashboard", icon: "home" },
+    { path: "/qr-scanner", label: "Escanear QR", icon: "qrcode" },
+    { path: "/batch-grouping", label: "Agrupar Lotes", icon: "cubes" },
+    { path: "/batch-validation", label: "Validar Lotes", icon: "check-circle" },
+    { path: "/batch-history", label: "Historial de Lotes", icon: "history" },
+  ];
+
+  // Menú para ADMIN: Acceso total
   const adminNavItems = [
     { path: "/", label: "Dashboard Admin", icon: "home" },
+    { path: "/qr-scanner", label: "Escanear QR", icon: "qrcode" },
+    { path: "/deposits", label: "Registrar Depósito", icon: "bottle-water" },
+    { path: "/history", label: "Mi Historial", icon: "user" },
+    { path: "/batch-grouping", label: "Agrupar Lotes", icon: "cubes" },
+    { path: "/batch-validation", label: "Validar Lotes", icon: "check-circle" },
+    { path: "/batch-history", label: "Historial de Lotes", icon: "clock" },
     { path: "/recycling-points", label: "Puntos de Depósito", icon: "map-marker-alt" },
-    { path: "/qr-admin", label: "Generador de QR", icon: "code" },
-    { path: "/batch-management", label: "Gestión de Lotes", icon: "cubes" },
-    { path: "/process-management", label: "Gestión de Procesos", icon: "cogs" },
-    { path: "/process-history", label: "Historial de Procesos", icon: "clock" },
-    { path: "/product-management", label: "Gestión de Productos", icon: "box-open" },
-    { path: "/product-history", label: "Historial de Productos", icon: "archive" },
-    { path: "/traceability", label: "Trazabilidad", icon: "sitemap" },
-    { path: "/statistics", label: "Reportes", icon: "chart-line" },
-    { path: "/history", label: "Historial Global", icon: "history" },
+    { path: "/global-history", label: "Historial Global", icon: "globe" },
+    { path: "/user-management", label: "Gestión de Usuarios", icon: "users" },
+    { path: "/statistics", label: "Métricas", icon: "chart-line" },
+    // OCULTO PARA MVP: Gestión de productos, procesos, reportes avanzados
+    // { path: "/process-management", label: "Gestión de Procesos", icon: "cogs" },
+    // { path: "/product-management", label: "Gestión de Productos", icon: "box-open" },
+    // { path: "/advanced-reports", label: "Reportes Avanzados", icon: "file-alt" },
   ];
 
   // Seleccionar el menú apropiado según el rol
   const getNavItems = () => {
+    if (!isAuthenticated) return publicNavItems;
     if (isAdmin) return adminNavItems;
-    if (isAuthenticated) return userNavItems;
+    if (isCentroAcopio) return centroAcopioNavItems;
+    if (isRecolector) return recolectorNavItems;
     return publicNavItems;
   };
 
@@ -97,7 +112,11 @@ export default function Sidebar({ isMobile = false, closeMobileMenu }: SidebarPr
         {isAuthenticated && user && (
           <div className="text-center">
             <p className="text-sm font-medium text-gray-700">{user.name}</p>
-            <p className="text-xs text-gray-500">{isAdmin ? 'Administrador' : 'Usuario'}</p>
+            <p className="text-xs text-gray-500">
+              {isAdmin ? 'Administrador' : 
+               isCentroAcopio ? 'Centro de Acopio' : 
+               isRecolector ? 'Recolector' : 'Usuario'}
+            </p>
           </div>
         )}
         

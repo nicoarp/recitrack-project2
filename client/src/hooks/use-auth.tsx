@@ -208,8 +208,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     registerWithEmail,
     loginWithWallet,
     logout,
+    // Roles específicos
+    isRecolector,
+    isCentroAcopio,
     isAdmin,
+    // Permisos granulares
+    canScanQR,
+    canRegisterDeposit,
+    canViewPersonalHistory,
+    canCreateBatches,
+    canValidateBatches,
+    canViewBatchHistory,
     canAccessAdminPanel,
+    canViewGlobalHistory,
+    canManageUsers,
   };
 
   return (
