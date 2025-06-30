@@ -20,6 +20,7 @@ import Help from "@/pages/help";
 import AccessDenied from "@/pages/access-denied";
 import NotFound from "@/pages/not-found";
 import BatchManagement from "@/pages/batch-management";
+import BatchGrouping from "@/pages/batch-grouping";
 import ProcessManagement from "@/pages/process-management";
 import ProcessHistory from "@/pages/process-history";
 import ProductManagement from "@/pages/product-management";
@@ -102,6 +103,7 @@ function Router() {
           <Route path="/qr-admin" component={QRAdmin} />
           <Route path="/admin" component={QRAdmin} />
           <Route path="/batch-management" component={BatchManagement} />
+          <Route path="/batch-grouping" component={BatchGrouping} />
           <Route path="/process-management" component={ProcessManagement} />
           <Route path="/process-history" component={ProcessHistory} />
           <Route path="/product-management" component={ProductManagement} />

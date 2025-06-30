@@ -886,6 +886,329 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // === LÓGICA BATCH 2025-07: NUEVO ENDPOINT PARA AGRUPACIÓN DE LOTES ===
+  
+  // Endpoint para crear lotes desde depósitos individuales
+  app.post('/api/batch', async (req, res) => {
+    try {
+      console.log('🔍 BATCH 2025-07: Iniciando creación de lote');
+      console.log('📋 BATCH 2025-07: Datos recibidos:', JSON.stringify(req.body, null, 2));
+      
+      const { depositIds, totalWeight, weightAdjustment, operatorData, evidence, location } = req.body;
+      
+      // === Validaciones de entrada ===
+      const validationErrors = [];
+      const failedIds = [];
+      
+      // 1. Validar array de depósitos
+      if (!Array.isArray(depositIds) || depositIds.length === 0) {
+        validationErrors.push("Se requiere al menos un ID de depósito para crear el lote");
+      }
+      
+      // 2. Validar peso
+      if (!totalWeight || totalWeight <= 0) {
+        validationErrors.push("Peso total requerido y debe ser mayor a 0");
+      }
+      
+      // 3. Validar evidencia
+      if (!evidence || !evidence.startsWith('data:image/')) {
+        validationErrors.push("Foto de evidencia requerida en formato base64");
+      }
+      
+      // 4. Validar datos del operador
+      if (!operatorData?.operatorName || !operatorData?.operatorRut) {
+        validationErrors.push("Datos completos del operador requeridos (nombre y RUT)");
+      }
+      
+      // 5. Validar ubicación
+      if (!location || location.trim().length === 0) {
+        validationErrors.push("Ubicación requerida");
+      }
+      
+      // 6. Validar ajuste de peso si existe
+      if (weightAdjustment) {
+        const { originalSum, adjustedWeight, reason } = weightAdjustment;
+        
+        if (!originalSum || !adjustedWeight) {
+          validationErrors.push("Datos de ajuste de peso incompletos");
+        } else {
+          const difference = Math.abs(adjustedWeight - originalSum);
+          const percentDiff = (difference / originalSum) * 100;
+          
+          if (percentDiff > 15) {
+            validationErrors.push(`Ajuste de peso excesivo: ${percentDiff.toFixed(1)}% (máximo 15%)`);
+          }
+          
+          if (percentDiff > 5 && (!reason || reason.trim().length === 0)) {
+            validationErrors.push("Razón del ajuste de peso requerida para diferencias > 5%");
+          }
+        }
+      }
+      
+      // Si hay errores de validación, retornar inmediatamente
+      if (validationErrors.length > 0) {
+        console.log('❌ BATCH 2025-07: Errores de validación:', validationErrors);
+        return res.status(400).json({
+          success: false,
+          error: "Datos de entrada inválidos",
+          validationErrors,
+          failedIds,
+          errorType: 'VALIDATION_ERROR'
+        });
+      }
+      
+      // === Verificar servicio blockchain ===
+      if (!blockchainService.isReady()) {
+        console.log('❌ BATCH 2025-07: Servicio blockchain no disponible');
+        return res.status(503).json({
+          success: false,
+          error: "Servicio blockchain no disponible",
+          mode: "offline",
+          errorType: 'SERVICE_UNAVAILABLE'
+        });
+      }
+      
+      // === Mapear y validar depósitos ===
+      console.log('🔍 BATCH 2025-07: Mapeando depósitos desde blockchain events');
+      
+      // Buscar depósitos en blockchain events
+      const foundDeposits = [];
+      const notFoundIds = [];
+      const alreadyBatchedIds = [];
+      
+      try {
+        // Verificar cada depositId individualmente para control granular
+        for (const depositId of depositIds) {
+          try {
+            // Buscar el evento de depósito
+            const depositEvent = await blockchainService.getEvent(depositId);
+            
+            if (!depositEvent) {
+              notFoundIds.push(depositId);
+              continue;
+            }
+            
+            if (depositEvent.eventType !== 'Deposit') {
+              failedIds.push({
+                id: depositId,
+                reason: `Tipo de evento inválido: ${depositEvent.eventType} (se esperaba Deposit)`
+              });
+              continue;
+            }
+            
+            // Verificar si ya está en un lote
+            const batchEvents = await blockchainService.getEventsByType('Batch');
+            const isAlreadyBatched = batchEvents.some(batch => 
+              batch.relatedIds && batch.relatedIds.includes(depositId)
+            );
+            
+            if (isAlreadyBatched) {
+              alreadyBatchedIds.push(depositId);
+              continue;
+            }
+            
+            foundDeposits.push({
+              eventId: depositId,
+              originalWeight: depositEvent.quantity || 0,
+              location: depositEvent.location,
+              timestamp: depositEvent.timestamp,
+              description: depositEvent.description
+            });
+            
+          } catch (eventError) {
+            console.log(`❌ BATCH 2025-07: Error procesando depósito ${depositId}:`, eventError.message);
+            failedIds.push({
+              id: depositId,
+              reason: `Error de acceso: ${eventError.message}`
+            });
+          }
+        }
+        
+        // Reportar errores específicos por ID
+        const processingErrors = [];
+        
+        if (notFoundIds.length > 0) {
+          processingErrors.push(`Depósitos no encontrados: ${notFoundIds.join(', ')}`);
+        }
+        
+        if (alreadyBatchedIds.length > 0) {
+          processingErrors.push(`Depósitos ya en lotes existentes: ${alreadyBatchedIds.join(', ')}`);
+        }
+        
+        if (failedIds.length > 0) {
+          processingErrors.push(`Depósitos con errores: ${failedIds.map(f => `${f.id} (${f.reason})`).join(', ')}`);
+        }
+        
+        if (processingErrors.length > 0) {
+          console.log('❌ BATCH 2025-07: Errores de procesamiento:', processingErrors);
+          return res.status(400).json({
+            success: false,
+            error: "Algunos depósitos no pudieron procesarse",
+            processingErrors,
+            notFoundIds,
+            alreadyBatchedIds,
+            failedIds,
+            validDeposits: foundDeposits.length,
+            errorType: 'DEPOSIT_PROCESSING_ERROR'
+          });
+        }
+        
+        if (foundDeposits.length === 0) {
+          return res.status(400).json({
+            success: false,
+            error: "No se encontraron depósitos válidos para crear el lote",
+            errorType: 'NO_VALID_DEPOSITS'
+          });
+        }
+        
+        console.log(`✅ BATCH 2025-07: ${foundDeposits.length} depósitos válidos encontrados`);
+        
+      } catch (mappingError) {
+        console.error('❌ BATCH 2025-07: Error mapeando depósitos:', mappingError);
+        return res.status(500).json({
+          success: false,
+          error: "Error interno mapeando depósitos",
+          details: mappingError.message,
+          errorType: 'MAPPING_ERROR'
+        });
+      }
+      
+      // === Verificar ubicaciones consistentes ===
+      const uniqueLocations = [...new Set(foundDeposits.map(d => d.location))];
+      if (uniqueLocations.length > 1) {
+        console.log('❌ BATCH 2025-07: Ubicaciones múltiples detectadas:', uniqueLocations);
+        return res.status(400).json({
+          success: false,
+          error: "No se puede crear un lote con depósitos de diferentes ubicaciones",
+          locations: uniqueLocations,
+          errorType: 'MULTIPLE_LOCATIONS'
+        });
+      }
+      
+      // === Crear lote en blockchain ===
+      console.log('🔗 BATCH 2025-07: Registrando lote en blockchain');
+      
+      const batchDescription = weightAdjustment 
+        ? `Lote con ${foundDeposits.length} depósitos (${totalWeight}kg, ajustado desde ${weightAdjustment.originalSum}kg). Razón: ${weightAdjustment.reason}`
+        : `Lote con ${foundDeposits.length} depósitos (${totalWeight}kg)`;
+      
+      const evidenceHash = `0x${Date.now().toString(16)}`; // Simular hash de evidencia
+      
+      const blockchainResult = await blockchainService.registerEvent(
+        'Batch',
+        depositIds, // IDs de los depósitos relacionados
+        location,
+        totalWeight,
+        batchDescription,
+        evidenceHash,
+        null, // userId para lotes
+        operatorData.operatorName
+      );
+      
+      if (!blockchainResult.success) {
+        console.log('❌ BATCH 2025-07: Error en blockchain:', blockchainResult.error);
+        return res.status(400).json({
+          success: false,
+          error: blockchainResult.error,
+          errorType: blockchainResult.errorType,
+          contractStatus: blockchainResult.contractStatus,
+          mode: "blockchain_error"
+        });
+      }
+      
+      // === Generar QR para el lote ===
+      console.log('📱 BATCH 2025-07: Generando QR para lote');
+      
+      let qrResult = null;
+      try {
+        qrResult = await qrService.generateQrCode({
+          eventId: blockchainResult.eventId,
+          eventType: 'Batch',
+          metadata: {
+            batchId: blockchainResult.eventId,
+            totalDeposits: foundDeposits.length,
+            totalWeight,
+            operatorName: operatorData.operatorName,
+            operatorRut: operatorData.operatorRut,
+            centerId: operatorData.centerId,
+            location,
+            createdAt: new Date().toISOString(),
+            relatedDeposits: depositIds,
+            weightAdjustment
+          },
+          createdBy: operatorData.operatorName
+        });
+        
+        if (!qrResult.success) {
+          console.log('⚠️ BATCH 2025-07: Error generando QR (no crítico):', qrResult.error);
+        }
+        
+      } catch (qrError) {
+        console.log('⚠️ BATCH 2025-07: Error generando QR (no crítico):', qrError.message);
+      }
+      
+      // === Respuesta exitosa ===
+      console.log('✅ BATCH 2025-07: Lote creado exitosamente');
+      
+      const response = {
+        success: true,
+        batch: {
+          batchId: `BATCH-${new Date().toISOString().split('T')[0]}-${blockchainResult.eventId.slice(-3)}`,
+          eventId: blockchainResult.eventId,
+          qrCode: qrResult?.qrCode?.qrDataUrl || null,
+          qrId: qrResult?.qrCode?.qrId || null,
+          totalDeposits: foundDeposits.length,
+          totalWeight,
+          weightAdjustment: weightAdjustment ? {
+            originalSum: weightAdjustment.originalSum,
+            adjustedWeight: totalWeight,
+            adjustmentPercent: ((Math.abs(totalWeight - weightAdjustment.originalSum) / weightAdjustment.originalSum) * 100).toFixed(1),
+            reason: weightAdjustment.reason
+          } : null,
+          status: 'created',
+          blockchainTxHash: blockchainResult.txHash,
+          blockNumber: blockchainResult.blockNumber,
+          gasUsed: blockchainResult.gasUsed,
+          createdAt: new Date().toISOString(),
+          location,
+          operatorInfo: {
+            name: operatorData.operatorName,
+            rut: operatorData.operatorRut,
+            centerId: operatorData.centerId
+          }
+        },
+        processedDeposits: foundDeposits.map(deposit => ({
+          eventId: deposit.eventId,
+          originalWeight: deposit.originalWeight,
+          location: deposit.location,
+          status: 'batched'
+        })),
+        validationSummary: {
+          depositsValidated: foundDeposits.length,
+          totalOriginalWeight: foundDeposits.reduce((sum, d) => sum + d.originalWeight, 0),
+          adjustmentPercent: weightAdjustment ? 
+            ((Math.abs(totalWeight - weightAdjustment.originalSum) / weightAdjustment.originalSum) * 100).toFixed(1) : 
+            "0.0",
+          allFromSameLocation: uniqueLocations.length === 1,
+          locationName: uniqueLocations[0] || location
+        },
+        qrGenerated: !!qrResult?.success,
+        mode: "blockchain"
+      };
+      
+      res.json(response);
+      
+    } catch (error: any) {
+      console.error('❌ BATCH 2025-07: Error crítico creando lote:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message || "Error interno del servidor al crear lote",
+        errorType: 'INTERNAL_ERROR',
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
   // === ENDPOINTS DEL SISTEMA QR ===
 
   // Resolver y validar códigos QR escaneados

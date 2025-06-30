@@ -6,7 +6,7 @@ interface AuthUser {
   email?: string;
   name?: string;
   walletAddress?: string;
-  role: 'user' | 'admin';
+  role: 'user' | 'admin' | 'acopio' | 'batch_operator';
   totalDeposits: number;
   totalBottles: number;
 }
