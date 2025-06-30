@@ -35,6 +35,7 @@ A blockchain-powered environmental impact platform that transforms plastic bottl
 - ✅ **User Experience Focus**: Each role sees only relevant functionality (MVP-focused approach)
 - ✅ **Development Phase Preparation**: Commented out advanced features as "OCULTO PARA MVP" for future implementation
 - ✅ **Default Role Assignment**: New users automatically assigned as 'recolector' role for immediate functionality
+- ✅ **Demo Accounts Created**: Ready-to-use test accounts with auto-fill buttons for role-based testing
 
 ### June 30, 2025 - Enhanced Security Framework & Testing Implementation
 - ✅ **Multi-Role User Management**: Created comprehensive user system with roles: user, admin, acopio, batch_operator

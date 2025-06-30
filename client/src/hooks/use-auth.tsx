@@ -100,10 +100,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
         setUser(recolectorUser);
         localStorage.setItem('ecotraza_user', JSON.stringify(recolectorUser));
-      } else if (email === "centro@ecotraza.com" && password === "centro123") {
+      } else if (email === "acopio@ecotraza.com" && password === "acopio123") {
         const centroUser: AuthUser = {
           id: 3,
-          email: "centro@ecotraza.com",
+          email: "acopio@ecotraza.com",
           name: "María González - Centro Acopio",
           walletAddress: "0x789...ghi", 
           role: 'centro_acopio',
