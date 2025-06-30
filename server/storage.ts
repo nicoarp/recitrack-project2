@@ -182,7 +182,7 @@ export class MemStorage implements IStorage {
       this.createProcessingCenter(center);
     });
     
-    // Sample users
+    // === USUARIOS CON ROLES DE SEGURIDAD 2025-07 ===
     const users: InsertUser[] = [
       {
         password: "password123",
@@ -195,6 +195,25 @@ export class MemStorage implements IStorage {
         email: "user@example.com",
         name: "Usuario Ejemplo",
         role: "user"
+      },
+      // Operadores de centros de acopio con roles específicos
+      {
+        password: "acopio123",
+        email: "operador.central@ecotraza.com",
+        name: "Juan Pérez (Operador Central)",
+        role: "acopio"
+      },
+      {
+        password: "acopio123",
+        email: "operador.norte@ecotraza.com", 
+        name: "María González (Operador Norte)",
+        role: "acopio"
+      },
+      {
+        password: "batch123",
+        email: "lote.temuco@ecotraza.com",
+        name: "Roberto Silva (Operador Lote)",
+        role: "batch_operator"
       }
     ];
     
