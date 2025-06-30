@@ -894,7 +894,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('🔍 BATCH 2025-07: Iniciando creación de lote');
       console.log('📋 BATCH 2025-07: Datos recibidos:', JSON.stringify(req.body, null, 2));
       
-      const { depositIds, totalWeight, weightAdjustment, operatorData, evidence, location } = req.body;
+      const { depositIds, totalWeight, weightAdjustment, operatorData, evidence, location, userId } = req.body;
+      
+      // === SEGURIDAD 2025-07: VALIDACIÓN DE ROLES ===
+      // Solo usuarios con rol "acopio", "batch_operator" o "admin" pueden crear lotes
+      if (userId) {
+        try {
+          const user = await storage.getUser(parseInt(userId));
+          if (!user || !['acopio', 'batch_operator', 'admin'].includes(user.role)) {
+            console.log(`❌ BATCH 2025-07: Usuario ${userId} sin permisos (rol: ${user?.role || 'undefined'})`);
+            return res.status(403).json({
+              success: false,
+              error: "No tiene permisos para crear lotes",
+              errorType: "PERMISSION_DENIED",
+              requiredRoles: ["acopio", "batch_operator", "admin"],
+              userRole: user?.role || null
+            });
+          }
+          console.log(`✅ BATCH 2025-07: Usuario ${userId} autorizado (rol: ${user.role})`);
+        } catch (error) {
+          console.log(`❌ BATCH 2025-07: Error verificando usuario ${userId}:`, error);
+          return res.status(401).json({
+            success: false,
+            error: "Usuario no válido",
+            errorType: "INVALID_USER"
+          });
+        }
+      }
       
       // === Validaciones de entrada ===
       const validationErrors = [];
@@ -996,13 +1022,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
               continue;
             }
             
-            // Verificar si ya está en un lote
+            // === SEGURIDAD 2025-07: VALIDACIÓN ANTI-DUPLICADOS ===
+            // Verificar si ya está en un lote existente
             const batchEvents = await blockchainService.getEventsByType('Batch');
             const isAlreadyBatched = batchEvents.some(batch => 
               batch.relatedIds && batch.relatedIds.includes(depositId)
             );
             
             if (isAlreadyBatched) {
+              console.log(`❌ BATCH 2025-07: Depósito ${depositId} ya está en un lote existente`);
               alreadyBatchedIds.push(depositId);
               continue;
             }
@@ -1062,6 +1090,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         console.log(`✅ BATCH 2025-07: ${foundDeposits.length} depósitos válidos encontrados`);
+        
+        // === SEGURIDAD 2025-07: VALIDACIÓN DE CENTROS DE ACOPIO ===
+        // Verificar que todos los depósitos pertenezcan al mismo centro de acopio
+        const uniqueLocations = [...new Set(foundDeposits.map(d => d.location))];
+        if (uniqueLocations.length > 1) {
+          console.log('❌ BATCH 2025-07: Múltiples centros detectados:', uniqueLocations);
+          return res.status(400).json({
+            success: false,
+            error: "Solo puede agrupar depósitos de su propio centro",
+            details: "Todos los depósitos deben pertenecer al mismo centro de acopio",
+            locations: uniqueLocations,
+            errorType: 'MULTIPLE_CENTERS_ERROR'
+          });
+        }
+        
+        // Verificar que el operador pertenece al centro correcto
+        const depositLocation = foundDeposits[0].location;
+        if (operatorData.centerName && !depositLocation.includes(operatorData.centerName)) {
+          console.log('❌ BATCH 2025-07: Centro del operador no coincide:', operatorData.centerName, '!=', depositLocation);
+          return res.status(403).json({
+            success: false,
+            error: "No puede agrupar depósitos de otro centro",
+            details: `Los depósitos pertenecen a ${depositLocation}, pero el operador es de ${operatorData.centerName}`,
+            errorType: 'UNAUTHORIZED_CENTER_ACCESS'
+          });
+        }
         
       } catch (mappingError) {
         console.error('❌ BATCH 2025-07: Error mapeando depósitos:', mappingError);

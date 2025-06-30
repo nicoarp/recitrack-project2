@@ -1,0 +1,37 @@
+Ahora que la funcionalidad de agrupación de lotes (Batch) está implementada, necesito fortalecer la consistencia y la seguridad del flujo, y asegurar que el frontend y backend trabajen con los roles y centros de acopio correctos.
+
+Lo que requiero:
+
+Valida en backend (y si es posible también en frontend):
+
+❗️ No permitir incluir un depósito (Deposit) en más de un batch. Si se intenta, mostrar alerta clara: “Este QR ya fue agrupado en otro lote”.
+
+❗️ No permitir crear un lote (Batch) con depósitos que pertenezcan a diferentes centros de acopio. Todos los depositIds deben ser del mismo centerId. Si no, mostrar error: “Solo puede agrupar depósitos de su propio centro”.
+
+❗️ Solo permitir que usuarios con el rol “centro de acopio” o “admin” accedan a la pantalla y endpoint de batch-grouping. Si un usuario sin rol intenta acceder, redirigir o bloquear con mensaje claro.
+
+❗️ Si se intenta agregar un depósito manualmente (por código) y no existe o ya fue usado, bloquearlo y mostrar alerta clara.
+
+Frontend:
+
+Habilitar en la UI la función de agrupación solo para usuarios con el rol correcto (“acopio” o “admin”).
+
+Si el usuario NO tiene ese rol, ocultar/deshabilitar la opción de crear lote/batch.
+
+Si aún no existe la opción de visualizar/gestionar lotes en frontend para distintos centros, créala (aunque sea mínima): por ejemplo, mostrar lista de batches creados por ese centro y su historial.
+
+Gestión de roles:
+
+Si aún no existe el rol “acopio” en la base de usuarios, agrégalo (puede ser string en campo role o similar).
+
+Verifica que al registrar usuarios puedas asignarles ese rol.
+
+Deja visible en el sistema qué rol tiene el usuario logueado (al menos para debug/test).
+
+Auditoría/Mensajes:
+
+Todos los bloqueos deben dejar mensaje y log (alert o toast en frontend y log en backend).
+
+Si se bloquea la operación, el usuario debe saber exactamente por qué (ID duplicado, centro incorrecto, sin permisos, etc.).
+
+No elimines el flujo antiguo de depósitos individuales. Haz los cambios sobre el flujo nuevo de batch y documenta en comentarios cada validación añadida.

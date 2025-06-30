@@ -50,8 +50,20 @@ export default function BatchGrouping() {
   
   const evidenceRef = useRef<HTMLInputElement>(null);
 
-  // Lógica batch 2025-07: Verificar permisos de centro de acopio
-  const hasPermissions = isAuthenticated && (user?.role === 'admin' || user?.role === 'acopio' || user?.role === 'batch_operator');
+  // === SEGURIDAD 2025-07: VALIDACIÓN DE ROLES ===
+  const hasPermissions = isAuthenticated && ['admin', 'acopio', 'batch_operator'].includes(user?.role || '');
+  
+  // Bloquear acceso si no tiene permisos
+  React.useEffect(() => {
+    if (isAuthenticated && !hasPermissions) {
+      toast({
+        variant: "destructive",
+        title: "Acceso denegado",
+        description: "Solo usuarios con rol 'acopio' o 'admin' pueden crear lotes",
+      });
+      setLocation('/dashboard');
+    }
+  }, [isAuthenticated, hasPermissions, setLocation]);
 
   // Lógica batch 2025-07: Calcular totales automáticamente
   React.useEffect(() => {
@@ -124,14 +136,33 @@ export default function BatchGrouping() {
       if (response.success && response.type === 'deposit') {
         const depositData = response.data;
         
-        // Lógica batch 2025-07: Verificar duplicados
+        // === SEGURIDAD 2025-07: VALIDACIÓN ANTI-DUPLICADOS ===
+        // Verificar duplicados en la lista local
         if (scannedDeposits.some(d => d.eventId === depositData.eventId)) {
           toast({
             variant: "destructive",
-            title: "Depósito duplicado",
-            description: "Este depósito ya fue agregado al lote"
+            title: "Este QR ya fue agregado al lote",
+            description: "No puede agregar el mismo depósito dos veces"
           });
           return;
+        }
+        
+        // Verificar que no esté ya en un lote existente (validación adicional)
+        try {
+          const batchCheckResponse = await apiRequest('GET', `/api/qr/${depositData.qrId}/history`);
+          if (batchCheckResponse.success && batchCheckResponse.validations) {
+            const hasBatchValidation = batchCheckResponse.validations.some((v: any) => v.phase === 'Batch');
+            if (hasBatchValidation) {
+              toast({
+                variant: "destructive",
+                title: "Este QR ya fue agrupado en otro lote",
+                description: "No puede agregar depósitos que ya forman parte de un lote"
+              });
+              return;
+            }
+          }
+        } catch (checkError) {
+          console.warn('No se pudo verificar historial de lotes para QR:', depositData.qrId);
         }
 
         // Agregar a la lista
@@ -278,10 +309,11 @@ export default function BatchGrouping() {
       return;
     }
 
-    // Lógica batch 2025-07: Preparar datos para envío
+    // === SEGURIDAD 2025-07: PREPARAR DATOS CON VALIDACIONES ===
     const batchData = {
       depositIds: scannedDeposits.map(d => d.eventId),
       totalWeight: adjustedWeight,
+      userId: user?.id, // Enviar ID de usuario para validación de roles
       weightAdjustment: totalWeight !== adjustedWeight ? {
         originalSum: totalWeight,
         adjustedWeight: adjustedWeight,
