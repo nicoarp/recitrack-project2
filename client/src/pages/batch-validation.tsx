@@ -93,6 +93,12 @@ export default function BatchValidation() {
     retry: false
   });
 
+  // Consultar centros de procesamiento
+  const { data: processingCenters = [] } = useQuery({
+    queryKey: ['/api/processing-centers'],
+    retry: false
+  });
+
   // Log para auditar qué está recibiendo el frontend
   console.log('🔍 Debug QR Info:', {
     qrId,
@@ -203,10 +209,26 @@ export default function BatchValidation() {
         system: 'EcoTraza'
       };
 
+      // Buscar la ubicación del centro de procesamiento seleccionado
+      const selectedCenter = processingCenters.find((center: any) => center.id.toString() === data.processingCenterId);
+      const location = selectedCenter ? `${selectedCenter.name} - ${selectedCenter.location}` : 'Ubicación no especificada';
+
+      console.log('🔍 Debug Form Submission:', {
+        qrData: JSON.stringify(qrData),
+        phase: data.phase,
+        validatedBy: data.validatedBy,
+        location: location,
+        operatorName: data.operatorName,
+        operatorRut: data.operatorRut,
+        processingCenterId: data.processingCenterId,
+        currentWeight: data.currentWeight
+      });
+
       const response = await apiRequest('POST', '/api/qr/validate', {
         qrData: JSON.stringify(qrData),
         phase: data.phase,
         validatedBy: data.validatedBy,
+        location: location,
         operatorName: data.operatorName,
         operatorRut: data.operatorRut,
         processingCenterId: data.processingCenterId,
@@ -553,11 +575,11 @@ export default function BatchValidation() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="CENTRO-001">Punto Limpio Central - Santiago Centro</SelectItem>
-                            <SelectItem value="CENTRO-002">EcoRecicla Las Condes - Las Condes</SelectItem>
-                            <SelectItem value="CENTRO-003">Verde Maipú - Maipú</SelectItem>
-                            <SelectItem value="CENTRO-004">ReciclaVita - Valparaíso</SelectItem>
-                            <SelectItem value="CENTRO-005">EcoSur - Concepción</SelectItem>
+                            {processingCenters.map((center: any) => (
+                              <SelectItem key={center.id} value={center.id.toString()}>
+                                {center.name} - {center.location}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                         <FormMessage />
