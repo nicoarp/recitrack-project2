@@ -75,40 +75,50 @@ function AdminRoutes() {
 }
 
 function Router() {
-  const { isAuthenticated, isAdmin } = useAuth();
+  const { isAuthenticated, isRecolector, isCentroAcopio, isAdmin } = useAuth();
   
   return (
     <Switch>
       {/* Rutas públicas para todos */}
       <Route path="/" component={Dashboard} />
-      <Route path="/deposits" component={Deposits} />
-      <Route path="/deposit" component={Deposits} />
-      
-      {/* Rutas QR - Accesibles para todos */}
       <Route path="/qr-scanner" component={QrScanner} />
       <Route path="/collection-form" component={CollectionForm} />
-      <Route path="/batch-validation" component={BatchValidation} />
       <Route path="/qr-history/:qrId" component={QrHistory} />
       
-      {/* Rutas para usuarios autenticados */}
-      {isAuthenticated && (
-        <Route path="/history" component={History} />
+      {/* Rutas para RECOLECTOR */}
+      {(isRecolector || isAdmin) && (
+        <>
+          <Route path="/deposits" component={Deposits} />
+          <Route path="/deposit" component={Deposits} />
+          <Route path="/history" component={History} />
+        </>
       )}
       
-      {/* Rutas exclusivas para administradores */}
+      {/* Rutas para CENTRO DE ACOPIO */}
+      {(isCentroAcopio || isAdmin) && (
+        <>
+          <Route path="/batch-grouping" component={BatchGrouping} />
+          <Route path="/batch-validation" component={BatchValidation} />
+          <Route path="/batch-history" component={History} />
+        </>
+      )}
+      
+      {/* Rutas exclusivas para ADMIN */}
       {isAdmin && (
         <>
           <Route path="/recycling-points" component={RecyclingPoints} />
+          <Route path="/global-history" component={History} />
+          <Route path="/user-management" component={Statistics} />
           <Route path="/statistics" component={Statistics} />
           <Route path="/qr-admin" component={QRAdmin} />
           <Route path="/admin" component={QRAdmin} />
-          <Route path="/batch-management" component={BatchManagement} />
-          <Route path="/batch-grouping" component={BatchGrouping} />
+          {/* OCULTO PARA MVP - Rutas comentadas hasta fase completa
           <Route path="/process-management" component={ProcessManagement} />
           <Route path="/process-history" component={ProcessHistory} />
           <Route path="/product-management" component={ProductManagement} />
           <Route path="/product-history" component={ProductHistory} />
           <Route path="/traceability" component={TraceabilityChain} />
+          */}
         </>
       )}
       

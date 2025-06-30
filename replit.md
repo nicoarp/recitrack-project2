@@ -27,6 +27,15 @@ A blockchain-powered environmental impact platform that transforms plastic bottl
 
 ## Recent Changes
 
+### June 30, 2025 - Clean Role-Based Navigation System Implementation
+- ✅ **Three-Role Structure**: Implemented clean role-based system with Recolector, Centro de Acopio, and Admin roles
+- ✅ **Authentication Hook Enhancement**: Updated use-auth.tsx with comprehensive role detection and permission methods
+- ✅ **Navigation Cleanup**: Implemented sidebar and mobile navigation with role-specific menu items
+- ✅ **Route Protection**: Added role-based route protection in App.tsx preventing unauthorized access
+- ✅ **User Experience Focus**: Each role sees only relevant functionality (MVP-focused approach)
+- ✅ **Development Phase Preparation**: Commented out advanced features as "OCULTO PARA MVP" for future implementation
+- ✅ **Default Role Assignment**: New users automatically assigned as 'recolector' role for immediate functionality
+
 ### June 30, 2025 - Enhanced Security Framework & Testing Implementation
 - ✅ **Multi-Role User Management**: Created comprehensive user system with roles: user, admin, acopio, batch_operator
 - ✅ **Role-Based Access Control**: Implemented robust RBAC for batch creation endpoint with proper permission validation
