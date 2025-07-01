@@ -51,7 +51,7 @@ export default function BatchGrouping() {
   const evidenceRef = useRef<HTMLInputElement>(null);
 
   // === SEGURIDAD 2025-07: VALIDACIÓN DE ROLES ===
-  const hasPermissions = isAuthenticated && ['admin', 'acopio', 'batch_operator'].includes(user?.role || '');
+  const hasPermissions = isAuthenticated && ['admin', 'acopio', 'batch_operator', 'centro_acopio'].includes(user?.role || '');
   
   // Bloquear acceso si no tiene permisos
   React.useEffect(() => {
@@ -59,7 +59,7 @@ export default function BatchGrouping() {
       toast({
         variant: "destructive",
         title: "Acceso denegado",
-        description: "Solo usuarios con rol 'acopio' o 'admin' pueden crear lotes",
+        description: "Solo usuarios con rol 'centro_acopio', 'acopio' o 'admin' pueden crear lotes",
       });
       setLocation('/dashboard');
     }
