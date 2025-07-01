@@ -19,6 +19,7 @@ import Register from "@/pages/register";
 import Help from "@/pages/help";
 import AccessDenied from "@/pages/access-denied";
 import NotFound from "@/pages/not-found";
+import UserManagement from "@/pages/admin/user-management";
 import BatchManagement from "@/pages/batch-management";
 import BatchGrouping from "@/pages/batch-grouping";
 import ProcessManagement from "@/pages/process-management";
@@ -108,7 +109,7 @@ function Router() {
         <>
           <Route path="/recycling-points" component={RecyclingPoints} />
           <Route path="/global-history" component={History} />
-          <Route path="/user-management" component={Statistics} />
+          <Route path="/user-management" component={UserManagement} />
           <Route path="/statistics" component={Statistics} />
           <Route path="/qr-admin" component={QRAdmin} />
           <Route path="/admin" component={QRAdmin} />
