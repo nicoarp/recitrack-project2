@@ -901,13 +901,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (userId) {
         try {
           const user = await storage.getUser(parseInt(userId));
-          if (!user || !['acopio', 'batch_operator', 'admin'].includes(user.role)) {
+          if (!user || !['acopio', 'batch_operator', 'admin', 'centro_acopio'].includes(user.role)) {
             console.log(`❌ BATCH 2025-07: Usuario ${userId} sin permisos (rol: ${user?.role || 'undefined'})`);
             return res.status(403).json({
               success: false,
               error: "No tiene permisos para crear lotes",
               errorType: "PERMISSION_DENIED",
-              requiredRoles: ["acopio", "batch_operator", "admin"],
+              requiredRoles: ["acopio", "batch_operator", "admin", "centro_acopio"],
               userRole: user?.role || null
             });
           }

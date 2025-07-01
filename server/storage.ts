@@ -214,6 +214,13 @@ export class MemStorage implements IStorage {
         email: "lote.temuco@ecotraza.com",
         name: "Roberto Silva (Operador Lote)",
         role: "batch_operator"
+      },
+      // Usuario demo para María González (frontend)
+      {
+        password: "acopio123",
+        email: "acopio@ecotraza.com",
+        name: "María González - Centro Acopio",
+        role: "centro_acopio"
       }
     ];
     
