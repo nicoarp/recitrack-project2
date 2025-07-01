@@ -14,12 +14,12 @@ import RecyclingPoints from "@/pages/recycling-points";
 import Statistics from "@/pages/statistics";
 import Profile from "@/pages/profile";
 import QRAdmin from "@/pages/qr-admin";
+import UserManagement from "@/pages/admin/user-management";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
 import Help from "@/pages/help";
 import AccessDenied from "@/pages/access-denied";
 import NotFound from "@/pages/not-found";
-import UserManagement from "@/pages/admin/user-management";
 import BatchManagement from "@/pages/batch-management";
 import BatchGrouping from "@/pages/batch-grouping";
 import ProcessManagement from "@/pages/process-management";
@@ -70,6 +70,7 @@ function AdminRoutes() {
       <Route path="/admin" component={QRAdmin} />
       <Route path="/qr-admin" component={QRAdmin} />
       <Route path="/admin/statistics" component={Statistics} />
+      <Route path="/user-management" component={UserManagement} />
       <Route component={AuthenticatedRoutes} />
     </Switch>
   );
