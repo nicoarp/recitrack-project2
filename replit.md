@@ -1,4 +1,4 @@
-# EcoTraza - Trazabilidad de Reciclaje
+# Recitrack - Trazabilidad de Reciclaje
 
 ## Overview
 A blockchain-powered environmental impact platform that transforms plastic bottle recycling into an engaging, transparent digital experience. Enables secure, authenticated user interactions with real-time recycling data verification.

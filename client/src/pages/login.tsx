@@ -46,7 +46,7 @@ export default function Login() {
             <FontAwesomeIcon icon="recycle" className="text-xl" />
           </div>
           <CardTitle className="text-2xl font-bold text-gray-900">
-            Iniciar Sesión en EcoTraza
+            Iniciar Sesión en Recitrack
           </CardTitle>
           <p className="text-gray-600">
             Accede a tu cuenta para gestionar tus depósitos de reciclaje
@@ -119,13 +119,13 @@ export default function Login() {
                     size="sm"
                     variant="outline"
                     className="h-6 px-2 text-xs border-blue-300 text-blue-600 hover:bg-blue-100"
-                    onClick={() => fillDemoAccount('recolector@ecotraza.com', 'recolector123')}
+                    onClick={() => fillDemoAccount('recolector@recitrack.com', 'recolector123')}
                   >
                     Usar
                   </Button>
                 </div>
                 <div className="text-gray-600">
-                  📧 recolector@ecotraza.com<br />
+                  📧 recolector@recitrack.com<br />
                   🔑 recolector123<br />
                   <span className="text-xs text-blue-600">• Escaneo QR • Depósitos • Historial personal</span>
                 </div>
@@ -141,13 +141,13 @@ export default function Login() {
                     size="sm"
                     variant="outline"
                     className="h-6 px-2 text-xs border-green-300 text-green-600 hover:bg-green-100"
-                    onClick={() => fillDemoAccount('acopio@ecotraza.com', 'acopio123')}
+                    onClick={() => fillDemoAccount('acopio@recitrack.com', 'acopio123')}
                   >
                     Usar
                   </Button>
                 </div>
                 <div className="text-gray-600">
-                  📧 acopio@ecotraza.com<br />
+                  📧 acopio@recitrack.com<br />
                   🔑 acopio123<br />
                   <span className="text-xs text-green-600">• Agrupación lotes • Validación • Historial lotes</span>
                 </div>
@@ -163,13 +163,13 @@ export default function Login() {
                     size="sm"
                     variant="outline"
                     className="h-6 px-2 text-xs border-purple-300 text-purple-600 hover:bg-purple-100"
-                    onClick={() => fillDemoAccount('admin@ecotraza.com', 'admin123')}
+                    onClick={() => fillDemoAccount('admin@recitrack.com', 'admin123')}
                   >
                     Usar
                   </Button>
                 </div>
                 <div className="text-gray-600">
-                  📧 admin@ecotraza.com<br />
+                  📧 admin@recitrack.com<br />
                   🔑 admin123<br />
                   <span className="text-xs text-purple-600">• Acceso completo • Gestión usuarios • Métricas</span>
                 </div>

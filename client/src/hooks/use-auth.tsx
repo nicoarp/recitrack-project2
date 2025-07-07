@@ -66,17 +66,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     try {
       // Verificar cuentas registradas por usuarios
-      const registeredUsers = JSON.parse(localStorage.getItem('ecotraza_registered_users') || '[]');
+      const registeredUsers = JSON.parse(localStorage.getItem('recitrack_registered_users') || '[]');
       const registeredUser = registeredUsers.find((u: any) => u.email === email && u.password === password);
       
       if (registeredUser) {
         setUser(registeredUser.user);
-        localStorage.setItem('ecotraza_user', JSON.stringify(registeredUser.user));
+        localStorage.setItem('recitrack_user', JSON.stringify(registeredUser.user));
         return;
       }
       
       // Credenciales de demostración por rol
-      if (email === "admin@ecotraza.com" && password === "admin123") {
+      if (email === "admin@recitrack.com" && password === "admin123") {
         // Obtener datos reales del usuario desde PostgreSQL
         try {
           const response = await fetch('/api/auth/user', {
@@ -86,7 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const realUserData = await response.json();
             const adminUser: AuthUser = {
               id: realUserData.id || 3,
-              email: realUserData.email || "admin@ecotraza.com", 
+              email: realUserData.email || "admin@recitrack.com", 
               name: realUserData.name || "Administrador",
               walletAddress: "0xd1ca86232E3c54725c4cD05c653c78922061180f",
               role: realUserData.role || 'admin',
@@ -94,7 +94,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               totalBottles: 0
             };
             setUser(adminUser);
-            localStorage.setItem('ecotraza_user', JSON.stringify(adminUser));
+            localStorage.setItem('recitrack_user', JSON.stringify(adminUser));
             return;
           }
         } catch (error) {
@@ -103,7 +103,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         const adminUser: AuthUser = {
           id: 3,
-          email: "admin@ecotraza.com", 
+          email: "admin@recitrack.com", 
           name: "Administrador",
           walletAddress: "0xd1ca86232E3c54725c4cD05c653c78922061180f",
           role: 'admin',
@@ -111,8 +111,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           totalBottles: 0
         };
         setUser(adminUser);
-        localStorage.setItem('ecotraza_user', JSON.stringify(adminUser));
-      } else if (email === "recolector@ecotraza.com" && password === "recolector123") {
+        localStorage.setItem('recitrack_user', JSON.stringify(adminUser));
+      } else if (email === "recolector@recitrack.com" && password === "recolector123") {
         // Obtener datos reales del usuario desde PostgreSQL
         try {
           const response = await fetch('/api/auth/user', {
@@ -122,7 +122,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const realUserData = await response.json();
             const recolectorUser: AuthUser = {
               id: realUserData.id || 1,
-              email: realUserData.email || "recolector@ecotraza.com",
+              email: realUserData.email || "recolector@recitrack.com",
               name: realUserData.name || "Recolector",
               walletAddress: "0x456...def", 
               role: realUserData.role || 'recolector',
@@ -130,7 +130,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               totalBottles: 0   // Se actualizará dinámicamente
             };
             setUser(recolectorUser);
-            localStorage.setItem('ecotraza_user', JSON.stringify(recolectorUser));
+            localStorage.setItem('recitrack_user', JSON.stringify(recolectorUser));
             return;
           }
         } catch (error) {
@@ -140,7 +140,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Fallback solo si falla PostgreSQL - usuario sin datos hardcodeados
         const recolectorUser: AuthUser = {
           id: 1,
-          email: "recolector@ecotraza.com",
+          email: "recolector@recitrack.com",
           name: "Recolector",
           walletAddress: "0x456...def", 
           role: 'recolector',
@@ -148,8 +148,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           totalBottles: 0
         };
         setUser(recolectorUser);
-        localStorage.setItem('ecotraza_user', JSON.stringify(recolectorUser));
-      } else if (email === "acopio@ecotraza.com" && password === "acopio123") {
+        localStorage.setItem('recitrack_user', JSON.stringify(recolectorUser));
+      } else if (email === "acopio@recitrack.com" && password === "acopio123") {
         // Obtener datos reales del usuario desde PostgreSQL
         try {
           const response = await fetch('/api/auth/user', {
@@ -159,7 +159,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const realUserData = await response.json();
             const centroUser: AuthUser = {
               id: realUserData.id || 2,
-              email: realUserData.email || "acopio@ecotraza.com",
+              email: realUserData.email || "acopio@recitrack.com",
               name: realUserData.name || "Centro de Acopio",
               walletAddress: "0x789...ghi", 
               role: realUserData.role || 'centro_acopio',
@@ -167,7 +167,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               totalBottles: 0
             };
             setUser(centroUser);
-            localStorage.setItem('ecotraza_user', JSON.stringify(centroUser));
+            localStorage.setItem('recitrack_user', JSON.stringify(centroUser));
             return;
           }
         } catch (error) {
@@ -176,7 +176,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         const centroUser: AuthUser = {
           id: 2,
-          email: "acopio@ecotraza.com",
+          email: "acopio@recitrack.com",
           name: "Centro de Acopio",
           walletAddress: "0x789...ghi", 
           role: 'centro_acopio',
@@ -184,7 +184,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           totalBottles: 0
         };
         setUser(centroUser);
-        localStorage.setItem('ecotraza_user', JSON.stringify(centroUser));
+        localStorage.setItem('recitrack_user', JSON.stringify(centroUser));
       } else {
         throw new Error('Credenciales incorrectas');
       }
@@ -199,7 +199,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     try {
       // Verificar si el usuario ya existe
-      const existingUsers = JSON.parse(localStorage.getItem('ecotraza_registered_users') || '[]');
+      const existingUsers = JSON.parse(localStorage.getItem('recitrack_registered_users') || '[]');
       const userExists = existingUsers.find((u: any) => u.email === email);
       
       if (userExists) {
@@ -225,11 +225,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       };
       
       existingUsers.push(newUserCredentials);
-      localStorage.setItem('ecotraza_registered_users', JSON.stringify(existingUsers));
+      localStorage.setItem('recitrack_registered_users', JSON.stringify(existingUsers));
       
       // Iniciar sesión automáticamente
       setUser(newUser);
-      localStorage.setItem('ecotraza_user', JSON.stringify(newUser));
+      localStorage.setItem('recitrack_user', JSON.stringify(newUser));
     } catch (error) {
       throw error;
     } finally {
@@ -250,7 +250,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         totalBottles: 0
       };
       setUser(walletUser);
-      localStorage.setItem('ecotraza_user', JSON.stringify(walletUser));
+      localStorage.setItem('recitrack_user', JSON.stringify(walletUser));
     } finally {
       setIsLoading(false);
     }
@@ -258,17 +258,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('ecotraza_user');
+    localStorage.removeItem('recitrack_user');
   };
 
   // Recuperar usuario del localStorage al cargar
   useEffect(() => {
-    const savedUser = localStorage.getItem('ecotraza_user');
+    const savedUser = localStorage.getItem('recitrack_user');
     if (savedUser) {
       try {
         setUser(JSON.parse(savedUser));
       } catch (error) {
-        localStorage.removeItem('ecotraza_user');
+        localStorage.removeItem('recitrack_user');
       }
     }
   }, []);
