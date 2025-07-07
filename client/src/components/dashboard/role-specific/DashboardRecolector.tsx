@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { QrCode, Package, History, Leaf, Target, Droplets, Zap, TreePine, Car } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { StatsGrid } from "@/components/dashboard/stats-card";
+import { UserStatsGridRecolector } from "@/components/dashboard/user-stats-grid";
 import { useUserStats, useUserImpact } from "@/hooks/use-user-stats";
 
 export function DashboardRecolector() {
@@ -87,7 +87,7 @@ export function DashboardRecolector() {
       </div>
 
       {/* Estadísticas personales */}
-      <StatsGrid />
+      <UserStatsGridRecolector />
 
       {/* Información sobre proceso seguro */}
       <Card className="mt-8">

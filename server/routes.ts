@@ -176,6 +176,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Endpoint específico para estadísticas de usuario autenticado
+  app.get("/api/user-stats", async (req, res) => {
+    try {
+      const userId = req.headers['x-user-id'] as string;
+      
+      if (!userId) {
+        return res.status(401).json({ error: 'No autorizado', message: 'Se requiere autenticación' });
+      }
+
+      const userIdNumber = parseInt(userId);
+      
+      // Obtener estadísticas reales del usuario desde PostgreSQL
+      const [totalBottles, totalDeposits, totalWeight] = await Promise.all([
+        storage.getUserTotalBottles(userIdNumber),
+        storage.getUserTotalDeposits(userIdNumber), 
+        storage.getUserTotalWeight(userIdNumber)
+      ]);
+
+      res.json({
+        userId: userIdNumber,
+        totalBottles,
+        totalDeposits,
+        totalWeight: Number(totalWeight.toFixed(2)),
+        calculatedAt: new Date(),
+        dataSource: "postgresql_user_specific"
+      });
+    } catch (error) {
+      console.error("Error obteniendo estadísticas de usuario:", error);
+      res.status(500).json({ 
+        error: "Error interno del servidor",
+        message: "No se pudieron calcular las estadísticas del usuario"
+      });
+    }
+  });
+
   // Endpoint para estadísticas de usuario específico
   app.get("/api/user-stats", async (req, res) => {
     try {

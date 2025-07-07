@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Package, Users, ClipboardCheck, BarChart3, Building2, CheckCircle } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { StatsGrid } from "@/components/dashboard/stats-card";
+import { UserStatsGridCentroAcopio } from "@/components/dashboard/user-stats-grid";
 import { BatchHistory } from "@/components/dashboard/batch-history";
 
 export function DashboardCentroAcopio() {
@@ -92,8 +92,8 @@ export function DashboardCentroAcopio() {
         </Link>
       </div>
 
-      {/* Estadísticas del centro */}
-      <StatsGrid />
+      {/* Estadísticas específicas del centro */}
+      <UserStatsGridCentroAcopio />
 
       {/* Información operativa */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">

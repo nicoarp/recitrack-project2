@@ -16,7 +16,7 @@ import {
   Globe
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { StatsGrid } from "@/components/dashboard/stats-card";
+import { UserStatsGridAdmin } from "@/components/dashboard/user-stats-grid";
 import { BatchHistory } from "@/components/dashboard/batch-history";
 import { WalletStatus } from "@/components/dashboard/wallet-status";
 
@@ -156,8 +156,8 @@ export function DashboardAdmin() {
       {/* Estado del sistema */}
       <WalletStatus />
 
-      {/* Estadísticas globales */}
-      <StatsGrid />
+      {/* Estadísticas globales del sistema */}
+      <UserStatsGridAdmin />
 
       {/* Información del sistema */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
