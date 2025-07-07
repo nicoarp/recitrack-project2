@@ -1691,10 +1691,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           dataSource: "postgresql_real_time"
         });
       } catch (dbError) {
-        console.error("Error obteniendo estadísticas globales reales, usando simulador temporal:", dbError);
-        // Fallback temporal si hay problemas con la base de datos
-        const globalStats = generateTempGlobalStats();
-        res.json(globalStats);
+        console.error("Error obteniendo estadísticas globales desde PostgreSQL:", dbError);
+        throw new Error(`Error de base de datos: ${dbError.message}`);
       }
     } catch (error) {
       console.error("Error obteniendo estadísticas globales:", error);

@@ -196,7 +196,7 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(bottleDeposits)
       .where(eq(bottleDeposits.userId, userId))
-      .orderBy(bottleDeposits.timestamp)
+      .orderBy(desc(bottleDeposits.createdAt))
       .limit(limit);
   }
 

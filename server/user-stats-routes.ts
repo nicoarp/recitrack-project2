@@ -105,7 +105,7 @@ export function registerUserStatsRoutes(app: Express) {
         // Calcular última actividad
         let lastActivity = null;
         if (recentDeposits.length > 0) {
-          lastActivity = recentDeposits[0].timestamp;
+          lastActivity = recentDeposits[0].createdAt;
         }
 
         response = {
@@ -135,15 +135,8 @@ export function registerUserStatsRoutes(app: Express) {
           dataSource: "postgresql_real_time"
         };
       } catch (dbError) {
-        console.error("Error obteniendo datos reales, usando simulador temporal:", dbError);
-        // Fallback temporal si hay problemas con la base de datos
-        const userName = `Usuario ${userId}`;
-        const userEmail = `user${userId}@ecotraza.com`;
-        const userStats = generateTempUserStats(userId, userName, userEmail);
-        response = {
-          ...userStats,
-          ...(includeRecentDeposits && { recentDeposits: [] }),
-        };
+        console.error("Error obteniendo estadísticas de usuario desde PostgreSQL:", dbError);
+        throw new Error(`Error de base de datos: ${dbError.message}`);
       }
 
       res.json(response);
@@ -231,12 +224,8 @@ export function registerUserStatsRoutes(app: Express) {
           methodology: "Factores de conversión basados en estudios de reciclaje de PET"
         };
       } catch (dbError) {
-        console.error("Error obteniendo datos reales, usando simulador temporal:", dbError);
-        // Fallback temporal si hay problemas con la base de datos
-        const userName = `Usuario ${userId}`;
-        const userEmail = `user${userId}@ecotraza.com`;
-        const userStats = generateTempUserStats(userId, userName, userEmail);
-        impact = generateTempUserImpact(userStats);
+        console.error("Error obteniendo impacto de usuario desde PostgreSQL:", dbError);
+        throw new Error(`Error de base de datos: ${dbError.message}`);
       }
 
       res.json(impact);
