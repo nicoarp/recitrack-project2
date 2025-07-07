@@ -11,11 +11,8 @@ interface User {
   role: 'recolector' | 'centro_acopio' | 'admin';
 }
 
-const mockUsers: User[] = [
-  { id: 1, email: 'admin@ecotraza.com', name: 'Administrador EcoTraza', role: 'admin' },
-  { id: 2, email: 'recolector@ecotraza.com', name: 'Carlos Recolector', role: 'recolector' },
-  { id: 3, email: 'acopio@ecotraza.com', name: 'María González', role: 'centro_acopio' },
-];
+// ELIMINADO: datos mock - usar solo datos reales de PostgreSQL
+// Los usuarios se cargarán dinámicamente desde /api/users
 
 const roleLabels = {
   'recolector': 'Recolector',

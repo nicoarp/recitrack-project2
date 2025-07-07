@@ -77,38 +77,111 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Credenciales de demostración por rol
       if (email === "admin@ecotraza.com" && password === "admin123") {
+        // Obtener datos reales del usuario desde PostgreSQL
+        try {
+          const response = await fetch('/api/auth/user', {
+            headers: { 'X-User-Id': '3' }
+          });
+          if (response.ok) {
+            const realUserData = await response.json();
+            const adminUser: AuthUser = {
+              id: realUserData.id || 3,
+              email: realUserData.email || "admin@ecotraza.com", 
+              name: realUserData.name || "Administrador",
+              walletAddress: "0xd1ca86232E3c54725c4cD05c653c78922061180f",
+              role: realUserData.role || 'admin',
+              totalDeposits: 0,
+              totalBottles: 0
+            };
+            setUser(adminUser);
+            localStorage.setItem('ecotraza_user', JSON.stringify(adminUser));
+            return;
+          }
+        } catch (error) {
+          console.error("Error obteniendo datos reales del usuario:", error);
+        }
+        
         const adminUser: AuthUser = {
-          id: 1,
+          id: 3,
           email: "admin@ecotraza.com", 
-          name: "Administrador EcoTraza",
+          name: "Administrador",
           walletAddress: "0xd1ca86232E3c54725c4cD05c653c78922061180f",
           role: 'admin',
-          totalDeposits: 15,
-          totalBottles: 145
+          totalDeposits: 0,
+          totalBottles: 0
         };
         setUser(adminUser);
         localStorage.setItem('ecotraza_user', JSON.stringify(adminUser));
       } else if (email === "recolector@ecotraza.com" && password === "recolector123") {
+        // Obtener datos reales del usuario desde PostgreSQL
+        try {
+          const response = await fetch('/api/auth/user', {
+            headers: { 'X-User-Id': '1' }
+          });
+          if (response.ok) {
+            const realUserData = await response.json();
+            const recolectorUser: AuthUser = {
+              id: realUserData.id || 1,
+              email: realUserData.email || "recolector@ecotraza.com",
+              name: realUserData.name || "Recolector",
+              walletAddress: "0x456...def", 
+              role: realUserData.role || 'recolector',
+              totalDeposits: 0, // Se actualizará dinámicamente
+              totalBottles: 0   // Se actualizará dinámicamente
+            };
+            setUser(recolectorUser);
+            localStorage.setItem('ecotraza_user', JSON.stringify(recolectorUser));
+            return;
+          }
+        } catch (error) {
+          console.error("Error obteniendo datos reales del usuario:", error);
+        }
+        
+        // Fallback solo si falla PostgreSQL - usuario sin datos hardcodeados
         const recolectorUser: AuthUser = {
-          id: 2,
+          id: 1,
           email: "recolector@ecotraza.com",
-          name: "Juan Pérez - Recolector",
+          name: "Recolector",
           walletAddress: "0x456...def", 
           role: 'recolector',
-          totalDeposits: 5,
-          totalBottles: 25
+          totalDeposits: 0,
+          totalBottles: 0
         };
         setUser(recolectorUser);
         localStorage.setItem('ecotraza_user', JSON.stringify(recolectorUser));
       } else if (email === "acopio@ecotraza.com" && password === "acopio123") {
+        // Obtener datos reales del usuario desde PostgreSQL
+        try {
+          const response = await fetch('/api/auth/user', {
+            headers: { 'X-User-Id': '2' }
+          });
+          if (response.ok) {
+            const realUserData = await response.json();
+            const centroUser: AuthUser = {
+              id: realUserData.id || 2,
+              email: realUserData.email || "acopio@ecotraza.com",
+              name: realUserData.name || "Centro de Acopio",
+              walletAddress: "0x789...ghi", 
+              role: realUserData.role || 'centro_acopio',
+              totalDeposits: 0,
+              totalBottles: 0
+            };
+            setUser(centroUser);
+            localStorage.setItem('ecotraza_user', JSON.stringify(centroUser));
+            return;
+          }
+        } catch (error) {
+          console.error("Error obteniendo datos reales del usuario:", error);
+        }
+        
         const centroUser: AuthUser = {
-          id: 3,
+          id: 2,
           email: "acopio@ecotraza.com",
-          name: "María González - Centro Acopio",
+          name: "Centro de Acopio",
           walletAddress: "0x789...ghi", 
           role: 'centro_acopio',
-          totalDeposits: 12,
-          totalBottles: 120
+          totalDeposits: 0,
+          totalBottles: 0
         };
         setUser(centroUser);
         localStorage.setItem('ecotraza_user', JSON.stringify(centroUser));

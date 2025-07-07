@@ -28,6 +28,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(users);
   });
 
+  // Auth endpoint que obtiene datos reales de usuario desde PostgreSQL
+  app.get('/api/auth/user', async (req, res) => {
+    try {
+      const userId = req.headers['x-user-id'] as string;
+      
+      if (!userId) {
+        return res.status(401).json({ error: 'No autorizado' });
+      }
+
+      // Obtener datos reales del usuario desde PostgreSQL
+      const user = await storage.getUser(parseInt(userId));
+      if (!user) {
+        return res.status(404).json({ error: 'Usuario no encontrado' });
+      }
+
+      res.json({
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role
+      });
+    } catch (error) {
+      console.error("Error obteniendo usuario desde PostgreSQL:", error);
+      res.status(500).json({ error: "Error interno del servidor" });
+    }
+  });
+
   app.post("/api/users", async (req, res) => {
     try {
       const userData = insertUserSchema.parse(req.body);
