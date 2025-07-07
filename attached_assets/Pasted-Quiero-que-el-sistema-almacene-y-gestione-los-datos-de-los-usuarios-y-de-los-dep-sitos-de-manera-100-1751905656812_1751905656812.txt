@@ -1,0 +1,58 @@
+Quiero que el sistema almacene y gestione los datos de los usuarios y de los depósitos de manera 100% real, segura y ordenada, sin datos simulados ni hardcodeados. Implementa lo siguiente:
+
+1. Registro fiable de datos:
+
+Cada vez que un usuario (recolector o centro de acopioo futuras etapas posteriores) registra un depósito accion con su debida informacion, asegúrate de guardar en la base de datos:
+
+userId
+
+cantidad de botellas (bottleCount)
+
+peso en kg (weightKg)
+
+fecha y hora
+
+ubicación y cualquier metadata relevante
+
+Los datos deben persistir en la base de datos y estar correctamente asociados al usuario creador.
+
+2. Estadísticas dinámicas:
+
+Crea un endpoint seguro (por ejemplo, GET /api/user/:userId/stats) que devuelva las estadísticas REALES del usuario autenticado:
+
+Depósitos realizados = total de depósitos creados por ese userId
+
+Impacto en kg = suma de weightKg de todos sus depósitos
+
+Suma de lotes etc...
+
+
+El endpoint NO debe devolver datos hardcodeados ni simulados.
+
+3. Dashboard real:
+
+Modifica el frontend para que las estadísticas personales en el dashboard del usuario SIEMPRE se obtengan consultando el endpoint anterior.
+
+El frontend no debe mostrar nunca datos falsos o estáticos.
+
+La estética esta muy buena no la cambies, se ve bonito.
+
+4. Usuarios nuevos y confiabilidad:
+
+Cuando un usuario nuevo se registre, asegúrate de que automáticamente pueda registrar depósitos y sus estadísticas personales inicien en cero, construyéndose SOLO a partir de sus acciones reales.
+
+5. Integridad de datos:
+
+Todas las operaciones de registro y consulta de datos deben estar autenticadas y autorizadas.
+
+Solo el usuario autenticado puede ver y consultar sus propios datos.
+
+Opcional: Agrega comentarios en el código para facilitar la extensión a otras métricas en el futuro.
+
+6. Blockchain solo para auditoría:
+
+Para el MVP, la base de datos es la fuente principal de consulta para el dashboard y métricas.
+
+La blockchain debe usarse solo como respaldo/auditoría para casos de verificación, no para estadísticas de uso cotidiano (por costo y eficiencia).
+
+¿Puedes dejar toda la lógica implementada y el código comentado para futuras métricas o integraciones? Prioriza seguridad, claridad y escalabilidad.

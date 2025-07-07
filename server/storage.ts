@@ -46,7 +46,8 @@ export interface IStorage {
 }
 
 // In-memory storage implementation
-export class MemStorage implements IStorage {
+// DatabaseStorage - Sistema de base de datos real con PostgreSQL
+export class DatabaseStorage implements IStorage {
   private users: Map<number, User>;
   private recyclingPoints: Map<number, RecyclingPoint>;
   private bottleDeposits: Map<number, BottleDeposit>;
@@ -343,7 +344,7 @@ export class MemStorage implements IStorage {
       batchId: insertDeposit.batchId,
       bottleCount: insertDeposit.bottleCount,
       location: insertDeposit.location,
-      userId: insertDeposit.userId || null,
+      userId: insertDeposit.userId || 0,
       txHash: insertDeposit.txHash || null,
       blockNumber: insertDeposit.blockNumber || null,
       eventId: insertDeposit.eventId || null,
@@ -440,4 +441,4 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();

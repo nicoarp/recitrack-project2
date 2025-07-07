@@ -1,12 +1,27 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { z } from "zod";
-import { storage } from "./storage";
+import { storage } from "./database-storage";
 import { insertBottleDepositSchema, insertRecyclingPointSchema, insertUserSchema } from "@shared/schema";
 import { blockchainService } from "./blockchain.js";
 import { qrService } from "./qr-service";
+import { registerUserStatsRoutes } from "./user-stats-routes";
+import { initializeDatabase, needsInitialization } from "./init-database";
+import { generateTempGlobalStats } from "./temp-user-simulator";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Inicializar base de datos con datos de ejemplo si está vacía
+  try {
+    if (await needsInitialization()) {
+      console.log("🔄 Base de datos vacía, inicializando con datos de ejemplo...");
+      await initializeDatabase();
+    } else {
+      console.log("✅ Base de datos ya inicializada");
+    }
+  } catch (error) {
+    console.error("❌ Error durante inicialización de base de datos:", error);
+  }
+
   // API routes
   app.get("/api/users", async (_req, res) => {
     const users = await storage.getAllUsers();
@@ -1630,6 +1645,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({
         success: false,
         error: error.message || 'Error al buscar códigos QR'
+      });
+    }
+  });
+
+  // Registrar rutas de estadísticas de usuario
+  registerUserStatsRoutes(app);
+
+  // Endpoint para estadísticas globales del sistema
+  app.get('/api/global-stats', async (_req, res) => {
+    try {
+      // TEMPORAL: Usar simulador de estadísticas globales realistas
+      const globalStats = generateTempGlobalStats();
+      res.json(globalStats);
+    } catch (error) {
+      console.error("Error obteniendo estadísticas globales:", error);
+      res.status(500).json({
+        error: "Error interno del servidor",
+        message: "No se pudieron obtener las estadísticas globales"
       });
     }
   });

@@ -3,12 +3,17 @@ import { Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { QrCode, Package, History, Leaf, Target } from "lucide-react";
+import { QrCode, Package, History, Leaf, Target, Droplets, Zap, TreePine, Car } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { StatsGrid } from "@/components/dashboard/stats-card";
+import { useUserStats, useUserImpact } from "@/hooks/use-user-stats";
 
 export function DashboardRecolector() {
   const { user } = useAuth();
+  
+  // Obtener estadísticas reales del usuario desde la base de datos
+  const { data: userStats, isLoading: statsLoading } = useUserStats(true);
+  const { data: userImpact, isLoading: impactLoading } = useUserImpact();
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-20 md:pb-6">

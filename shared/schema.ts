@@ -31,27 +31,42 @@ export const recyclingPoints = pgTable("recycling_points", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Bottles Deposits table - Soporta usuarios anónimos y autenticados
+// Bottles Deposits table - Registro real de depósitos con seguimiento completo
 export const bottleDeposits = pgTable("bottle_deposits", {
   id: serial("id").primaryKey(),
+  // Información del depósito
   batchId: integer("batch_id").notNull(),
   bottleCount: integer("bottle_count").notNull(),
+  weightKg: real("weight_kg").notNull(), // Peso real en kilogramos - CAMPO OBLIGATORIO
   location: text("location").notNull(),
   depositId: text("deposit_id").notNull(), // ID del punto de reciclaje
-  // Usuario opcional - null para depósitos anónimos
-  userId: integer("user_id").references(() => users.id),
-  // Información de blockchain
+  
+  // Usuario OBLIGATORIO - sistema requiere autenticación
+  userId: integer("user_id").notNull().references(() => users.id),
+  
+  // Información de blockchain para auditoría
   txHash: text("tx_hash"),
   blockNumber: integer("block_number"),
   eventId: text("event_id"), // ID del evento en el smart contract
   evidenceHash: text("evidence_hash"), // Hash de evidencia para verificación
   contractStatus: text("contract_status").default("pending"), // "pending", "confirmed", "failed"
   contractError: text("contract_error"), // Error del contrato si hay alguno
-  // Timestamps
-  timestamp: timestamp("timestamp").defaultNow().notNull(),
-  // Metadatos adicionales para el futuro
-  deviceInfo: text("device_info"), // Para analytics
-  ipAddress: text("ip_address"), // Para geolocalización
+  
+  // Metadatos para trazabilidad y auditoría
+  deviceInfo: text("device_info"), // Para analytics y verificación
+  ipAddress: text("ip_address"), // Para geolocalización y seguridad
+  userAgent: text("user_agent"), // Información del navegador/app
+  
+  // Evidencia y validación
+  photos: json("photos"), // URLs o hashes de fotos del depósito
+  notes: text("notes"), // Notas adicionales del usuario
+  isValidated: boolean("is_validated").default(false), // Si fue validado por el centro
+  validatedBy: integer("validated_by").references(() => users.id), // Usuario que validó
+  validatedAt: timestamp("validated_at"), // Cuándo fue validado
+  
+  // Control de timestamps
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // Blockchain Events table - Rastrea todos los eventos del smart contract
