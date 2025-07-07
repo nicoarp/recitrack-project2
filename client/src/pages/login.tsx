@@ -22,8 +22,8 @@ export default function Login() {
         title: "¡Bienvenido!",
         description: "Has iniciado sesión correctamente.",
       });
-      // Redirigir al perfil después del login exitoso
-      setLocation('/profile');
+      // Redirigir al dashboard principal después del login exitoso
+      setLocation('/');
     } catch (error) {
       toast({
         title: "Error de autenticación",

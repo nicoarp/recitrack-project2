@@ -77,7 +77,7 @@ function AdminRoutes() {
 }
 
 function Router() {
-  const { isAuthenticated, isRecolector, isCentroAcopio, isAdmin } = useAuth();
+  const { isAuthenticated, isRecolector, isCentroAcopio, isAdmin, user } = useAuth();
   
   return (
     <Switch>

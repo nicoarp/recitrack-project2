@@ -24,10 +24,11 @@ export default function Sidebar({ isMobile = false, closeMobileMenu }: SidebarPr
 
   // Menú para RECOLECTOR: Solo escaneo QR, registro de depósitos e historial personal
   const recolectorNavItems = [
-    { path: "/", label: "Inicio", icon: "home" },
+    { path: "/", label: "Dashboard", icon: "home" },
     { path: "/qr-scanner", label: "Escanear QR", icon: "qrcode" },
     { path: "/deposits", label: "Registrar Depósito", icon: "bottle-water" },
     { path: "/history", label: "Mi Historial", icon: "history" },
+    { path: "/profile", label: "Mi Perfil", icon: "user" },
   ];
 
   // Menú para CENTRO DE ACOPIO: Agrupar lotes, validar e historial de lotes
@@ -37,6 +38,7 @@ export default function Sidebar({ isMobile = false, closeMobileMenu }: SidebarPr
     { path: "/batch-grouping", label: "Agrupar Lotes", icon: "cubes" },
     { path: "/batch-validation", label: "Validar Lotes", icon: "check-circle" },
     { path: "/batch-history", label: "Historial de Lotes", icon: "history" },
+    { path: "/profile", label: "Mi Perfil", icon: "user" },
   ];
 
   // Menú para ADMIN: Acceso total
@@ -44,14 +46,15 @@ export default function Sidebar({ isMobile = false, closeMobileMenu }: SidebarPr
     { path: "/", label: "Dashboard Admin", icon: "home" },
     { path: "/qr-scanner", label: "Escanear QR", icon: "qrcode" },
     { path: "/deposits", label: "Registrar Depósito", icon: "bottle-water" },
-    { path: "/history", label: "Mi Historial", icon: "user" },
+    { path: "/history", label: "Mi Historial", icon: "clock" },
     { path: "/batch-grouping", label: "Agrupar Lotes", icon: "cubes" },
     { path: "/batch-validation", label: "Validar Lotes", icon: "check-circle" },
-    { path: "/batch-history", label: "Historial de Lotes", icon: "clock" },
+    { path: "/batch-history", label: "Historial de Lotes", icon: "history" },
     { path: "/recycling-points", label: "Puntos de Depósito", icon: "map-marker-alt" },
     { path: "/global-history", label: "Historial Global", icon: "globe" },
     { path: "/user-management", label: "Gestión de Usuarios", icon: "users" },
     { path: "/statistics", label: "Métricas", icon: "chart-line" },
+    { path: "/profile", label: "Mi Perfil", icon: "user" },
     // OCULTO PARA MVP: Gestión de productos, procesos, reportes avanzados
     // { path: "/process-management", label: "Gestión de Procesos", icon: "cogs" },
     // { path: "/product-management", label: "Gestión de Productos", icon: "box-open" },

@@ -1,18 +1,60 @@
 import React from 'react';
 import { Link, useLocation } from 'wouter';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faHome, faRecycle, faHistory, faMapMarkerAlt, faUser } from '@fortawesome/free-solid-svg-icons';
+import { faHome, faRecycle, faHistory, faQrcode, faUser } from '@fortawesome/free-solid-svg-icons';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function MobileNav() {
   const [location] = useLocation();
+  const { isAuthenticated, isRecolector, isCentroAcopio, isAdmin } = useAuth();
   
-  const navItems = [
-    { path: "/", label: "Inicio", icon: faHome },
-    { path: "/deposits", label: "Depositar", icon: faRecycle },
-    { path: "/history", label: "Historial", icon: faHistory },
-    { path: "/recycling-points", label: "Puntos", icon: faMapMarkerAlt },
-    { path: "/profile", label: "Perfil", icon: faUser },
-  ];
+  // Navegación moderna y específica por rol
+  const getNavItems = () => {
+    if (!isAuthenticated) {
+      return [
+        { path: "/", label: "Inicio", icon: faHome },
+        { path: "/qr-scanner", label: "Escanear", icon: faQrcode },
+        { path: "/help", label: "Ayuda", icon: faUser },
+      ];
+    }
+    
+    if (isRecolector) {
+      return [
+        { path: "/", label: "Inicio", icon: faHome },
+        { path: "/qr-scanner", label: "Escanear", icon: faQrcode },
+        { path: "/deposits", label: "Depósito", icon: faRecycle },
+        { path: "/history", label: "Historial", icon: faHistory },
+        { path: "/profile", label: "Perfil", icon: faUser },
+      ];
+    }
+    
+    if (isCentroAcopio) {
+      return [
+        { path: "/", label: "Dashboard", icon: faHome },
+        { path: "/qr-scanner", label: "Escanear", icon: faQrcode },
+        { path: "/batch-grouping", label: "Lotes", icon: faRecycle },
+        { path: "/batch-history", label: "Historial", icon: faHistory },
+        { path: "/profile", label: "Perfil", icon: faUser },
+      ];
+    }
+    
+    if (isAdmin) {
+      return [
+        { path: "/", label: "Dashboard", icon: faHome },
+        { path: "/qr-scanner", label: "Escanear", icon: faQrcode },
+        { path: "/user-management", label: "Usuarios", icon: faRecycle },
+        { path: "/statistics", label: "Métricas", icon: faHistory },
+        { path: "/profile", label: "Perfil", icon: faUser },
+      ];
+    }
+    
+    return [
+      { path: "/", label: "Inicio", icon: faHome },
+      { path: "/profile", label: "Perfil", icon: faUser },
+    ];
+  };
+  
+  const navItems = getNavItems();
 
   return (
     <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-10">
