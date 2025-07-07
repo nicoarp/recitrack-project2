@@ -1655,9 +1655,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Endpoint para estadísticas globales del sistema
   app.get('/api/global-stats', async (_req, res) => {
     try {
-      // TEMPORAL: Usar simulador de estadísticas globales realistas
-      const globalStats = generateTempGlobalStats();
-      res.json(globalStats);
+      // USAR DATOS REALES DE POSTGRESQL
+      try {
+        const [
+          totalUsers,
+          totalBottles,
+          totalBatches,
+          totalRecyclingPoints,
+          totalWeight
+        ] = await Promise.all([
+          storage.getTotalUsers(),
+          storage.getTotalBottles(),
+          storage.getTotalBatches(),
+          storage.getTotalRecyclingPoints(),
+          storage.getTotalWeight()
+        ]);
+
+        res.json({
+          totalUsers,
+          totalBottles,
+          totalBatches,
+          totalRecyclingPoints,
+          totalWeight: Number(totalWeight.toFixed(2)),
+          // Métricas derivadas
+          averageBottlesPerUser: totalUsers > 0 ? Number((totalBottles / totalUsers).toFixed(1)) : 0,
+          averageWeightPerUser: totalUsers > 0 ? Number((totalWeight / totalUsers).toFixed(2)) : 0,
+          // Impacto ambiental global
+          globalImpact: {
+            co2Saved: Number((totalWeight * 1.8).toFixed(2)),
+            energySaved: Number((totalWeight * 2.1).toFixed(2)),
+            waterSaved: Number((totalWeight * 15.3).toFixed(1)),
+            equivalentTreesPlanted: Number((totalWeight * 0.02).toFixed(1)),
+          },
+          calculatedAt: new Date(),
+          dataSource: "postgresql_real_time"
+        });
+      } catch (dbError) {
+        console.error("Error obteniendo estadísticas globales reales, usando simulador temporal:", dbError);
+        // Fallback temporal si hay problemas con la base de datos
+        const globalStats = generateTempGlobalStats();
+        res.json(globalStats);
+      }
     } catch (error) {
       console.error("Error obteniendo estadísticas globales:", error);
       res.status(500).json({
