@@ -13,7 +13,7 @@ interface BottleEvent {
 
 // Almacén de eventos en localStorage
 export class LocalStorage {
-  private static STORAGE_KEY = 'ecotraza_events';
+  private static STORAGE_KEY = 'recitrack_events';
 
   // Guardar un nuevo evento
   static saveEvent(event: BottleEvent): void {

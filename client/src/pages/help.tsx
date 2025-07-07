@@ -8,7 +8,7 @@ export default function Help() {
     <div className="p-6 max-w-4xl mx-auto">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Centro de Ayuda</h1>
-        <p className="text-gray-600">Encuentra respuestas a las preguntas más frecuentes sobre EcoTraza</p>
+        <p className="text-gray-600">Encuentra respuestas a las preguntas más frecuentes sobre Recitrack</p>
       </div>
 
       <div className="grid gap-6">
@@ -84,7 +84,7 @@ export default function Help() {
                 <div className="bg-primary-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">1</div>
                 <div>
                   <h4 className="font-semibold">Busca un punto de reciclaje</h4>
-                  <p className="text-gray-600 text-sm">Encuentra contenedores oficiales con el logo de EcoTraza</p>
+                  <p className="text-gray-600 text-sm">Encuentra contenedores oficiales con el logo de Recitrack</p>
                 </div>
               </div>
               

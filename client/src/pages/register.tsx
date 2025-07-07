@@ -65,7 +65,7 @@ export default function Register() {
             Crear cuenta nueva
           </CardTitle>
           <p className="text-gray-600">
-            Únete a EcoTraza y comienza a rastrear tu impacto ambiental
+            Únete a Recitrack y comienza a rastrear tu impacto ambiental
           </p>
         </CardHeader>
         <CardContent>

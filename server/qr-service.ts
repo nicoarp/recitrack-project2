@@ -346,10 +346,10 @@ export class QrService {
     try {
       const data = JSON.parse(qrString);
       
-      if (!data.qrId || !data.system || data.system !== 'EcoTraza') {
+      if (!data.qrId || !data.system || data.system !== 'Recitrack') {
         return {
           success: false,
-          error: 'Código QR no válido para el sistema EcoTraza'
+          error: 'Código QR no válido para el sistema Recitrack'
         };
       }
 

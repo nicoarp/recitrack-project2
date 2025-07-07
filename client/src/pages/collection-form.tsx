@@ -332,9 +332,9 @@ export default function CollectionForm() {
     if (printWindow) {
       printWindow.document.write(`
         <html>
-          <head><title>QR Lote EcoTraza</title></head>
+          <head><title>QR Lote Recitrack</title></head>
           <body style="text-align: center; font-family: Arial;">
-            <h2>EcoTraza - Lote de Reciclaje</h2>
+            <h2>Recitrack - Lote de Reciclaje</h2>
             <p><strong>ID:</strong> ${generatedQr.qrCode.qrId}</p>
             <p><strong>Fecha:</strong> ${new Date().toLocaleDateString()}</p>
             <img src="${generatedQr.qrImage}" style="max-width: 300px;" />
@@ -464,7 +464,7 @@ export default function CollectionForm() {
                       <FormItem>
                         <FormLabel>Email del Operador</FormLabel>
                         <FormControl>
-                          <Input placeholder="operador@ecotraza.com" type="email" {...field} />
+                          <Input placeholder="operador@recitrack.com" type="email" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

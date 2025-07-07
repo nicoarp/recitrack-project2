@@ -166,7 +166,7 @@ function App() {
                       <div className="h-8 w-8 flex items-center justify-center rounded-lg bg-primary-500 text-white">
                         <FontAwesomeIcon icon="recycle" className="text-sm" />
                       </div>
-                      <h1 className="ml-2 text-lg font-bold text-gray-800">EcoTraza</h1>
+                      <h1 className="ml-2 text-lg font-bold text-gray-800">Recitrack</h1>
                     </div>
                     <button 
                       onClick={toggleMobileMenu} 

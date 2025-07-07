@@ -85,7 +85,7 @@ export default function Sidebar({ isMobile = false, closeMobileMenu }: SidebarPr
           <div className="h-10 w-10 flex items-center justify-center rounded-lg bg-primary-500 text-white">
             <FontAwesomeIcon icon="recycle" className="text-xl" />
           </div>
-          <h1 className="ml-3 text-xl font-bold text-gray-800">EcoTraza</h1>
+          <h1 className="ml-3 text-xl font-bold text-gray-800">Recitrack</h1>
         </div>
       </div>
       
