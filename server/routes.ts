@@ -6,6 +6,7 @@ import { insertBottleDepositSchema, insertRecyclingPointSchema, insertUserSchema
 import { blockchainService } from "./blockchain.js";
 import { qrService } from "./qr-service";
 import { registerUserStatsRoutes } from "./user-stats-routes";
+import { documentRoutes } from "./document-routes";
 import { initializeDatabase, needsInitialization } from "./init-database";
 import { generateTempGlobalStats } from "./temp-user-simulator";
 
@@ -1713,6 +1714,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Registrar rutas de estadísticas de usuario
   registerUserStatsRoutes(app);
+
+  // === MINI-ERP: RUTAS DE GESTIÓN DE DOCUMENTOS ===
+  // Funcionalidad exclusiva para centros de acopio
+  app.use('/api/documents', documentRoutes);
 
   // Endpoint para estadísticas globales del sistema
   app.get('/api/global-stats', async (_req, res) => {

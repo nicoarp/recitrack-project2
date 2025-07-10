@@ -58,7 +58,7 @@ export const bottleDeposits = pgTable("bottle_deposits", {
   userAgent: text("user_agent"), // Información del navegador/app
   
   // Evidencia y validación
-  photos: json("photos"), // URLs o hashes de fotos del depósito
+  photos: json("photos").$type<string[]>(), // URLs o hashes de fotos del depósito
   notes: text("notes"), // Notas adicionales del usuario
   isValidated: boolean("is_validated").default(false), // Si fue validado por el centro
   validatedBy: integer("validated_by").references(() => users.id), // Usuario que validó
@@ -162,6 +162,38 @@ export const qrValidations = pgTable("qr_validations", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// === TABLA PARA MINI-ERP: GESTIÓN DE DOCUMENTOS ===
+
+// Tabla para documentos asociados a lotes y movimientos
+export const documents = pgTable("documents", {
+  id: serial("id").primaryKey(),
+  // Información del documento
+  fileName: text("file_name").notNull(),
+  originalName: text("original_name").notNull(),
+  fileSize: integer("file_size").notNull(), // En bytes
+  mimeType: text("mime_type").notNull(),
+  filePath: text("file_path").notNull(), // Ruta donde se almacena el archivo
+  fileHash: text("file_hash"), // SHA-256 del archivo para integridad
+  
+  // Clasificación y metadatos
+  documentType: text("document_type").notNull(), // "boleta", "guia", "certificado", "contrato", "otro"
+  description: text("description"), // Descripción opcional del documento
+  tags: text("tags").array().default([]), // Etiquetas para búsqueda
+  
+  // Relaciones - documento puede estar asociado a lotes o movimientos
+  batchId: integer("batch_id"), // Referencia al lote (bottleDeposits.batchId)
+  blockchainEventId: integer("blockchain_event_id").references(() => blockchainEvents.id), // Referencia a eventos blockchain
+  
+  // Control de acceso y auditoría
+  uploadedBy: integer("uploaded_by").notNull().references(() => users.id), // Usuario que subió el documento
+  isPublic: boolean("is_public").default(false), // Si es visible públicamente o solo para el centro
+  status: text("status").default("active"), // "active", "archived", "deleted"
+  
+  // Control de timestamps
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Schemas for insertions
 export const insertUserSchema = createInsertSchema(users).pick({
   email: true,
@@ -260,6 +292,23 @@ export const insertQrValidationSchema = createInsertSchema(qrValidations).pick({
   notes: true,
 });
 
+export const insertDocumentSchema = createInsertSchema(documents).pick({
+  fileName: true,
+  originalName: true,
+  fileSize: true,
+  mimeType: true,
+  filePath: true,
+  fileHash: true,
+  documentType: true,
+  description: true,
+  tags: true,
+  batchId: true,
+  blockchainEventId: true,
+  uploadedBy: true,
+  isPublic: true,
+  status: true,
+});
+
 // Type definitions
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -283,3 +332,8 @@ export type ProcessingCenter = typeof processingCenters.$inferSelect;
 
 export type InsertQrValidation = z.infer<typeof insertQrValidationSchema>;
 export type QrValidation = typeof qrValidations.$inferSelect;
+
+// === TIPOS MINI-ERP ===
+
+export type InsertDocument = z.infer<typeof insertDocumentSchema>;
+export type Document = typeof documents.$inferSelect;
