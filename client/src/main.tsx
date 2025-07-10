@@ -9,7 +9,12 @@ import {
   faMapMarkerAlt, faChartLine, faUserCircle, 
   faWallet, faBars, faCheckCircle, faTimes, 
   faInfoCircle, faExclamationTriangle, faCubes, 
-  faLeaf, faArrowRight, faSpinner
+  faLeaf, faArrowRight, faSpinner, faQrcode,
+  faDownload, faCopy, faPlus, faMinus, faTrash,
+  faSearch, faSave, faEdit, faTools, faCalendar,
+  faIndustry, faBox, faBoxOpen, faCalendarAlt,
+  faCogs, faCheck, faCircle, faUser, faGlobe,
+  faUsers, faClock
 } from '@fortawesome/free-solid-svg-icons';
 
 library.add(
@@ -17,7 +22,12 @@ library.add(
   faMapMarkerAlt, faChartLine, faUserCircle, 
   faWallet, faBars, faCheckCircle, faTimes, 
   faInfoCircle, faExclamationTriangle, faCubes, 
-  faLeaf, faArrowRight, faSpinner
+  faLeaf, faArrowRight, faSpinner, faQrcode,
+  faDownload, faCopy, faPlus, faMinus, faTrash,
+  faSearch, faSave, faEdit, faTools, faCalendar,
+  faIndustry, faBox, faBoxOpen, faCalendarAlt,
+  faCogs, faCheck, faCircle, faUser, faGlobe,
+  faUsers, faClock
 );
 
 createRoot(document.getElementById("root")!).render(<App />);
