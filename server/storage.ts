@@ -343,6 +343,7 @@ export class DatabaseStorage implements IStorage {
       depositId: insertDeposit.depositId,
       batchId: insertDeposit.batchId,
       bottleCount: insertDeposit.bottleCount,
+      weightKg: insertDeposit.weightKg || 0,
       location: insertDeposit.location,
       userId: insertDeposit.userId || 0,
       txHash: insertDeposit.txHash || null,
@@ -351,7 +352,8 @@ export class DatabaseStorage implements IStorage {
       evidenceHash: insertDeposit.evidenceHash || null,
       contractStatus: insertDeposit.contractStatus || null,
       contractError: insertDeposit.contractError || null,
-      timestamp,
+      createdAt: timestamp,
+      updatedAt: timestamp,
       deviceInfo: insertDeposit.deviceInfo || null,
       ipAddress: insertDeposit.ipAddress || null
     };

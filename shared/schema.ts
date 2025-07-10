@@ -194,6 +194,42 @@ export const documents = pgTable("documents", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// === TABLA PARA MOVIMIENTOS DE SALIDA DE MATERIALES ===
+
+// Tabla para registrar salidas de materiales desde centros de acopio
+export const movimientosSalidas = pgTable("movimientos_salidas", {
+  id: serial("id").primaryKey(),
+  
+  // Información básica del movimiento
+  fecha: timestamp("fecha").notNull(), // Fecha de la salida
+  destino: text("destino").notNull(), // Empresa o lugar de destino
+  tipoResiduo: text("tipo_residuo").notNull(), // Tipo de residuo (PET, HDPE, etc.)
+  peso: real("peso").notNull(), // Peso total en kg
+  
+  // Lote asociado (opcional)
+  batchId: integer("batch_id"), // Referencia al lote si corresponde
+  
+  // Documentos adjuntos (guías de despacho, etc.)
+  documentos: text("documentos").array().default([]), // Array de paths de documentos
+  
+  // Información del operador
+  creadoPor: integer("creado_por").notNull().references(() => users.id), // Usuario que registró la salida
+  
+  // Metadatos adicionales
+  observaciones: text("observaciones"), // Notas adicionales
+  numeroGuia: text("numero_guia"), // Número de guía de despacho
+  transportista: text("transportista"), // Empresa transportista
+  
+  // Estado y validación
+  estado: text("estado").default("registrado"), // "registrado", "en_transito", "entregado"
+  validadoPor: integer("validado_por").references(() => users.id), // Usuario que validó
+  fechaValidacion: timestamp("fecha_validacion"), // Fecha de validación
+  
+  // Control de timestamps
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Schemas for insertions
 export const insertUserSchema = createInsertSchema(users).pick({
   email: true,
@@ -309,6 +345,22 @@ export const insertDocumentSchema = createInsertSchema(documents).pick({
   status: true,
 });
 
+// === ESQUEMA MOVIMIENTOS DE SALIDA ===
+
+export const insertMovimientoSalidaSchema = createInsertSchema(movimientosSalidas).pick({
+  fecha: true,
+  destino: true,
+  tipoResiduo: true,
+  peso: true,
+  batchId: true,
+  documentos: true,
+  creadoPor: true,
+  observaciones: true,
+  numeroGuia: true,
+  transportista: true,
+  estado: true,
+});
+
 // Type definitions
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -337,3 +389,8 @@ export type QrValidation = typeof qrValidations.$inferSelect;
 
 export type InsertDocument = z.infer<typeof insertDocumentSchema>;
 export type Document = typeof documents.$inferSelect;
+
+// === TIPOS MOVIMIENTOS DE SALIDA ===
+
+export type InsertMovimientoSalida = z.infer<typeof insertMovimientoSalidaSchema>;
+export type MovimientoSalida = typeof movimientosSalidas.$inferSelect;

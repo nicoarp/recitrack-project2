@@ -31,13 +31,15 @@ export default function Sidebar({ isMobile = false, closeMobileMenu }: SidebarPr
     { path: "/profile", label: "Mi Perfil", icon: "user" },
   ];
 
-  // Menú para CENTRO DE ACOPIO: Agrupar lotes, validar e historial de lotes
+  // Menú para CENTRO DE ACOPIO: Agrupar lotes, validar e historial de lotes + movimientos de salida
   const centroAcopioNavItems = [
     { path: "/", label: "Dashboard", icon: "home" },
     { path: "/qr-scanner", label: "Escanear QR", icon: "qrcode" },
     { path: "/batch-grouping", label: "Agrupar Lotes", icon: "cubes" },
     { path: "/batch-validation", label: "Validar Lotes", icon: "check-circle" },
     { path: "/batch-history", label: "Historial de Lotes", icon: "history" },
+    { path: "/movimientos-salida", label: "Salida de Materiales", icon: "truck" },
+    { path: "/movimientos-salida/historial", label: "Historial de Salidas", icon: "list" },
     { path: "/profile", label: "Mi Perfil", icon: "user" },
   ];
 

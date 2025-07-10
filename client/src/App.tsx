@@ -34,6 +34,8 @@ import CollectionForm from "@/pages/collection-form";
 import BatchValidation from "@/pages/batch-validation";
 
 import QrHistory from "@/pages/qr-history";
+import MovimientosSalida from "@/pages/movimientos-salida";
+import MovimientosSalidaHistorial from "@/pages/movimientos-salida-historial";
 import Sidebar from "@/components/layout/sidebar";
 import MobileNav from "@/components/layout/mobile-nav";
 import { useState } from "react";
@@ -102,6 +104,8 @@ function Router() {
           <Route path="/batch-grouping" component={BatchGrouping} />
           <Route path="/batch-validation" component={BatchValidation} />
           <Route path="/batch-history" component={History} />
+          <Route path="/movimientos-salida" component={MovimientosSalida} />
+          <Route path="/movimientos-salida/historial" component={MovimientosSalidaHistorial} />
         </>
       )}
       

@@ -7,6 +7,7 @@ import { blockchainService } from "./blockchain.js";
 import { qrService } from "./qr-service";
 import { registerUserStatsRoutes } from "./user-stats-routes";
 import { documentRoutes } from "./document-routes";
+import { movimientosSalidaRoutes } from "./movimientos-salida-routes";
 import { initializeDatabase, needsInitialization } from "./init-database";
 import { generateTempGlobalStats } from "./temp-user-simulator";
 
@@ -1769,6 +1770,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+
+  // Registrar rutas para movimientos de salida (centro de acopio)
+  app.use('/api/movimientos-salida', movimientosSalidaRoutes);
 
   const httpServer = createServer(app);
   return httpServer;

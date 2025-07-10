@@ -12,14 +12,17 @@ import {
   bottleDeposits, 
   recyclingPoints, 
   processingCenters,
+  movimientosSalidas,
   type User, 
   type BottleDeposit, 
   type RecyclingPoint, 
   type ProcessingCenter,
+  type MovimientoSalida,
   type InsertUser,
   type InsertBottleDeposit,
   type InsertRecyclingPoint,
-  type InsertProcessingCenter
+  type InsertProcessingCenter,
+  type InsertMovimientoSalida
 } from "@shared/schema";
 import { eq, and, sum, count, desc } from "drizzle-orm";
 
@@ -62,6 +65,15 @@ export interface IStorage {
   getTotalRecyclingPoints(): Promise<number>;
   getTotalWeight(): Promise<number>;
   getTotalUsers(): Promise<number>;
+  
+  // === OPERACIONES DE MOVIMIENTOS DE SALIDA ===
+  getMovimientoSalida(id: number): Promise<MovimientoSalida | undefined>;
+  getAllMovimientosSalidas(): Promise<MovimientoSalida[]>;
+  getMovimientosSalidasByUser(userId: number): Promise<MovimientoSalida[]>;
+  getMovimientosSalidasByBatch(batchId: number): Promise<MovimientoSalida[]>;
+  createMovimientoSalida(movimiento: InsertMovimientoSalida): Promise<MovimientoSalida>;
+  updateMovimientoSalida(id: number, updates: Partial<InsertMovimientoSalida>): Promise<MovimientoSalida>;
+  deleteMovimientoSalida(id: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -309,6 +321,102 @@ export class DatabaseStorage implements IStorage {
       .from(users);
     
     return result[0]?.count || 0;
+  }
+
+  // === OPERACIONES DE MOVIMIENTOS DE SALIDA ===
+
+  /**
+   * Obtiene un movimiento de salida por ID
+   * @param id ID del movimiento de salida
+   * @returns Movimiento de salida encontrado
+   */
+  async getMovimientoSalida(id: number): Promise<MovimientoSalida | undefined> {
+    const [movimiento] = await db.select().from(movimientosSalidas).where(eq(movimientosSalidas.id, id));
+    return movimiento;
+  }
+
+  /**
+   * Obtiene todos los movimientos de salida
+   * @returns Lista completa de movimientos de salida
+   */
+  async getAllMovimientosSalidas(): Promise<MovimientoSalida[]> {
+    return await db
+      .select()
+      .from(movimientosSalidas)
+      .orderBy(desc(movimientosSalidas.fecha));
+  }
+
+  /**
+   * Obtiene movimientos de salida de un usuario específico
+   * @param userId ID del usuario
+   * @returns Lista de movimientos de salida del usuario
+   */
+  async getMovimientosSalidasByUser(userId: number): Promise<MovimientoSalida[]> {
+    return await db
+      .select()
+      .from(movimientosSalidas)
+      .where(eq(movimientosSalidas.creadoPor, userId))
+      .orderBy(desc(movimientosSalidas.fecha));
+  }
+
+  /**
+   * Obtiene movimientos de salida asociados a un lote específico
+   * @param batchId ID del lote
+   * @returns Lista de movimientos de salida del lote
+   */
+  async getMovimientosSalidasByBatch(batchId: number): Promise<MovimientoSalida[]> {
+    return await db
+      .select()
+      .from(movimientosSalidas)
+      .where(eq(movimientosSalidas.batchId, batchId))
+      .orderBy(desc(movimientosSalidas.fecha));
+  }
+
+  /**
+   * Crea un nuevo movimiento de salida
+   * @param movimiento Datos del movimiento de salida a crear
+   * @returns Movimiento de salida creado
+   */
+  async createMovimientoSalida(insertMovimiento: InsertMovimientoSalida): Promise<MovimientoSalida> {
+    const [movimiento] = await db
+      .insert(movimientosSalidas)
+      .values({
+        ...insertMovimiento,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
+    return movimiento;
+  }
+
+  /**
+   * Actualiza un movimiento de salida existente
+   * @param id ID del movimiento de salida
+   * @param updates Campos a actualizar
+   * @returns Movimiento de salida actualizado
+   */
+  async updateMovimientoSalida(id: number, updates: Partial<InsertMovimientoSalida>): Promise<MovimientoSalida> {
+    const [movimiento] = await db
+      .update(movimientosSalidas)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(eq(movimientosSalidas.id, id))
+      .returning();
+    return movimiento;
+  }
+
+  /**
+   * Elimina un movimiento de salida
+   * @param id ID del movimiento de salida
+   * @returns true si se eliminó correctamente
+   */
+  async deleteMovimientoSalida(id: number): Promise<boolean> {
+    const result = await db
+      .delete(movimientosSalidas)
+      .where(eq(movimientosSalidas.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
   }
 }
 
