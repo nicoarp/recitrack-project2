@@ -21,7 +21,7 @@ import {
   type InsertRecyclingPoint,
   type InsertProcessingCenter
 } from "@shared/schema";
-import { eq, and, sum, count } from "drizzle-orm";
+import { eq, and, sum, count, desc } from "drizzle-orm";
 
 export interface IStorage {
   // === OPERACIONES DE USUARIOS ===

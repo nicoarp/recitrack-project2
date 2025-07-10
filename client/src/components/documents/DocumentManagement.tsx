@@ -103,7 +103,7 @@ export function DocumentManagement() {
     queryKey: ['/api/documents', filters],
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (filters.documentType) params.append('documentType', filters.documentType);
+      if (filters.documentType && filters.documentType !== 'all') params.append('documentType', filters.documentType);
       if (filters.search) params.append('search', filters.search);
       if (filters.batchId) params.append('batchId', filters.batchId);
       
@@ -433,7 +433,7 @@ export function DocumentManagement() {
                 <SelectValue placeholder="Filtrar por tipo" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos los tipos</SelectItem>
+                <SelectItem value="all">Todos los tipos</SelectItem>
                 {Object.entries(DOCUMENT_TYPE_LABELS).map(([value, label]) => (
                   <SelectItem key={value} value={value}>{label}</SelectItem>
                 ))}
