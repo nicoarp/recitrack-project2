@@ -36,6 +36,7 @@ import BatchValidation from "@/pages/batch-validation";
 import QrHistory from "@/pages/qr-history";
 import MovimientosSalida from "@/pages/movimientos-salida";
 import MovimientosSalidaHistorial from "@/pages/movimientos-salida-historial";
+import DepositManual from "@/pages/deposit-manual";
 import Sidebar from "@/components/layout/sidebar";
 import MobileNav from "@/components/layout/mobile-nav";
 import { useState } from "react";
@@ -101,6 +102,7 @@ function Router() {
       {/* Rutas para CENTRO DE ACOPIO */}
       {(isCentroAcopio || isAdmin) && (
         <>
+          <Route path="/deposit-manual" component={DepositManual} />
           <Route path="/batch-grouping" component={BatchGrouping} />
           <Route path="/batch-validation" component={BatchValidation} />
           <Route path="/batch-history" component={History} />

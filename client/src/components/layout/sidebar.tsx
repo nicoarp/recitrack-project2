@@ -35,6 +35,7 @@ export default function Sidebar({ isMobile = false, closeMobileMenu }: SidebarPr
   const centroAcopioNavItems = [
     { path: "/", label: "Dashboard", icon: "home" },
     { path: "/qr-scanner", label: "Escanear QR", icon: "qrcode" },
+    { path: "/deposit-manual", label: "Depósito Manual", icon: "hand-holding" },
     { path: "/batch-grouping", label: "Agrupar Lotes", icon: "cubes" },
     { path: "/batch-validation", label: "Validar Lotes", icon: "check-circle" },
     { path: "/batch-history", label: "Historial de Lotes", icon: "history" },

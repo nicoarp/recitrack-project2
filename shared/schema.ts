@@ -44,6 +44,11 @@ export const bottleDeposits = pgTable("bottle_deposits", {
   // Usuario OBLIGATORIO - sistema requiere autenticación
   userId: integer("user_id").notNull().references(() => users.id),
   
+  // Campos para depósitos manuales
+  origen: text("origen").default("qr"), // "qr" o "manual"
+  donante_nombre: text("donante_nombre"), // Nombre del donante para depósitos manuales
+  tipo_material: text("tipo_material"), // Tipo de material (PET, HDPE, etc.)
+  
   // Información de blockchain para auditoría
   txHash: text("tx_hash"),
   blockNumber: integer("block_number"),
@@ -261,6 +266,16 @@ export const insertBottleDepositSchema = createInsertSchema(bottleDeposits).pick
   contractError: true,
   deviceInfo: true,
   ipAddress: true,
+  origen: true,
+  donante_nombre: true,
+  tipo_material: true,
+  weightKg: true,
+  userAgent: true,
+  photos: true,
+  notes: true,
+  isValidated: true,
+  validatedBy: true,
+  validatedAt: true,
 });
 
 export const insertBlockchainEventSchema = createInsertSchema(blockchainEvents).pick({

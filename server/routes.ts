@@ -8,6 +8,7 @@ import { qrService } from "./qr-service";
 import { registerUserStatsRoutes } from "./user-stats-routes";
 import { documentRoutes } from "./document-routes";
 import { movimientosSalidaRoutes } from "./movimientos-salida-routes";
+import { depositManualRoutes } from "./deposit-manual-routes";
 import { initializeDatabase, needsInitialization } from "./init-database";
 import { generateTempGlobalStats } from "./temp-user-simulator";
 
@@ -1773,6 +1774,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Registrar rutas para movimientos de salida (centro de acopio)
   app.use('/api/movimientos-salida', movimientosSalidaRoutes);
+
+  // Registrar rutas para depósitos manuales (centro de acopio)
+  app.use('/api/deposit-manual', depositManualRoutes);
 
   const httpServer = createServer(app);
   return httpServer;
