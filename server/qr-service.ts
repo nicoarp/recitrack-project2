@@ -41,7 +41,7 @@ export class QrService {
         eventId: options.eventId,
         eventType: options.eventType,
         timestamp: Date.now(),
-        system: 'EcoTraza'
+        system: 'Recitrack',
       };
 
       const qrCodeData = JSON.stringify(qrData);

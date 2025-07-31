@@ -246,6 +246,7 @@ export default function CollectionForm() {
       const depositRes = await apiRequest('POST', '/api/bottle-deposits', {
         batchId: batchId,
         bottleCount: parseInt(data.bottleCount),
+        weightKg: parseFloat(data.weight),
         location: data.location,
         depositId: data.pointId,
         userId: 1, // Usuario por defecto para demo

@@ -31,7 +31,7 @@ import TraceabilityChain from "@/pages/traceability-chain";
 // QR Flow pages
 import QrScanner from "@/pages/qr-scanner";
 import CollectionForm from "@/pages/collection-form";
-import BatchValidation from "@/pages/batch-validation";
+import DepositValidation from "@/pages/deposit-validation";
 
 import QrHistory from "@/pages/qr-history";
 import MovimientosSalida from "@/pages/movimientos-salida";
@@ -104,7 +104,7 @@ function Router() {
         <>
           <Route path="/deposit-manual" component={DepositManual} />
           <Route path="/batch-grouping" component={BatchGrouping} />
-          <Route path="/batch-validation" component={BatchValidation} />
+          <Route path="/deposit-validation" component={DepositValidation} />
           <Route path="/batch-history" component={History} />
           <Route path="/movimientos-salida" component={MovimientosSalida} />
           <Route path="/movimientos-salida/historial" component={MovimientosSalidaHistorial} />
