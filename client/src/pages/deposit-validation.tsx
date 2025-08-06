@@ -1,8 +1,9 @@
+import { useAuth } from '@/hooks/use-auth';
 import { useState, useRef } from 'react';
 import { useLocation, useSearch } from 'wouter';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { optional, z } from 'zod';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { Button } from '@/components/ui/button';
@@ -30,7 +31,7 @@ const validationFormSchema = z.object({
   }),
   
   // Ubicación obligatoria (select de centros registrados)
-  processingCenterId: z.string().min(1, 'Debe seleccionar un centro de procesado registrado'),
+  processingCenterId: z.string().optional(),
   
   // Peso obligatorio y validación de diferencias
   currentWeight: z.string().min(1, 'Peso actual requerido').transform((val) => {
@@ -72,6 +73,8 @@ export default function BatchValidation() {
   const search = useSearch();
   const queryParams = new URLSearchParams(search);
   const qrId = queryParams.get('qrId');
+  const { user } = useAuth();
+  
   
   const [uploading, setUploading] = useState(false);
   const [validationComplete, setValidationComplete] = useState(false);
@@ -115,7 +118,10 @@ export default function BatchValidation() {
       operatorRut: '',
       validatedBy: '',
       phase: 'Batch',
-      processingCenterId: '',
+      processingCenterId: 
+        user?.role === 'centro_acopio' && user.processing_center_id
+          ? String(user.processing_center_id)
+          : '',
       currentWeight: '',
       scalePhoto: '',
       extraEvidence: '',
@@ -206,7 +212,7 @@ export default function BatchValidation() {
         qrId: qrId,
         eventType: (qrInfo as any)?.qrCode?.eventType || 'Deposit',
         timestamp: Date.now(),
-        system: 'EcoTraza'
+        system: 'Recitrack',
       };
 
       // Buscar la ubicación del centro de procesamiento seleccionado
@@ -261,6 +267,9 @@ export default function BatchValidation() {
   });
 
   const onSubmit = (data: ValidationFormData) => {
+    if (user?.role === 'centro_acopio') {
+      data.processingCenterId = String(user.processing_center_id);
+    }
     validateQrMutation.mutate(data);
   };
 
@@ -568,7 +577,15 @@ export default function BatchValidation() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Centro de Procesamiento *</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          defaultValue={
+                            user?.role === 'centro_acopio' && user.processing_center_id
+                            ? String(user.processing_center_id)
+                            :field.value
+                          }
+                          disabled={user?.role === 'centro_acopio'}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Selecciona el centro" />
@@ -582,6 +599,11 @@ export default function BatchValidation() {
                             ))}
                           </SelectContent>
                         </Select>
+                        {user?.role === 'centro_acopio' && (
+                          <p className="text-xs text-blue-600 mt-1">
+                            Centro asignado automáticamente según su perfil.
+                          </p>
+                        )}
                         <FormMessage />
                       </FormItem>
                     )}

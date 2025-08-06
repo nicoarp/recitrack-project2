@@ -372,7 +372,7 @@ export default function BatchGrouping() {
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
           <Package className="h-6 w-6 text-blue-600" />
-          Agrupar Lote - Centro de Acopio
+          Agrupar Depositos - Centro de Acopio
         </h1>
         <p className="mt-2 text-gray-600">
           Operador: {user?.name} | Total depósitos: {scannedDeposits.length}

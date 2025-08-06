@@ -36,7 +36,7 @@ export default function Sidebar({ isMobile = false, closeMobileMenu }: SidebarPr
     { path: "/", label: "Dashboard", icon: "home" },
     { path: "/qr-scanner", label: "Escanear QR", icon: "qrcode" },
     { path: "/deposit-manual", label: "Depósito Manual", icon: "hand-holding" },
-    { path: "/batch-grouping", label: "Agrupar Lotes", icon: "cubes" },
+    { path: "/batch-grouping", label: "Agrupar Depositos", icon: "cubes" },
     { path: "/deposit-validation", label: "Validar Depósitos", icon: "check-circle" },
     { path: "/batch-history", label: "Historial de Lotes", icon: "history" },
     { path: "/movimientos-salida", label: "Salida de Materiales", icon: "truck" },

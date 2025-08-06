@@ -1386,15 +1386,17 @@ app.post('/api/qr/resolve', async (req, res) => {
     let qrRecord = null;
     let actualQrId = qrCode;
 
+
     // Intentar parsear como JSON si es un QR complejo
     try {
       const parsedQr = JSON.parse(qrCode);
-      if (parsedQr.qrId && parsedQr.system === 'EcoTraza') {
+      if (parsedQr?.qrId) {
         actualQrId = parsedQr.qrId;
         console.log(`🔍 QR complejo detectado, extrayendo ID: ${actualQrId}`);
       }
     } catch (e) {
-      // No es JSON, usar el código tal como está
+      console.log('ℹ️ QR no es JSON, se usa valor literal');
+    // No es JSON, usar el código tal como está
       actualQrId = qrCode;
     }
 

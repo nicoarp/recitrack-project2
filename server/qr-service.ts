@@ -1,7 +1,7 @@
 import QRCode from 'qrcode';
 import { v4 as uuidv4 } from 'uuid';
 import { db } from './db';
-import { qrCodes, qrValidations, type QrCode, type QrValidation, type InsertQrCode, type InsertQrValidation } from '@shared/schema';
+import { qrCodes, qrValidations, bottleDeposits, type QrCode, type QrValidation, type InsertQrCode, type InsertQrValidation } from '@shared/schema';
 import { eq, and } from 'drizzle-orm';
 import { blockchainService } from './blockchain.js';
 
@@ -237,6 +237,17 @@ export class QrService {
       };
 
       const [insertedValidation] = await db.insert(qrValidations).values(validationRecord).returning();
+
+      if (validationData.phase === 'Deposit' && qrCode.eventId) {
+        await db
+          .update(bottleDeposits)
+          .set({
+            isValidated: true,
+            validatedBy: parseInt(validationData.validatedBy, 10), // aquí debe ir un ID numérico
+            validatedAt: new Date()
+        })
+        .where(eq(bottleDeposits.depositId, qrCode.eventId));
+      }
 
       // 7. Actualizar estado del QR si es la fase final
       if (validationData.phase === 'Product') {

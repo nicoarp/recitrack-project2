@@ -7,6 +7,7 @@ interface AuthUser {
   name?: string;
   walletAddress?: string;
   role: 'recolector' | 'centro_acopio' | 'admin';
+  processingCenterId?: number;
   totalDeposits: number;
   totalBottles: number;
 }
@@ -175,11 +176,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         
         const centroUser: AuthUser = {
-          id: 2,
-          email: "acopio@recitrack.com",
-          name: "Centro de Acopio",
+          id: realUserData.id || 2,
+          email: realUserData.email || "acopio@recitrack.com",
+          name: realUserData.name || "Centro de Acopio",
           walletAddress: "0x789...ghi", 
-          role: 'centro_acopio',
+          role: realUserData.role || 'centro_acopio',
+          processingCenterId: 1,
           totalDeposits: 0,
           totalBottles: 0
         };

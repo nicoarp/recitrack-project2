@@ -22,7 +22,6 @@ export default function Login() {
         title: "¡Bienvenido!",
         description: "Has iniciado sesión correctamente.",
       });
-      // Redirigir al dashboard principal después del login exitoso
       setLocation('/');
     } catch (error) {
       toast({
@@ -106,80 +105,94 @@ export default function Login() {
             </p>
           </div>
 
-          <div className="mt-6 border-t pt-6">
-            <h3 className="text-sm font-medium text-gray-700 mb-3">🔍 Cuentas de Demostración:</h3>
-            <div className="space-y-2 text-xs">
-              <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg">
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    <strong className="text-blue-700">Recolector</strong>
+          {import.meta.env.MODE === 'development' ? (
+            // --- SOLO en desarrollo: cuentas demo ---
+            <div className="mt-6 border-t pt-6">
+              <h3 className="text-sm font-medium text-gray-700 mb-3">🔍 Cuentas de Demostración:</h3>
+              <div className="space-y-2 text-xs">
+                <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg">
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      <strong className="text-blue-700">Recolector</strong>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-6 px-2 text-xs border-blue-300 text-blue-600 hover:bg-blue-100"
+                      onClick={() => fillDemoAccount('recolector@recitrack.com', 'recolector123')}
+                    >
+                      Usar
+                    </Button>
                   </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-6 px-2 text-xs border-blue-300 text-blue-600 hover:bg-blue-100"
-                    onClick={() => fillDemoAccount('recolector@recitrack.com', 'recolector123')}
-                  >
-                    Usar
-                  </Button>
+                  <div className="text-gray-600">
+                    📧 recolector@recitrack.com<br />
+                    🔑 recolector123<br />
+                    <span className="text-xs text-blue-600">• Escaneo QR • Depósitos • Historial personal</span>
+                  </div>
                 </div>
-                <div className="text-gray-600">
-                  📧 recolector@recitrack.com<br />
-                  🔑 recolector123<br />
-                  <span className="text-xs text-blue-600">• Escaneo QR • Depósitos • Historial personal</span>
+                
+                <div className="bg-green-50 border border-green-200 p-3 rounded-lg">
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <strong className="text-green-700">Centro de Acopio</strong>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-6 px-2 text-xs border-green-300 text-green-600 hover:bg-green-100"
+                      onClick={() => fillDemoAccount('acopio@recitrack.com', 'acopio123')}
+                    >
+                      Usar
+                    </Button>
+                  </div>
+                  <div className="text-gray-600">
+                    📧 acopio@recitrack.com<br />
+                    🔑 acopio123<br />
+                    <span className="text-xs text-green-600">• Agrupación lotes • Validación • Historial lotes</span>
+                  </div>
+                </div>
+                
+                <div className="bg-purple-50 border border-purple-200 p-3 rounded-lg">
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                      <strong className="text-purple-700">Administrador</strong>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-6 px-2 text-xs border-purple-300 text-purple-600 hover:bg-purple-100"
+                      onClick={() => fillDemoAccount('admin@recitrack.com', 'admin123')}
+                    >
+                      Usar
+                    </Button>
+                  </div>
+                  <div className="text-gray-600">
+                    📧 admin@recitrack.com<br />
+                    🔑 admin123<br />
+                    <span className="text-xs text-purple-600">• Acceso completo • Gestión usuarios • Métricas</span>
+                  </div>
                 </div>
               </div>
               
-              <div className="bg-green-50 border border-green-200 p-3 rounded-lg">
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <strong className="text-green-700">Centro de Acopio</strong>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-6 px-2 text-xs border-green-300 text-green-600 hover:bg-green-100"
-                    onClick={() => fillDemoAccount('acopio@recitrack.com', 'acopio123')}
-                  >
-                    Usar
-                  </Button>
-                </div>
-                <div className="text-gray-600">
-                  📧 acopio@recitrack.com<br />
-                  🔑 acopio123<br />
-                  <span className="text-xs text-green-600">• Agrupación lotes • Validación • Historial lotes</span>
-                </div>
-              </div>
-              
-              <div className="bg-purple-50 border border-purple-200 p-3 rounded-lg">
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                    <strong className="text-purple-700">Administrador</strong>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-6 px-2 text-xs border-purple-300 text-purple-600 hover:bg-purple-100"
-                    onClick={() => fillDemoAccount('admin@recitrack.com', 'admin123')}
-                  >
-                    Usar
-                  </Button>
-                </div>
-                <div className="text-gray-600">
-                  📧 admin@recitrack.com<br />
-                  🔑 admin123<br />
-                  <span className="text-xs text-purple-600">• Acceso completo • Gestión usuarios • Métricas</span>
-                </div>
+              <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-700">
+                💡 <strong>Tip:</strong> Cada rol muestra diferentes opciones en el menú de navegación
               </div>
             </div>
-            
-            <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-700">
-              💡 <strong>Tip:</strong> Cada rol muestra diferentes opciones en el menú de navegación
+          ) : (
+            // --- SOLO en producción: mensaje profesional ---
+            <div className="mt-6 border-t pt-6">
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded">
+                <p className="text-sm text-blue-800">
+                  ¿No tienes una cuenta? <br />
+                  Solicita acceso al administrador del sistema o utiliza la opción 
+                  <strong> "Crear cuenta" </strong> para registrarte.
+                </p>
+              </div>
             </div>
-          </div>
+          )}
         </CardContent>
       </Card>
     </div>
