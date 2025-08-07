@@ -233,7 +233,7 @@ export default function BatchValidation() {
       const response = await apiRequest('POST', '/api/qr/validate', {
         qrData: JSON.stringify(qrData),
         phase: data.phase,
-        validatedBy: data.validatedBy,
+        validatedBy: user.id,
         location: location,
         operatorName: data.operatorName,
         operatorRut: data.operatorRut,

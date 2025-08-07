@@ -1,5 +1,8 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import { db } from "./db";
+import { and, eq } from "drizzle-orm";
+import { bottleDeposits } from "@shared/schema";
 import { z } from "zod";
 import { storage } from "./database-storage";
 import { insertBottleDepositSchema, insertRecyclingPointSchema, insertUserSchema } from "@shared/schema";
@@ -156,7 +159,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const depositData = insertBottleDepositSchema.parse(req.body);
       const deposit = await storage.createBottleDeposit(depositData);
-      res.status(201).json(deposit);
+      res.status(201).json({
+        success: true,
+        data: {
+          id: deposit.id,
+          batchId: deposit.batchId,
+          depositId: deposit.depositId,
+          eventId: deposit.eventId,
+        
+        }
+      });
+
     } catch (error) {
       if (error instanceof z.ZodError) {
         res.status(400).json({ message: "Datos inválidos", errors: error.errors });
@@ -213,6 +226,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+
+  app.post('/api/test/update-deposit', async (req, res) => {
+  const { eventId, updates } = req.body;
+
+  console.log('🔍 TEST UPDATE - Input:', {
+    eventId,
+    eventIdType: typeof eventId,
+    eventIdLength: eventId?.length,
+    eventIdTrimmed: eventId?.trim(),
+    eventIdBytes: Buffer.from(eventId || '').toString('hex')
+  });
+
+  try {
+    // Buscar el depósito con ese eventId
+    const [existingDeposit] = await db
+      .select()
+      .from(bottleDeposits)
+      .where(eq(bottleDeposits.eventId, eventId))
+      .limit(1);
+
+    console.log('🔍 TEST UPDATE - Depósito encontrado:', existingDeposit ? 'SÍ' : 'NO');
+
+    if (existingDeposit) {
+      console.log('🔍 TEST UPDATE - Depósito actual:', {
+        id: existingDeposit.id,
+        eventId: existingDeposit.eventId,
+        eventIdBytes: Buffer.from(existingDeposit.eventId || '').toString('hex'),
+        isValidated: existingDeposit.isValidated
+      });
+
+      // Comparación byte a byte
+      const inputBytes = Buffer.from(eventId);
+      const dbBytes = Buffer.from(existingDeposit.eventId || '');
+      const bytesMatch = inputBytes.equals(dbBytes);
+
+      console.log('🔍 TEST UPDATE - Comparación de bytes:', bytesMatch ? 'COINCIDEN' : 'NO COINCIDEN');
+    }
+
+    // 🚨 Conversión de fecha a objeto Date si llega como string
+    if (updates && typeof updates.validatedAt === 'string') {
+      updates.validatedAt = new Date(updates.validatedAt);
+    }
+
+    // Intentar el update
+    const updateResult = await db
+      .update(bottleDeposits)
+      .set(updates)
+      .where(eq(bottleDeposits.eventId, eventId))
+      .returning();
+
+    console.log('🔍 TEST UPDATE - Resultado:', updateResult);
+
+    res.json({
+      success: updateResult.length > 0,
+      rowsAffected: updateResult.length,
+      updated: updateResult[0] || null,
+      debug: {
+        inputEventId: eventId,
+        foundBeforeUpdate: !!existingDeposit,
+        comparison: {
+          trimmed: eventId === eventId?.trim(),
+          type: typeof eventId
+        }
+      }
+    });
+  } catch (error) {
+    console.error('🔍 TEST UPDATE - Error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      stack: error.stack
+    });
+  }
+});
+
 
   // Endpoint para estadísticas de usuario específico
   app.get("/api/user-stats", async (req, res) => {
@@ -1594,6 +1682,34 @@ app.post('/api/qr/resolve', async (req, res) => {
       });
     }
   });
+  // === ENDPOINT: Obtener depósitos validados por un centro de acopio ===
+app.get("/api/deposits/validated/:userId", async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId, 10);
+    if (isNaN(userId)) {
+      return res.status(400).json({ success: false, error: "ID de usuario no válido" });
+    }
+
+    const deposits = await db
+      .select({
+        depositId: bottleDeposits.depositId,
+        eventId: bottleDeposits.eventId,
+        location: bottleDeposits.location,
+        weightKg: bottleDeposits.weightKg,
+        bottleCount: bottleDeposits.bottleCount,
+        validatedAt: bottleDeposits.validatedAt,
+      })
+      .from(bottleDeposits)
+      .where(and(eq(bottleDeposits.isValidated, true), eq(bottleDeposits.validatedBy, userId)))
+      .orderBy(bottleDeposits.validatedAt);
+
+    res.json({ success: true, deposits });
+  } catch (error: any) {
+    console.error("Error al obtener depósitos validados:", error);
+    res.status(500).json({ success: false, error: error.message || "Error interno" });
+  }
+});
+
 
   // Obtener información de un código QR
   app.get('/api/qr/:qrId', async (req, res) => {

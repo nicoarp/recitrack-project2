@@ -7,6 +7,7 @@
  */
 
 import { db } from "./db";
+import { v4 as uuidv4 } from "uuid";
 import { 
   users, 
   bottleDeposits, 
@@ -134,17 +135,31 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(bottleDeposits);
   }
 
-  async createBottleDeposit(insertDeposit: InsertBottleDeposit): Promise<BottleDeposit> {
-    const [deposit] = await db
-      .insert(bottleDeposits)
-      .values({
-        ...insertDeposit,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      })
-      .returning();
-    return deposit;
-  }
+
+async createBottleDeposit(insertDeposit: InsertBottleDeposit): Promise<BottleDeposit> {
+  // Si insertDeposit ya trae eventId, úsalo. Si no, genera uno nuevo.
+  const eventId = insertDeposit.eventId && insertDeposit.eventId.trim() !== ""
+    ? insertDeposit.eventId
+    : uuidv4();
+
+  console.log("DEBUG Deposit que llega:", insertDeposit);
+  console.log("DEBUG EventId usado:", eventId);
+
+
+  const [deposit] = await db
+  
+
+    .insert(bottleDeposits)
+    .values({
+      ...insertDeposit,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      eventId, 
+    })
+    .returning();
+  return deposit;
+}
+
 
   // === ESTADÍSTICAS REALES DEL USUARIO ===
   

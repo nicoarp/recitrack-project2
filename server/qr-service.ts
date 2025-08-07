@@ -4,6 +4,7 @@ import { db } from './db';
 import { qrCodes, qrValidations, bottleDeposits, type QrCode, type QrValidation, type InsertQrCode, type InsertQrValidation } from '@shared/schema';
 import { eq, and } from 'drizzle-orm';
 import { blockchainService } from './blockchain.js';
+import { number } from 'zod';
 
 interface QrGenerationOptions {
   eventId?: string;
@@ -27,61 +28,71 @@ export class QrService {
    * Genera un código QR único para un evento
    */
   async generateQrCode(options: QrGenerationOptions): Promise<{
-    success: boolean;
-    qrCode?: QrCode;
-    qrImage?: string;
-    error?: string;
-  }> {
-    try {
-      const qrId = uuidv4();
-      
-      // Crear datos para el QR que incluyan información identificativa
-      const qrData = {
-        qrId,
-        eventId: options.eventId,
-        eventType: options.eventType,
-        timestamp: Date.now(),
-        system: 'Recitrack',
-      };
+  success: boolean;
+  qrCode?: QrCode;
+  qrImage?: string;
+  error?: string;
+}> {
+  try {
+    const qrId = uuidv4();
 
-      const qrCodeData = JSON.stringify(qrData);
-      
-      // Generar imagen QR en base64
-      const qrImageBase64 = await QRCode.toDataURL(qrCodeData, {
-        errorCorrectionLevel: 'M',
-        margin: 1,
-        width: 256
-      });
+    // === NUEVO: Forzar eventId válido si es un depósito ===
+    const isDeposit = options.eventType === 'Deposit';
+    const eventId = isDeposit 
+      ? (options.eventId && options.eventId.trim() !== '' ? options.eventId : null)
+      : options.eventId;
 
-      // Guardar en base de datos
-      const qrCodeRecord: InsertQrCode = {
-        qrId,
-        eventId: options.eventId,
-        eventType: options.eventType,
-        qrCodeData,
-        qrImageBase64,
-        status: 'active',
-        metadata: options.metadata,
-        createdBy: options.createdBy,
-      };
-
-      const [insertedQrCode] = await db.insert(qrCodes).values(qrCodeRecord).returning();
-
-      console.log(`📱 QR generado exitosamente: ${qrId} para evento ${options.eventType}`);
-      
-      return {
-        success: true,
-        qrCode: insertedQrCode,
-        qrImage: qrImageBase64
-      };
-    } catch (error: any) {
-      console.error('Error generando código QR:', error);
-      return {
-        success: false,
-        error: error.message || 'Error al generar código QR'
-      };
+    if (isDeposit && !eventId) {
+      throw new Error('Falta eventId del depósito original para generar el QR');
     }
+    // Crear datos para el QR que incluyan información identificativa
+    const qrData = {
+      qrId,
+      eventId,
+      eventType: options.eventType,
+      timestamp: Date.now(),
+      system: 'Recitrack',
+    };
+
+    const qrCodeData = JSON.stringify(qrData);
+
+    // Generar imagen QR en base64
+    const qrImageBase64 = await QRCode.toDataURL(qrCodeData, {
+      errorCorrectionLevel: 'M',
+      margin: 1,
+      width: 256
+    });
+
+    // Guardar en base de datos
+    const qrCodeRecord: InsertQrCode = {
+      qrId,
+      eventId,
+      eventType: options.eventType,
+      qrCodeData,
+      qrImageBase64,
+      status: 'active',
+      metadata: options.metadata,
+      createdBy: options.createdBy,
+    };
+
+    const [insertedQrCode] = await db.insert(qrCodes).values(qrCodeRecord).returning();
+
+    console.log(`📱 QR generado exitosamente: ${qrId} para evento ${options.eventType}`);
+    
+    return {
+      success: true,
+      qrCode: insertedQrCode,
+      qrImage: qrImageBase64
+    };
+  } catch (error: any) {
+    console.error('Error generando código QR:', error);
+    return {
+      success: false,
+      error: error.message || 'Error al generar código QR'
+    };
   }
+}
+
 
   /**
    * Busca un código QR por su ID
@@ -193,9 +204,29 @@ export class QrService {
 
       // 5. Registrar evento en blockchain (si es una fase que lo requiere)
       let blockchainResult = null;
+      let relatedIds: any = [];
       if (this.shouldRegisterInBlockchain(validationData.phase)) {
         // Determinar IDs relacionados basados en el historial
-        const relatedIds = this.getRelatedIds(qrCode, history);
+        
+
+        if (validationData.phase === 'Deposit') {
+          // Buscar el depósito original por eventId para obtener su id (número)
+          const [deposit] = await db
+            .select()
+            .from(bottleDeposits)
+            .where(eq(bottleDeposits.eventId, qrCode.eventId!))
+            .limit(1);
+
+          if (deposit) {
+            relatedIds = [deposit.id]; // ← Ahora sí es el número
+          } else {
+            relatedIds = []; // fallback, puedes lanzar error si quieres
+          }
+        } else {
+          // Mantén tu lógica actual para otras fases
+          relatedIds = this.getRelatedIds(qrCode, history);
+        }
+
         
         try {
           blockchainResult = await blockchainService.registerEvent(
@@ -238,16 +269,28 @@ export class QrService {
 
       const [insertedValidation] = await db.insert(qrValidations).values(validationRecord).returning();
 
-      if (validationData.phase === 'Deposit' && qrCode.eventId) {
-        await db
-          .update(bottleDeposits)
-          .set({
-            isValidated: true,
-            validatedBy: parseInt(validationData.validatedBy, 10), // aquí debe ir un ID numérico
-            validatedAt: new Date()
-        })
-        .where(eq(bottleDeposits.depositId, qrCode.eventId));
-      }
+if (validationData.phase === 'Deposit') {
+  const idToUpdate = qrCode.eventId && qrCode.eventId.trim() !== '' 
+    ? qrCode.eventId 
+    : validationData.qrId; // fallback temporal
+
+  console.log('→ [QR-VALIDATION] Actualizando depósito:', idToUpdate);
+  console.log('→ validatedBy recibido:', validationData.validatedBy, 'typeof:', typeof validationData.validatedBy);
+  console.log('→ Convertido a Number:', Number(validationData.validatedBy));
+
+
+  const updateResult = await db
+    .update(bottleDeposits)
+    .set({
+      isValidated: true,
+      validatedBy: Number(validationData.validatedBy),
+      validatedAt: new Date()
+    })
+    .where(eq(bottleDeposits.eventId, idToUpdate));
+
+  console.log('→ [QR-VALIDATION] Resultado del UPDATE:', updateResult);
+}
+
 
       // 7. Actualizar estado del QR si es la fase final
       if (validationData.phase === 'Product') {

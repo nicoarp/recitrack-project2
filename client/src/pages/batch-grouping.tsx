@@ -31,6 +31,8 @@ interface WeightAdjustment {
 
 export default function BatchGrouping() {
   const [, setLocation] = useLocation();
+  const [isLoadingDeposits, setIsLoadingDeposits] = useState(true);
+  const [validDeposits, setValidDeposits] = useState<ScannedDeposit[]>([]);
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -52,7 +54,39 @@ export default function BatchGrouping() {
 
   // === SEGURIDAD 2025-07: VALIDACIÓN DE ROLES ===
   const hasPermissions = isAuthenticated && ['admin', 'acopio', 'batch_operator', 'centro_acopio'].includes(user?.role || '');
-  
+  // useEffect para cargar los depósitos validados del centro logueado
+React.useEffect(() => {
+  console.log('ID del usuario logueado (centro):', user?.id);
+
+  async function fetchDeposits() {
+    setIsLoadingDeposits(true);
+    try {
+      const response = await apiRequest('GET', '/api/bottle-deposits');
+      const allDeposits = await response.json();
+      console.log('TODOS LOS DEPÓSITOS:', allDeposits);
+
+      const centerId = user?.id; // Asegúrate que este es el ID de tu centro
+      // OJO: Ajusta el filtro según la estructura de tu backend
+      const validados = allDeposits
+        .filter((d: any) => d.isValidated && d.validatedBy === centerId)
+        .map((d: any) => ({
+          eventId: d.eventId,
+          location: d.location,
+          weight: d.weightKg,
+          bottleCount: d.bottleCount,
+          timestamp: d.validated_at,
+          collectorInfo: d.operatorName || ''
+        }));
+      console.log('DEPÓSITOS VALIDADOS:', validados);
+      setValidDeposits(validados);
+    } catch (error) {
+      setValidDeposits([]);
+    }
+    setIsLoadingDeposits(false);
+  }
+  if (user?.id) fetchDeposits();
+}, [user?.id]);
+
   // Bloquear acceso si no tiene permisos
   React.useEffect(() => {
     if (isAuthenticated && !hasPermissions) {
@@ -378,7 +412,50 @@ export default function BatchGrouping() {
           Operador: {user?.name} | Total depósitos: {scannedDeposits.length}
         </p>
       </div>
-
+  
+    {/* NUEVO CARD DE DEPÓSITOS VALIDADOS */}
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Camera className="h-5 w-5" />
+          Depósitos validados disponibles
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {isLoadingDeposits ? (
+          <div>Cargando depósitos...</div>
+        ) : validDeposits.length === 0 ? (
+          <div>No hay depósitos validados disponibles.</div>
+        ) : (
+          <div className="space-y-2 max-h-64 overflow-y-auto">
+            {validDeposits.map((deposit) => (
+              <div key={deposit.eventId} className="flex items-center justify-between p-3 bg-gray-50 rounded border">
+                <div className="flex-1">
+                  <div className="font-medium text-sm">{deposit.eventId}</div>
+                  <div className="text-xs text-gray-600">{deposit.location}</div>
+                  <div className="text-xs text-blue-600">
+                    {deposit.weight}kg • {deposit.bottleCount} botellas
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setScannedDeposits((prev) => [...prev, deposit]);
+                    toast({ title: "Depósito agregado", description: `${deposit.weight}kg agregados al lote` });
+                  }}
+                  className="ml-2"
+                  disabled={scannedDeposits.some((d) => d.eventId === deposit.eventId)}
+                >
+                  Agregar
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+    
+    
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Lógica batch 2025-07: Panel de escaneo */}
         <Card>

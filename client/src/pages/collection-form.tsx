@@ -253,10 +253,12 @@ export default function CollectionForm() {
         evidenceHash: data.scalePhoto ? 'hash_' + Date.now() : undefined
       });
       const depositResponse = await depositRes.json();
+      const eventId = depositResponse.data.eventId;
 
       // Luego generamos el QR con toda la información
       const qrRes = await apiRequest('POST', '/api/qr/generate', {
         eventType: 'Deposit',
+        eventId: eventId,
         metadata: {
           batchId: batchId,
           depositId: data.pointId,
